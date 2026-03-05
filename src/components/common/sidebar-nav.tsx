@@ -17,7 +17,7 @@ import { useAppContext } from "@/contexts/app-context";
 
 export function SidebarNav() {
   const pathname = usePathname();
-  const { role } = useAppContext();
+  const { role, loading } = useAppContext();
 
   return (
     <Sidebar collapsible="icon">
@@ -37,7 +37,7 @@ export function SidebarNav() {
             </SidebarMenuButton>
           </Link>
         </SidebarMenuItem>
-        {role === 'admin' && (
+        {!loading && role === 'admin' && (
           <SidebarMenuItem>
             <Link href="/admin" passHref>
               <SidebarMenuButton

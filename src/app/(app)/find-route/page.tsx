@@ -31,8 +31,15 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { findRouteAction } from '@/lib/actions';
-import { graph } from '@/lib/data';
-import { MapPlaceholder } from '@/components/map-placeholder';
+import { fetchGraphData } from '@/lib/db';
+import { useFirestore } from '@/firebase/provider';
+import { Graph } from '@/lib/types';
+import dynamic from 'next/dynamic';
+
+const RouteMapView = dynamic(() => import('@/components/map/RouteMapView'), {
+  ssr: false,
+  loading: () => <div className="h-[400px] md:h-[600px] w-full bg-slate-100 animate-pulse flex items-center justify-center rounded-xl border border-slate-200 text-slate-400 italic font-medium">Loading Interactive Map...</div>
+});
 import { Bus, Footprints, Hourglass, Route, Wallet } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
@@ -63,6 +70,19 @@ function SubmitButton() {
 
 export default function FindRoutePage() {
   const [state, formAction] = useActionState(findRouteAction, { message: '' });
+  const db = useFirestore();
+  const [graphData, setGraphData] = React.useState<Graph>({ nodes: [], routes: [], edges: [] });
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      const data = await fetchGraphData(db);
+      setGraphData(data);
+      setIsLoading(false);
+    };
+    loadData();
+  }, [db]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -73,8 +93,8 @@ export default function FindRoutePage() {
   });
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-      <div className="lg:col-span-1">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 h-full">
+      <div className="lg:col-span-1 overflow-y-auto">
         <Card>
           <CardHeader>
             <CardTitle>Plan Your Trip</CardTitle>
@@ -103,7 +123,7 @@ export default function FindRoutePage() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {graph.nodes.map(node => (
+                          {graphData.nodes.map(node => (
                             <SelectItem key={node.id} value={node.id}>
                               {node.name}
                             </SelectItem>
@@ -132,7 +152,7 @@ export default function FindRoutePage() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {graph.nodes.map(node => (
+                          {graphData.nodes.map(node => (
                             <SelectItem key={node.id} value={node.id}>
                               {node.name}
                             </SelectItem>
@@ -150,12 +170,12 @@ export default function FindRoutePage() {
             </form>
           </Form>
         </Card>
-        
+
         {state.message && state.error && (
-            <Alert variant="destructive" className="mt-4">
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{state.message}</AlertDescription>
-            </Alert>
+          <Alert variant="destructive" className="mt-4">
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{state.message}</AlertDescription>
+          </Alert>
         )}
 
         {state.result && (
@@ -167,35 +187,35 @@ export default function FindRoutePage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="mb-4 space-y-2 text-sm text-muted-foreground">
-                    <div className="flex items-center justify-between">
-                        <span>Total Distance</span>
-                        <span className="font-bold text-foreground">{state.result.totalDistance.toFixed(2)} km</span>
-                    </div>
-                    {state.result.totalFare !== undefined && (
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <Wallet className="h-4 w-4" />
-                            <span>Total Regular Fare</span>
-                        </div>
-                        <span className="font-bold text-foreground">₱{state.result.totalFare.toFixed(2)}</span>
-                    </div>
-                    )}
-                    {state.result.discountedFare !== undefined && (
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <Wallet className="h-4 w-4" />
-                            <span>Total Discounted Fare</span>
-                        </div>
-                        <span className="font-bold text-foreground">₱{state.result.discountedFare.toFixed(2)}</span>
-                    </div>
-                    )}
+              <div className="mb-4 space-y-2 text-sm text-muted-foreground">
+                <div className="flex items-center justify-between">
+                  <span>Total Distance</span>
+                  <span className="font-bold text-foreground">{state.result.totalDistance.toFixed(2)} km</span>
                 </div>
-                {state.result.discountedFare !== undefined && (
-                    <p className="text-xs text-muted-foreground/80 -mt-2 mb-4">
-                        Discount applies to students, seniors, and PWDs.
-                    </p>
+                {state.result.totalFare !== undefined && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Wallet className="h-4 w-4" />
+                      <span>Total Regular Fare</span>
+                    </div>
+                    <span className="font-bold text-foreground">₱{state.result.totalFare.toFixed(2)}</span>
+                  </div>
                 )}
+                {state.result.discountedFare !== undefined && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Wallet className="h-4 w-4" />
+                      <span>Total Discounted Fare</span>
+                    </div>
+                    <span className="font-bold text-foreground">₱{state.result.discountedFare.toFixed(2)}</span>
+                  </div>
+                )}
+              </div>
+              {state.result.discountedFare !== undefined && (
+                <p className="text-xs text-muted-foreground/80 -mt-2 mb-4">
+                  Discount applies to students, seniors, and PWDs.
+                </p>
+              )}
               <Separator className="mb-4" />
               <div className="space-y-4">
                 {state.result.path.map((segment, index) => (
@@ -218,33 +238,34 @@ export default function FindRoutePage() {
                       <p className="text-sm text-muted-foreground">
                         To <span className="font-medium text-foreground">{segment.to}</span>
                       </p>
-                       <p className="text-xs text-muted-foreground/80 mt-1">
+                      <p className="text-xs text-muted-foreground/80 mt-1">
                         ({segment.distance.toFixed(2)} km)
                         {segment.regularFare !== undefined &&
                           ` - Reg: ₱${segment.regularFare.toFixed(2)} / Disc: ₱${segment.discountedFare?.toFixed(2)}`}
-                       </p>
+                      </p>
                     </div>
                   </div>
                 ))}
-                 <div className="flex items-start gap-4">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                      <Footprints className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1 pt-1.5">
-                        <p className="font-semibold">Arrive at Destination</p>
-                        <p className="text-sm text-muted-foreground">{state.result.path[state.result.path.length - 1].to}</p>
-                    </div>
-                 </div>
+                <div className="flex items-start gap-4">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                    <Footprints className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1 pt-1.5">
+                    <p className="font-semibold">Arrive at Destination</p>
+                    <p className="text-sm text-muted-foreground">{state.result.path[state.result.path.length - 1].to}</p>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
         )}
       </div>
 
-      <div className="lg:col-span-2">
-        <MapPlaceholder 
-          start={state.result ? state.result.path[0].from : undefined}
-          end={state.result ? state.result.path[state.result.path.length - 1].to : undefined}
+      <div className="lg:col-span-2 h-full min-h-[400px]">
+        <RouteMapView
+          nodes={graphData.nodes}
+          path={state.result ? state.result.path : undefined}
+          className="h-full"
         />
       </div>
     </div>

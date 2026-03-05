@@ -31,7 +31,7 @@ export function findShortestPath(
     }
 
     if (u === null) {
-      break; 
+      break;
     }
 
     queue.delete(u);
@@ -55,7 +55,7 @@ export function findShortestPath(
 
   const path: PathSegment[] = [];
   let current = endNodeId;
-  
+
   if (previousNodes[current] === null && current !== startNodeId) {
     return null; // No path found
   }
@@ -64,23 +64,23 @@ export function findShortestPath(
     const prev = previousNodes[current];
     if (!prev) break;
     const { nodeId: prevNodeId, edge } = prev;
-    
+
     const fromLocation = locationMap.get(prevNodeId);
     const toLocation = locationMap.get(current);
 
     if (fromLocation && toLocation) {
-        path.unshift({
-            from: fromLocation.name,
-            to: toLocation.name,
-            routeName: edge.routeName,
-            distance: edge.weight,
-        });
+      path.unshift({
+        from: fromLocation.name,
+        to: toLocation.name,
+        routeName: edge.routeName,
+        distance: edge.weight,
+      });
     }
     current = prevNodeId;
   }
-  
+
   if (path.length === 0 && startNodeId !== endNodeId) {
-      return null;
+    return null;
   }
 
   return {

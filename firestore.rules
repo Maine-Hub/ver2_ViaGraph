@@ -84,5 +84,23 @@ service cloud.firestore {
       allow get, list: if true;
       allow create, update, delete: if isAdmin();
     }
+
+    /**
+     * @description Publicly readable node data. Writable only by admins.
+     * Used by the graph/pathfinding system.
+     */
+    match /nodes/{nodeId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Publicly readable edge data. Writable only by admins.
+     * Used by the graph/pathfinding system.
+     */
+    match /edges/{edgeId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
+    }
   }
 }

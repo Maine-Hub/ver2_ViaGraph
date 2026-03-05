@@ -12,15 +12,24 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Logo } from "@/components/common/logo";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { useAppContext } from "@/contexts/app-context";
+import { useAuth } from "@/firebase/provider";
+import { signOut } from "firebase/auth";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
 
 export function Header() {
-  const { role, setRole } = useAppContext();
+  const { user, role, loading } = useAppContext();
+  const auth = useAuth();
+  const router = useRouter();
 
-  const handleRoleChange = (checked: boolean) => {
-    setRole(checked ? 'admin' : 'user');
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } finally {
+      router.replace('/signin');
+    }
   };
 
   return (
@@ -30,35 +39,36 @@ export function Header() {
         <Logo />
       </div>
       <div className="flex w-full items-center justify-end gap-4">
-        <div className="flex items-center space-x-2">
-          <Label htmlFor="role-switcher" className="text-sm font-medium">
-            Admin Mode
-          </Label>
-          <Switch
-            id="role-switcher"
-            checked={role === 'admin'}
-            onCheckedChange={handleRoleChange}
-            aria-label="Toggle admin mode"
-          />
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <Avatar>
-                <AvatarImage src="https://picsum.photos/seed/user/100/100" alt="User" data-ai-hint="person face" />
-                <AvatarFallback>U</AvatarFallback>
-              </Avatar>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>Settings</DropdownMenuItem>
-            <DropdownMenuItem>Support</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>Logout</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {!loading && user && (
+          <div className="flex items-center gap-4">
+            <Badge variant="outline" className="capitalize">
+              {role}
+            </Badge>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <Avatar>
+                    <AvatarImage src={`https://picsum.photos/seed/${user.uid}/100/100`} alt="User" />
+                    <AvatarFallback>{user.email?.charAt(0).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="z-[2000]">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{user.email}</p>
+                    <p className="text-xs leading-none text-muted-foreground capitalize">{role}</p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>Settings</DropdownMenuItem>
+                <DropdownMenuItem>Support</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={handleLogout}>Logout</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
       </div>
     </header>
   );

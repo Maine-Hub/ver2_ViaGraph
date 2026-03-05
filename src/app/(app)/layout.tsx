@@ -15,9 +15,9 @@ export default function AppLayout({
     <AppProvider>
       <SidebarProvider>
         <SidebarNav />
-        <SidebarInset>
+        <SidebarInset className="flex flex-col overflow-hidden h-screen">
           <Header />
-          <main className="flex-1 p-4 md:p-6">{children}</main>
+          <main className="flex-1 overflow-hidden p-4 md:p-6">{children}</main>
         </SidebarInset>
       </SidebarProvider>
     </AppProvider>

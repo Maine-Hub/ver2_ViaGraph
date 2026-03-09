@@ -2,17 +2,11 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { useAuth, useFirestore } from '@/firebase/provider';
-import { doc, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { getAuthErrorMessage } from '@/lib/auth-errors';
 
 export default function SignInPage() {
     const [isLoading, setIsLoading] = useState(false);
-    const auth = useAuth();
-    const firestore = useFirestore();
     const router = useRouter();
     const { toast } = useToast();
 
@@ -24,30 +18,27 @@ export default function SignInPage() {
 
         setIsLoading(true);
         try {
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            const user = userCredential.user;
-
-            // Fetch user role from Firestore
-            const userDoc = await getDoc(doc(firestore, 'users', user.uid));
-            const userData = userDoc.data();
-            const role = userData?.role || 'user';
-
-            toast({
-                title: 'Signed in',
-                description: 'Welcome back to ViaGraph.',
+            const res = await fetch('/api/auth/signin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password }),
             });
+            const data = await res.json();
 
-            if (role === 'admin') {
+            if (!data.success) {
+                toast({ variant: 'destructive', title: 'Login Failed', description: data.message });
+                return;
+            }
+
+            toast({ title: 'Signed in', description: 'Welcome back to ViaGraph.' });
+
+            if (data.user.role === 'admin') {
                 router.push('/admin');
             } else {
                 router.push('/find-route');
             }
-        } catch (error: any) {
-            toast({
-                variant: 'destructive',
-                title: 'Login Failed',
-                description: getAuthErrorMessage(error),
-            });
+        } catch {
+            toast({ variant: 'destructive', title: 'Login Failed', description: 'An unexpected error occurred.' });
         } finally {
             setIsLoading(false);
         }

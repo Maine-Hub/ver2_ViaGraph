@@ -13,24 +13,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Logo } from "@/components/common/logo";
 import { useAppContext } from "@/contexts/app-context";
-import { useAuth } from "@/firebase/provider";
-import { signOut } from "firebase/auth";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 
 export function Header() {
-  const { user, role, loading } = useAppContext();
-  const auth = useAuth();
-  const router = useRouter();
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-    } finally {
-      router.replace('/signin');
-    }
-  };
+  const { user, role, loading, signOut } = useAppContext();
 
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm md:px-6">
@@ -56,7 +42,7 @@ export function Header() {
               <DropdownMenuContent align="end" className="z-[2000]">
                 <DropdownMenuLabel>
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{user.email}</p>
+                    <p className="text-sm font-medium leading-none">{user.username || user.email}</p>
                     <p className="text-xs leading-none text-muted-foreground capitalize">{role}</p>
                   </div>
                 </DropdownMenuLabel>
@@ -64,7 +50,7 @@ export function Header() {
                 <DropdownMenuItem>Settings</DropdownMenuItem>
                 <DropdownMenuItem>Support</DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={handleLogout}>Logout</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => signOut()}>Logout</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

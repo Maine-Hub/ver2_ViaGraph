@@ -1,65 +1,60 @@
 'use client';
 
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
-import { useUser, useFirestore } from '@/firebase/provider';
-import { doc, getDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 
 export type Role = 'user' | 'admin';
 
+export interface SessionUser {
+  uid: string;
+  email: string;
+  username: string;
+  role: Role;
+}
+
 interface AppContextType {
   role: Role;
   setRole: (role: Role) => void;
-  user: any; // Firebase User type
+  user: SessionUser | null;
   loading: boolean;
+  signOut: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const { user, isUserLoading } = useUser();
-  const firestore = useFirestore();
   const router = useRouter();
+  const [user, setUser] = useState<SessionUser | null>(null);
   const [role, setRoleState] = useState<Role>('user');
   const [loading, setLoading] = useState(true);
 
-  const fetchUserRole = async (userId: string) => {
-    try {
-      const userDoc = await getDoc(doc(firestore, 'users', userId));
-      if (userDoc.exists()) {
-        setRoleState(userDoc.data().role as Role);
-      } else {
-        // Fallback for new users if not handled during signup
-        setRoleState('user');
-      }
-    } catch (error) {
-      console.error("Error fetching user role:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    if (!isUserLoading) {
-      if (user) {
-        fetchUserRole(user.uid);
-      } else {
-        setRoleState('user');
-        setLoading(false);
-        // Route groups are not part of URL, so this targets src/app/(auth)/signin/page.tsx
-        router.replace('/signin');
-      }
-    }
-  }, [user, isUserLoading, firestore, router]);
+    // Check session on mount
+    fetch('/api/auth/session')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.user) {
+          setUser(data.user);
+          setRoleState(data.user.role);
+        } else {
+          router.replace('/signin');
+        }
+      })
+      .catch(() => router.replace('/signin'))
+      .finally(() => setLoading(false));
+  }, [router]);
 
-  const setRole = (newRole: Role) => {
-    setRoleState(newRole);
-    // Note: In a real app, you might want to sync this to Firestore here if needed,
-    // but usually roles are assigned by an admin or during signup.
+  const setRole = (newRole: Role) => setRoleState(newRole);
+
+  const signOut = async () => {
+    await fetch('/api/auth/signout', { method: 'POST' });
+    setUser(null);
+    setRoleState('user');
+    router.replace('/signin');
   };
 
   return (
-    <AppContext.Provider value={{ role, setRole, user, loading }}>
+    <AppContext.Provider value={{ role, setRole, user, loading, signOut }}>
       {children}
     </AppContext.Provider>
   );

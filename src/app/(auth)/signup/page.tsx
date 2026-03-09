@@ -2,18 +2,12 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { useAuth, useFirestore } from '@/firebase/provider';
-import { doc, setDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { getAuthErrorMessage } from '@/lib/auth-errors';
 
 export default function SignUpPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [role, setRole] = useState('user');
-    const auth = useAuth();
-    const firestore = useFirestore();
     const router = useRouter();
     const { toast } = useToast();
 
@@ -25,69 +19,29 @@ export default function SignUpPage() {
         const username = formData.get('username') as string;
         const adminCode = formData.get('adminCode') as string;
 
-        if (role === 'admin') {
-            const validCodes = (process.env.NEXT_PUBLIC_ADMIN_ACCESS_CODES || '').split(',');
-            if (!validCodes.includes(adminCode)) {
-                toast({
-                    variant: 'destructive',
-                    title: 'Error',
-                    description: 'Invalid Admin Access Code.',
-                });
-                return;
-            }
-        }
-
         setIsLoading(true);
         try {
-            const userCredential = await createUserWithEmailAndPassword(
-                auth,
-                email,
-                password
-            );
-            const user = userCredential.user;
-
-            // Save user role and username to Firestore
-            await setDoc(doc(firestore, 'users', user.uid), {
-                id: user.uid,
-                email: user.email,
-                username: username || '',
-                role: role,
-                createdAt: new Date().toISOString(),
+            const res = await fetch('/api/auth/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password, username, role, adminCode }),
             });
+            const data = await res.json();
 
-            // If admin, also add to roles_admin collection
-            // NOTE: This might fail if Firestore rules don't permit self-creation, 
-            // but we'll try and handle it gracefully or let the user know.
-            if (role === 'admin') {
-                try {
-                    await setDoc(doc(firestore, 'roles_admin', user.uid), {
-                        id: user.uid,
-                        email: user.email,
-                        assignedAt: new Date().toISOString(),
-                    });
-                } catch (adminError) {
-                    console.error('Failed to register admin role in Firestore:', adminError);
-                    // We don't block the whole signup if role_admin write fails, 
-                    // as it might require manual approval or different rules.
-                }
+            if (!data.success) {
+                toast({ variant: 'destructive', title: 'Signup Failed', description: data.message });
+                return;
             }
 
-            toast({
-                title: 'Account created',
-                description: "You've successfully signed up.",
-            });
+            toast({ title: 'Account created', description: "You've successfully signed up." });
 
             if (role === 'admin') {
                 router.push('/admin');
             } else {
                 router.push('/find-route');
             }
-        } catch (error: any) {
-            toast({
-                variant: 'destructive',
-                title: 'Signup Failed',
-                description: getAuthErrorMessage(error),
-            });
+        } catch {
+            toast({ variant: 'destructive', title: 'Signup Failed', description: 'An unexpected error occurred.' });
         } finally {
             setIsLoading(false);
         }

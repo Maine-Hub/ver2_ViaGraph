@@ -1,4 +1,3 @@
-import { GeoPoint } from "firebase/firestore";
 
 export interface Location {
   id: string;

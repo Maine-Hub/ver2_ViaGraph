@@ -1,8 +1,8 @@
 'use client';
 
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, useMapEvents, FeatureGroup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, FeatureGroup } from 'react-leaflet';
 import { EditControl } from 'react-leaflet-draw';
-import L, { LeafletMouseEvent } from 'leaflet';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
 import { Location, RouteSegment } from '@/lib/types';
@@ -58,21 +58,12 @@ interface RouteMapProps {
     className?: string;
     onNodeClick?: (nodeId: string) => void;
     onPathDrawn?: (coords: [number, number][]) => void;
+    initialPath?: [number, number][];
 }
 
-// Component to handle mouse movement for the rubber band line
-function MouseHandler({ onMouseMove }: { onMouseMove: (lat: number, lng: number) => void }) {
-    useMapEvents({
-        mousemove: (e: LeafletMouseEvent) => {
-            onMouseMove(e.latlng.lat, e.latlng.lng);
-        },
-    });
-    return null;
-}
 
-export default function RouteMap({ nodes, edges, selectedSource, selectedTarget, className, onNodeClick, onPathDrawn }: RouteMapProps) {
+export default function RouteMap({ nodes, edges, selectedSource, selectedTarget, className, onNodeClick, onPathDrawn, initialPath }: RouteMapProps) {
     const [isMounted, setIsMounted] = useState(false);
-    const [mousePos, setMousePos] = useState<[number, number] | null>(null);
     const featureGroupRef = useRef<L.FeatureGroup>(null);
 
     useEffect(() => {
@@ -118,9 +109,6 @@ export default function RouteMap({ nodes, edges, selectedSource, selectedTarget,
                 />
 
                 <InvalidateSize />
-                <MouseHandler onMouseMove={(lat, lng) => {
-                    setMousePos([lat, lng]);
-                }} />
 
                 {/* Draw Controls */}
                 <FeatureGroup ref={featureGroupRef}>
@@ -142,10 +130,11 @@ export default function RouteMap({ nodes, edges, selectedSource, selectedTarget,
                             circlemarker: false,
                             marker: false,
                         }}
-                        edit={{
-                            featureGroup: featureGroupRef.current as any,
-                        }}
+                        edit={{}}
                     />
+                    {initialPath && initialPath.length > 0 && (
+                        <Polyline positions={initialPath} color="#22d3ee" weight={5} />
+                    )}
                 </FeatureGroup>
 
                 {nodes.map(node => (
@@ -194,34 +183,6 @@ export default function RouteMap({ nodes, edges, selectedSource, selectedTarget,
                     return null;
                 })}
 
-                {/* Temporary line for current selection (Rubber Band) */}
-                {sourceNode?.coordinates && !selectedTarget && mousePos && (
-                    <Polyline
-                        positions={[
-                            [sourceNode.coordinates.latitude, sourceNode.coordinates.longitude],
-                            mousePos
-                        ]}
-                        color="#22d3ee"
-                        weight={5}
-                        dashArray="10, 10"
-                        opacity={1}
-                        interactive={false}
-                    />
-                )}
-
-                {/* Locked selection line */}
-                {sourceNode?.coordinates && targetNode?.coordinates && (
-                    <Polyline
-                        positions={[
-                            [sourceNode.coordinates.latitude, sourceNode.coordinates.longitude],
-                            [targetNode.coordinates.latitude, targetNode.coordinates.longitude]
-                        ]}
-                        color="#22c55e"
-                        weight={5}
-                        dashArray="10, 10"
-                        opacity={0.9}
-                    />
-                )}
             </MapContainer>
         </div>
     );

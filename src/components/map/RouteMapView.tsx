@@ -87,20 +87,38 @@ export default function RouteMapView({ nodes, path, className }: RouteMapViewPro
 
     const center: [number, number] = [8.2415, 124.2435];
 
-    // Resolve path coordinates
-    const pathCoordinates: [number, number][] = [];
+    // Build path polylines per segment using stored drawn coords or node fallback
+    const segmentPolylines: { coords: [number, number][]; color: string }[] = [];
+    const segmentColors = ['#ef4444', '#ef4444', '#ef4444', '#ef4444', '#ef4444'];
+
     if (path) {
         path.forEach((segment, index) => {
-            const fromNode = nodes.find(n => n.name === segment.from || n.id === segment.from);
-            const toNode = nodes.find(n => n.name === segment.to || n.id === segment.to);
-            if (fromNode?.coordinates) {
-                pathCoordinates.push([fromNode.coordinates.latitude, fromNode.coordinates.longitude]);
-            }
-            if (index === path.length - 1 && toNode?.coordinates) {
-                pathCoordinates.push([toNode.coordinates.latitude, toNode.coordinates.longitude]);
+            const anySegment = segment as any;
+            if (anySegment.pathCoordinates && anySegment.pathCoordinates.length > 1) {
+                // Use the admin-drawn path coordinates
+                segmentPolylines.push({
+                    coords: anySegment.pathCoordinates,
+                    color: segmentColors[index % segmentColors.length],
+                });
+            } else {
+                // Fallback: straight line between nodes
+                const fromNode = nodes.find(n => n.name === segment.from || n.id === segment.from);
+                const toNode = nodes.find(n => n.name === segment.to || n.id === segment.to);
+                if (fromNode?.coordinates && toNode?.coordinates) {
+                    segmentPolylines.push({
+                        coords: [
+                            [fromNode.coordinates.latitude, fromNode.coordinates.longitude],
+                            [toNode.coordinates.latitude, toNode.coordinates.longitude],
+                        ],
+                        color: segmentColors[index % segmentColors.length],
+                    });
+                }
             }
         });
     }
+
+    // Flatten all segment coords to find start/end markers
+    const allCoords = segmentPolylines.flatMap(s => s.coords);
 
     return (
         <div className={`relative w-full rounded-xl overflow-hidden border border-slate-200 shadow-xl ${className || 'h-[400px] md:h-[600px]'}`}>
@@ -109,8 +127,8 @@ export default function RouteMapView({ nodes, path, className }: RouteMapViewPro
                 <button
                     onClick={() => setTileMode('standard')}
                     className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold transition-all ${tileMode === 'standard'
-                            ? 'bg-cyan-500 text-white'
-                            : 'bg-white text-slate-600 hover:bg-slate-100'
+                        ? 'bg-cyan-500 text-white'
+                        : 'bg-white text-slate-600 hover:bg-slate-100'
                         }`}
                 >
                     🗺️ Standard
@@ -118,8 +136,8 @@ export default function RouteMapView({ nodes, path, className }: RouteMapViewPro
                 <button
                     onClick={() => setTileMode('satellite')}
                     className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold transition-all ${tileMode === 'satellite'
-                            ? 'bg-cyan-500 text-white'
-                            : 'bg-white text-slate-600 hover:bg-slate-100'
+                        ? 'bg-cyan-500 text-white'
+                        : 'bg-white text-slate-600 hover:bg-slate-100'
                         }`}
                 >
                     🛰️ Satellite
@@ -150,23 +168,17 @@ export default function RouteMapView({ nodes, path, className }: RouteMapViewPro
                     )
                 ))}
 
-                {/* Highlight Path */}
-                {pathCoordinates.length > 0 && (
-                    <>
-                        <Polyline
-                            positions={pathCoordinates}
-                            color="#00bcd4"
-                            weight={6}
-                            opacity={0.8}
-                        />
-                        <Marker position={pathCoordinates[0]} icon={startIcon}>
-                            <Popup>Start Point</Popup>
-                        </Marker>
-                        <Marker position={pathCoordinates[pathCoordinates.length - 1]} icon={endIcon}>
-                            <Popup>Destination</Popup>
-                        </Marker>
-                    </>
-                )}
+                {/* Highlight Path — one polyline per segment with its color */}
+                {segmentPolylines.map((seg, i) => (
+                    <Polyline
+                        key={i}
+                        positions={seg.coords}
+                        color={seg.color}
+                        weight={6}
+                        opacity={0.85}
+                    />
+                ))}
+
             </MapContainer>
         </div>
     );

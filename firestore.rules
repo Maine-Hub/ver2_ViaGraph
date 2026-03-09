@@ -56,9 +56,12 @@ service cloud.firestore {
      * @description Rules for the admin role collection.
      */
     match /roles_admin/{userId} {
-      allow get: if isAdmin();
+      allow get: if isAdmin() || isOwner(userId);
       allow list: if isAdmin();
-      allow create, update, delete: if isAdmin();
+      // Allow a signed-in user to create their OWN admin entry (bootstrap case)
+      allow create: if isOwner(userId);
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
     }
 
     /**

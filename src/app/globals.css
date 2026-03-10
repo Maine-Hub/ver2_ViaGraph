@@ -82,3 +82,28 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Leaflet Map Label Styles */
+.map-label {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  font-weight: 800 !important;
+  color: #0369a1 !important; /* sky-700 */
+  text-shadow: 
+    -1px -1px 0 #fff,  
+     1px -1px 0 #fff,
+    -1px  1px 0 #fff,
+     1px  1px 0 #fff,
+     0px  2px 4px rgba(0,0,0,0.2);
+  font-size: 13px !important;
+  pointer-events: none !important;
+  white-space: nowrap;
+}
+
+.leaflet-tooltip-top:before,
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+  border: none !important;
+}

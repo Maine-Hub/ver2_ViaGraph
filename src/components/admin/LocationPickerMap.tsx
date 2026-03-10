@@ -67,11 +67,15 @@ export default function LocationPickerMap({ onLocationSelect, selectedLat, selec
             <MapContainer
                 center={center}
                 zoom={14}
+                minZoom={2}
+                maxZoom={22}
                 style={{ height: '100%', width: '100%' }}
             >
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    maxZoom={22}
+                    maxNativeZoom={19}
                 />
 
                 <MapEvents onLocationSelect={onLocationSelect} />

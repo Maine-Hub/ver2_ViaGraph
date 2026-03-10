@@ -36,11 +36,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Upload, PlusCircle, Trash2, Edit, Database, Loader2 } from 'lucide-react';
+import { Upload, PlusCircle, Trash2, Edit, Database, Loader2, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { graph as localGraph } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/app-context';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Fragment, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Textarea } from '@/components/ui/textarea';
@@ -139,7 +139,6 @@ function EditRouteButton({ edge, nodes, onEdited }: { edge: any; nodes: any[]; o
   const [open, setOpen] = useState(false);
   const [distance, setDistance] = useState(String(edge.distance ?? ''));
   const [stop, setStop] = useState(edge.stopAndTransfer ?? '');
-  const [fare, setFare] = useState(edge.fareDetails ?? '');
   const [note, setNote] = useState(edge.note ?? '');
   const [pathCoordinates, setPathCoordinates] = useState<[number, number][]>(edge.pathCoordinates ?? []);
 
@@ -154,7 +153,6 @@ function EditRouteButton({ edge, nodes, onEdited }: { edge: any; nodes: any[]; o
           distance: parseFloat(distance),
           routeName: edge.routeName,
           stopAndTransfer: stop,
-          fareDetails: fare,
           note: note,
           pathCoordinates: pathCoordinates,
         }),
@@ -175,7 +173,6 @@ function EditRouteButton({ edge, nodes, onEdited }: { edge: any; nodes: any[]; o
       if (o) {
         setDistance(String(edge.distance ?? ''));
         setStop(edge.stopAndTransfer ?? '');
-        setFare(edge.fareDetails ?? '');
         setNote(edge.note ?? '');
         setPathCoordinates(edge.pathCoordinates ?? []);
       }
@@ -188,7 +185,7 @@ function EditRouteButton({ edge, nodes, onEdited }: { edge: any; nodes: any[]; o
           {/* Left Column: Map */}
           <div className="hidden md:block md:w-3/5 bg-slate-50 relative border-r border-slate-100 min-h-[500px]">
             <RouteMap
-              nodes={nodes}
+              nodes={nodes.filter(n => n.id === edge.source || n.id === edge.target)}
               edges={[]}
               className="h-full w-full border-none shadow-none rounded-none"
               onPathDrawn={setPathCoordinates}
@@ -215,11 +212,7 @@ function EditRouteButton({ edge, nodes, onEdited }: { edge: any; nodes: any[]; o
                 <Input className="bg-white border-slate-200" value={stop} onChange={e => setStop(e.target.value)} placeholder="e.g. Transfer at Terminal" />
               </div>
               <div className="grid gap-1">
-                <Label className="text-sm font-semibold text-slate-700">Fare Details</Label>
-                <Input className="bg-white border-slate-200" value={fare} onChange={e => setFare(e.target.value)} placeholder="e.g. ₱13 base fare" />
-              </div>
-              <div className="grid gap-1">
-                <Label className="text-sm font-semibold text-slate-700">Note / Suggestion</Label>
+                <Label className="text-sm font-semibold text-slate-700">Suggestion</Label>
                 <Input className="bg-white border-slate-200" value={note} onChange={e => setNote(e.target.value)} placeholder="e.g. Take this route for faster travel" />
               </div>
 
@@ -243,7 +236,7 @@ function EditRouteButton({ edge, nodes, onEdited }: { edge: any; nodes: any[]; o
   );
 }
 
-function EditTransferButton({ transfer, nodes, onEdited }: { transfer: any; nodes: any[]; onEdited: () => void }) {
+function EditTransferButton({ transfer, nodes, onEdited, initialLegIdx = 0 }: { transfer: any; nodes: any[]; onEdited: () => void, initialLegIdx?: number }) {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(transfer.name || '');
@@ -270,7 +263,6 @@ function EditTransferButton({ transfer, nodes, onEdited }: { transfer: any; node
             routeName: l.route_name,
             distance: parseFloat(l.distance),
             stopAndTransfer: l.stop_and_transfer,
-            fareDetails: l.fare_details,
             note: l.note,
             pathCoordinates: l.pathCoordinates,
           })),
@@ -294,13 +286,13 @@ function EditTransferButton({ transfer, nodes, onEdited }: { transfer: any; node
         setFrom(transfer.from_node_id);
         setTo(transfer.to_node_id);
         setLegs(transfer.legs || []);
-        setActiveLegIdx(0);
+        setActiveLegIdx(initialLegIdx);
       }
     }}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Transfer Route</DialogTitle>
           <DialogDescription>Update the multi-leg route details.</DialogDescription>
@@ -330,7 +322,7 @@ function EditTransferButton({ transfer, nodes, onEdited }: { transfer: any; node
             <div className="flex items-center justify-between">
               <Label>Legs</Label>
               <Button size="sm" variant="outline" type="button" onClick={() => {
-                setLegs(prev => [...prev, { route_name: '', distance: '', stop_and_transfer: '', fare_details: '', pathCoordinates: [] }]);
+                setLegs(prev => [...prev, { route_name: '', distance: '', stop_and_transfer: '', pathCoordinates: [] }]);
                 setActiveLegIdx(legs.length);
               }}>
                 <PlusCircle className="mr-1 h-3 w-3" /> Add Leg
@@ -377,26 +369,22 @@ function EditTransferButton({ transfer, nodes, onEdited }: { transfer: any; node
                   </div>
                 )}
                 <div className="grid gap-1">
-                  <Label className="text-xs">Fare Details</Label>
-                  <Input className="h-8 text-sm" value={legs[activeLegIdx].fare_details}
-                    placeholder="e.g. Regular = ₱13"
-                    onChange={e => setLegs(prev => prev.map((l, i) => i === activeLegIdx ? { ...l, fare_details: e.target.value } : l))} />
-                </div>
-                <div className="grid gap-1">
-                  <Label className="text-xs">Note / Suggestion</Label>
+                  <Label className="text-xs">Suggestion</Label>
                   <Input className="h-8 text-sm" value={legs[activeLegIdx].note}
                     placeholder="e.g. Recommended route"
                     onChange={e => setLegs(prev => prev.map((l, i) => i === activeLegIdx ? { ...l, note: e.target.value } : l))} />
                 </div>
                 <div className="grid gap-1">
                   <Label className="text-xs">Draw Path for this Leg</Label>
-                  <RouteMap
-                    nodes={nodes}
-                    edges={[]}
-                    className="h-[250px]"
-                    onPathDrawn={(coords) => setLegs(prev => prev.map((l, i) => i === activeLegIdx ? { ...l, pathCoordinates: coords } : l))}
-                    initialPath={legs[activeLegIdx].pathCoordinates}
-                  />
+                  <div className="h-[250px]">
+                    <RouteMap
+                      nodes={nodes.filter(n => n.id === from || n.id === to)}
+                      edges={[]}
+                      className="h-[250px]"
+                      onPathDrawn={(coords) => setLegs(prev => prev.map((l, i) => i === activeLegIdx ? { ...l, pathCoordinates: coords } : l))}
+                      initialPath={legs[activeLegIdx].pathCoordinates}
+                    />
+                  </div>
                   {legs[activeLegIdx].pathCoordinates?.length > 1 && (
                     <p className="text-xs text-cyan-600">✓ {legs[activeLegIdx].pathCoordinates.length} coordinate points drawn.</p>
                   )}
@@ -417,14 +405,15 @@ function EditTransferButton({ transfer, nodes, onEdited }: { transfer: any; node
 function EditJeepneyLineButton({ route, onEdited }: { route: any; onEdited: () => void }) {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [name, setName] = useState(route.name);
   const [description, setDescription] = useState(route.description ?? '');
 
   const handleSave = async () => {
     try {
-      const res = await fetch('/api/mysql/routes', {
-        method: 'POST',
+      const res = await fetch(`/api/mysql/routes/${encodeURIComponent(route.name)}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: route.name, description }),
+        body: JSON.stringify({ newName: name, description }),
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.message);
@@ -437,15 +426,21 @@ function EditJeepneyLineButton({ route, onEdited }: { route: any; onEdited: () =
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (o) setDescription(route.description ?? ''); }}>
+    <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (o) { setName(route.name); setDescription(route.description ?? ''); } }}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader><DialogTitle>Edit Jeepney Line</DialogTitle></DialogHeader>
         <div className="grid gap-3 py-2">
-          <div className="grid gap-1"><Label>Line Name (cannot change)</Label><Input value={route.name} disabled /></div>
-          <div className="grid gap-1"><Label>Description</Label><Input value={description} onChange={e => setDescription(e.target.value)} placeholder="e.g. Route from downtown to..." /></div>
+          <div className="grid gap-1">
+            <Label>Line Name</Label>
+            <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Tibanga-Palao" />
+          </div>
+          <div className="grid gap-1">
+            <Label>Description</Label>
+            <Input value={description} onChange={e => setDescription(e.target.value)} placeholder="e.g. Route from downtown to..." />
+          </div>
         </div>
         <DialogFooter>
           <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
@@ -478,16 +473,96 @@ export default function AdminPage() {
   const [transfer2RouteName, setTransfer2RouteName] = useState('');
   const [transfer2Distance, setTransfer2Distance] = useState('');
   const [transfer2StopInfo, setTransfer2StopInfo] = useState('');
-  const [transfer2FareDetails, setTransfer2FareDetails] = useState('');
   const [transfer2Note, setTransfer2Note] = useState('');
   const [transfers, setTransfers] = useState<any[]>([]);
   const [transferLegs, setTransferLegs] = useState<any[]>([
-    { routeName: '', distance: '', stopAndTransfer: '', fareDetails: '', note: '', pathCoordinates: [] as [number, number][] },
+    { routeName: '', distance: '', stopAndTransfer: '', note: '', pathCoordinates: [] as [number, number][] },
   ]);
   const [transferFrom, setTransferFrom] = useState('');
   const [transferTo, setTransferTo] = useState('');
   const [transferName, setTransferName] = useState('');
   const [activeLegIdx, setActiveLegIdx] = useState(0);
+
+  // Sorting State
+  const [nodesSort, setNodesSort] = useState<{ key: string; direction: 'asc' | 'desc' | null }>({ key: 'name', direction: 'asc' });
+  const [edgesSort, setEdgesSort] = useState<{ key: string; direction: 'asc' | 'desc' | null }>({ key: 'source', direction: 'asc' });
+  const [routesSort, setRoutesSort] = useState<{ key: string; direction: 'asc' | 'desc' | null }>({ key: 'name', direction: 'asc' });
+  const [transfersSort, setTransfersSort] = useState<{ key: string; direction: 'asc' | 'desc' | null }>({ key: 'from_node_id', direction: 'asc' });
+
+  const toggleSort = (setter: any, current: any, key: string) => {
+    if (current.key === key) {
+      setter({ key, direction: current.direction === 'asc' ? 'desc' : 'asc' });
+    } else {
+      setter({ key, direction: 'asc' });
+    }
+  };
+
+  const SortIcon = ({ sort, column }: { sort: any; column: string }) => {
+    if (sort.key !== column) return <ChevronsUpDown className="ml-1 h-3 w-3 text-slate-400" />;
+    return sort.direction === 'asc'
+      ? <ChevronUp className="ml-1 h-3 w-3 text-cyan-600 font-bold" />
+      : <ChevronDown className="ml-1 h-3 w-3 text-cyan-600 font-bold" />;
+  };
+
+  const sortedNodes = useMemo(() => {
+    if (!nodesSort.direction) return graph.nodes;
+    return [...graph.nodes].sort((a, b) => {
+      const valA = String(a[nodesSort.key as keyof typeof a] || '').toLowerCase();
+      const valB = String(b[nodesSort.key as keyof typeof b] || '').toLowerCase();
+      return nodesSort.direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+    });
+  }, [graph.nodes, nodesSort]);
+
+  const sortedRoutes = useMemo(() => {
+    if (!routesSort.direction) return graph.routes;
+    return [...graph.routes].sort((a, b) => {
+      const valA = String(a[routesSort.key as keyof typeof a] || '').toLowerCase();
+      const valB = String(b[routesSort.key as keyof typeof b] || '').toLowerCase();
+      return routesSort.direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+    });
+  }, [graph.routes, routesSort]);
+
+  const sortedEdges = useMemo(() => {
+    if (!edgesSort.direction) return graph.edges;
+    return [...graph.edges].sort((a, b) => {
+      let valA: any, valB: any;
+      if (edgesSort.key === 'source' || edgesSort.key === 'target') {
+        valA = graph.nodes.find(n => n.id === a[edgesSort.key as keyof typeof a])?.name || '';
+        valB = graph.nodes.find(n => n.id === b[edgesSort.key as keyof typeof b])?.name || '';
+      } else {
+        valA = a[edgesSort.key as keyof typeof a];
+        valB = b[edgesSort.key as keyof typeof b];
+      }
+
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return edgesSort.direction === 'asc'
+          ? valA.localeCompare(valB)
+          : valB.localeCompare(valA);
+      }
+
+      if (valA < valB) return edgesSort.direction === 'asc' ? -1 : 1;
+      if (valA > valB) return edgesSort.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [graph.edges, graph.nodes, edgesSort]);
+
+  const sortedTransfers = useMemo(() => {
+    if (!transfersSort.direction) return transfers;
+    return [...transfers].sort((a, b) => {
+      let valA = a[transfersSort.key] || '';
+      let valB = b[transfersSort.key] || '';
+
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return transfersSort.direction === 'asc'
+          ? valA.localeCompare(valB)
+          : valB.localeCompare(valA);
+      }
+
+      if (valA < valB) return transfersSort.direction === 'asc' ? -1 : 1;
+      if (valA > valB) return transfersSort.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [transfers, transfersSort]);
 
   const loadData = async () => {
     setIsDataLoading(true);
@@ -606,7 +681,6 @@ export default function AdminPage() {
     const distance = parseFloat(formData.get('distance') as string);
     const routeName = formData.get('routeName') as string;
     const stopAndTransfer = formData.get('stopAndTransfer') as string;
-    const fareDetails = formData.get('fareDetails') as string;
     const note = formData.get('note') as string;
     if (!source || !target || !routeName || isNaN(distance)) {
       toast({ variant: 'destructive', title: 'Error', description: 'Please fill in all required fields.' });
@@ -628,8 +702,8 @@ export default function AdminPage() {
             toNodeId: target,
             name: `${graph.nodes.find(n => n.id === source)?.name ?? source} → ${graph.nodes.find(n => n.id === target)?.name ?? target}`,
             legs: [
-              { routeName, distance, stopAndTransfer: stopAndTransfer || '', fareDetails: fareDetails || '', note: note || '', pathCoordinates: drawnPath },
-              { routeName: transfer2RouteName, distance: parseFloat(transfer2Distance), stopAndTransfer: transfer2StopInfo || '', fareDetails: transfer2FareDetails || '', note: transfer2Note || '', pathCoordinates: [] },
+              { routeName, distance, stopAndTransfer: stopAndTransfer || '', note: note || '', pathCoordinates: drawnPath },
+              { routeName: transfer2RouteName, distance: parseFloat(transfer2Distance), stopAndTransfer: transfer2StopInfo || '', note: transfer2Note || '', pathCoordinates: [] },
             ],
           }),
         });
@@ -637,7 +711,7 @@ export default function AdminPage() {
         if (!data.success) throw new Error(data.message);
         toast({ title: 'Success', description: 'Transfer route added with 2 legs.' });
         setDrawnPath([]); setHasTransfer(false);
-        setTransfer2RouteName(''); setTransfer2Distance(''); setTransfer2StopInfo(''); setTransfer2FareDetails(''); setTransfer2Note('');
+        setTransfer2RouteName(''); setTransfer2Distance(''); setTransfer2StopInfo(''); setTransfer2Note('');
         loadData();
       } catch (error: any) {
         toast({ variant: 'destructive', title: 'Error', description: error?.message || 'Failed to add transfer route.' });
@@ -648,7 +722,7 @@ export default function AdminPage() {
         const res = await fetch('/api/mysql/edges', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ source, target, distance, routeName, stopAndTransfer, fareDetails, note, pathCoordinates: drawnPath }),
+          body: JSON.stringify({ source, target, distance, routeName, stopAndTransfer, note, pathCoordinates: drawnPath }),
         });
         const data = await res.json();
         if (!data.success) throw new Error(data.message);
@@ -750,7 +824,14 @@ export default function AdminPage() {
                   Add, edit, or delete route segments.
                 </CardDescription>
               </div>
-              <Dialog>
+              <Dialog onOpenChange={(o) => {
+                if (o) {
+                  setSelectedSource('');
+                  setSelectedTarget('');
+                  setRouteDistance('');
+                  setDrawnPath([]);
+                }
+              }}>
                 <DialogTrigger asChild>
                   <Button><PlusCircle className="mr-2 h-4 w-4" /> Add New Route</Button>
                 </DialogTrigger>
@@ -759,13 +840,14 @@ export default function AdminPage() {
                     {/* Left Column: Map */}
                     <div className="hidden md:block md:w-3/5 bg-slate-50 relative border-r border-slate-100 min-h-[500px]">
                       <RouteMap
-                        nodes={graph.nodes}
+                        nodes={graph.nodes.filter(n => n.id === selectedSource || n.id === selectedTarget)}
                         edges={graph.edges}
                         selectedSource={selectedSource}
                         selectedTarget={selectedTarget}
                         className="h-full w-full border-none shadow-none rounded-none"
                         onNodeClick={handleNodeClick}
                         onPathDrawn={(coords) => setDrawnPath(coords)}
+                        initialPath={drawnPath}
                       />
                     </div>
 
@@ -947,12 +1029,7 @@ export default function AdminPage() {
                           </div>
 
                           <div className="grid gap-2">
-                            <Label className="text-sm font-semibold text-slate-700">Fare Details</Label>
-                            <Textarea name="fareDetails" placeholder="Enter fare breakdown (e.g. Student, Regular, etc.)" className="bg-white border-slate-200 min-h-[60px]" />
-                          </div>
-
-                          <div className="grid gap-2">
-                            <Label className="text-sm font-semibold text-slate-700">Note / Suggestion</Label>
+                            <Label className="text-sm font-semibold text-slate-700">Suggestion</Label>
                             <Textarea name="note" placeholder="Enter additional suggestions or notes" className="bg-white border-slate-200 min-h-[60px]" />
                           </div>
 
@@ -992,12 +1069,6 @@ export default function AdminPage() {
                               </div>
 
                               <div className="grid gap-2">
-                                <Label className="text-sm font-semibold text-slate-700">Fare Details (Leg 2)</Label>
-                                <Textarea placeholder="Enter fare breakdown" className="bg-white border-slate-200 min-h-[50px]"
-                                  value={transfer2FareDetails} onChange={e => setTransfer2FareDetails(e.target.value)} />
-                              </div>
-
-                              <div className="grid gap-2">
                                 <Label className="text-sm font-semibold text-slate-700">Note / Suggestion (Leg 2)</Label>
                                 <Textarea placeholder="Enter suggestions for this leg" className="bg-white border-slate-200 min-h-[50px]"
                                   value={transfer2Note} onChange={e => setTransfer2Note(e.target.value)} />
@@ -1027,25 +1098,39 @@ export default function AdminPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Source</TableHead>
-                    <TableHead>Target</TableHead>
-                    <TableHead>Distance</TableHead>
-                    <TableHead>Line</TableHead>
+                    <TableHead className="cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => toggleSort(setEdgesSort, edgesSort, 'source')}>
+                      <div className="flex items-center">Source <SortIcon sort={edgesSort} column="source" /></div>
+                    </TableHead>
+                    <TableHead className="cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => toggleSort(setEdgesSort, edgesSort, 'target')}>
+                      <div className="flex items-center">Target <SortIcon sort={edgesSort} column="target" /></div>
+                    </TableHead>
+                    <TableHead className="cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => toggleSort(setEdgesSort, edgesSort, 'distance')}>
+                      <div className="flex items-center">Distance <SortIcon sort={edgesSort} column="distance" /></div>
+                    </TableHead>
+                    <TableHead className="cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => toggleSort(setEdgesSort, edgesSort, 'routeName')}>
+                      <div className="flex items-center">Line <SortIcon sort={edgesSort} column="routeName" /></div>
+                    </TableHead>
                     <TableHead>Stop & Transfer</TableHead>
-                    <TableHead>Fare Details</TableHead>
-                    <TableHead>Note / Suggestion</TableHead>
+                    <TableHead className="cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => toggleSort(setEdgesSort, edgesSort, 'regularFare')}>
+                      <div className="flex items-center">Regular <SortIcon sort={edgesSort} column="regularFare" /></div>
+                    </TableHead>
+                    <TableHead className="cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => toggleSort(setEdgesSort, edgesSort, 'discountedFare')}>
+                      <div className="flex items-center">Discounted <SortIcon sort={edgesSort} column="discountedFare" /></div>
+                    </TableHead>
+                    <TableHead>Suggestion</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {graph.edges.map((edge, i) => (
+                  {sortedEdges.map((edge, i) => (
                     <TableRow key={i}>
                       <TableCell>{graph.nodes.find(n => n.id === edge.source)?.name}</TableCell>
                       <TableCell>{graph.nodes.find(n => n.id === edge.target)?.name}</TableCell>
                       <TableCell>{edge.distance} km</TableCell>
                       <TableCell>{edge.routeName}</TableCell>
                       <TableCell>{(edge as any).stopAndTransfer || '—'}</TableCell>
-                      <TableCell>{(edge as any).fareDetails || '—'}</TableCell>
+                      <TableCell className="font-mono text-green-700">₱{(edge as any).regularFare ? Number((edge as any).regularFare).toFixed(2) : '—'}</TableCell>
+                      <TableCell className="font-mono text-blue-700">₱{(edge as any).discountedFare ? Number((edge as any).discountedFare).toFixed(2) : '—'}</TableCell>
                       <TableCell>{(edge as any).note || '—'}</TableCell>
                       <TableCell className="text-right">
                         <EditRouteButton edge={edge} nodes={graph.nodes} onEdited={loadData} />
@@ -1055,23 +1140,23 @@ export default function AdminPage() {
                   ))}
 
                   {/* Transfer routes shown inline */}
-                  {transfers.map((t: any) => (
-                    <>
+                  {sortedTransfers.map((t: any) => (
+                    <Fragment key={t.id}>
                       {/* Transfer header row */}
                       <TableRow key={`t-${t.id}`} className="bg-cyan-50/60">
                         <TableCell className="font-semibold text-cyan-800" colSpan={2}>
                           {t.from_name || t.from_node_id} → {t.to_name || t.to_node_id}
                         </TableCell>
-                        <TableCell colSpan={4}>
+                        <TableCell colSpan={6}>
                           <span className="text-xs font-bold bg-cyan-100 text-cyan-700 px-2 py-0.5 rounded-full">
                             TRANSFER · {t.legs?.length} legs
                           </span>
                           {t.name && <span className="ml-2 text-xs text-slate-500">{t.name}</span>}
                         </TableCell>
-                        <TableCell />
                         <TableCell className="text-right">
                           <EditTransferButton transfer={t} nodes={graph.nodes} onEdited={loadData} />
                           <Button variant="ghost" size="icon" onClick={async () => {
+                            if (!confirm('Are you sure you want to delete this entire transfer route?')) return;
                             try {
                               const res = await fetch(`/api/mysql/transfers/${encodeURIComponent(t.id)}`, { method: 'DELETE' });
                               const data = await res.json();
@@ -1095,12 +1180,13 @@ export default function AdminPage() {
                           <TableCell>{leg.distance} km</TableCell>
                           <TableCell>{leg.route_name}</TableCell>
                           <TableCell>{leg.stop_and_transfer || '—'}</TableCell>
-                          <TableCell>{leg.fare_details || '—'}</TableCell>
+                          <TableCell className="font-mono text-green-700">₱{leg.regular_fare ? Number(leg.regular_fare).toFixed(2) : '—'}</TableCell>
+                          <TableCell className="font-mono text-blue-700">₱{leg.discounted_fare ? Number(leg.discounted_fare).toFixed(2) : '—'}</TableCell>
                           <TableCell>{leg.note || '—'}</TableCell>
                           <TableCell />
                         </TableRow>
                       ))}
-                    </>
+                    </Fragment>
                   ))}
                 </TableBody>
               </Table>
@@ -1197,9 +1283,19 @@ export default function AdminPage() {
             </CardHeader>
             <CardContent>
               <Table>
-                <TableHeader><TableRow><TableHead>ID</TableHead><TableHead>Name</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => toggleSort(setNodesSort, nodesSort, 'id')}>
+                      <div className="flex items-center">ID <SortIcon sort={nodesSort} column="id" /></div>
+                    </TableHead>
+                    <TableHead className="cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => toggleSort(setNodesSort, nodesSort, 'name')}>
+                      <div className="flex items-center">Name <SortIcon sort={nodesSort} column="name" /></div>
+                    </TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
                 <TableBody>
-                  {graph.nodes.map(node => (
+                  {sortedNodes.map(node => (
                     <TableRow key={node.id}>
                       <TableCell className="font-mono">{node.id}</TableCell>
                       <TableCell>{node.name}</TableCell>
@@ -1252,13 +1348,17 @@ export default function AdminPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Line Name</TableHead>
-                    <TableHead>Description</TableHead>
+                    <TableHead className="cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => toggleSort(setRoutesSort, routesSort, 'name')}>
+                      <div className="flex items-center">Line Name <SortIcon sort={routesSort} column="name" /></div>
+                    </TableHead>
+                    <TableHead className="cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => toggleSort(setRoutesSort, routesSort, 'description')}>
+                      <div className="flex items-center">Description <SortIcon sort={routesSort} column="description" /></div>
+                    </TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {graph.routes.map(route => (
+                  {sortedRoutes.map(route => (
                     <TableRow key={route.name}>
                       <TableCell className="font-bold">{route.name}</TableCell>
                       <TableCell>{route.description}</TableCell>
@@ -1285,7 +1385,7 @@ export default function AdminPage() {
                 if (open) {
                   setTransferFrom(''); setTransferTo(''); setTransferName('');
                   setActiveLegIdx(0);
-                  setTransferLegs([{ routeName: '', distance: '', stopAndTransfer: '', fareDetails: '', note: '', pathCoordinates: [] as [number, number][] }]);
+                  setTransferLegs([{ routeName: '', distance: '', stopAndTransfer: '', note: '', pathCoordinates: [] as [number, number][] }]);
                 }
               }}>
                 <DialogTrigger asChild>
@@ -1325,7 +1425,7 @@ export default function AdminPage() {
                       <div className="flex items-center justify-between">
                         <Label>Legs</Label>
                         <Button size="sm" variant="outline" type="button" onClick={() => {
-                          setTransferLegs(prev => [...prev, { routeName: '', distance: '', stopAndTransfer: '', fareDetails: '', note: '', pathCoordinates: [] }]);
+                          setTransferLegs(prev => [...prev, { routeName: '', distance: '', stopAndTransfer: '', note: '', pathCoordinates: [] }]);
                           setActiveLegIdx(transferLegs.length);
                         }}>
                           <PlusCircle className="mr-1 h-3 w-3" /> Add Leg
@@ -1376,13 +1476,7 @@ export default function AdminPage() {
                             </div>
                           )}
                           <div className="grid gap-1">
-                            <Label className="text-xs">Fare Details</Label>
-                            <Input className="h-8 text-sm" value={transferLegs[activeLegIdx].fareDetails}
-                              placeholder="e.g. Regular = ₱13"
-                              onChange={e => setTransferLegs(prev => prev.map((l, i) => i === activeLegIdx ? { ...l, fareDetails: e.target.value } : l))} />
-                          </div>
-                          <div className="grid gap-1">
-                            <Label className="text-xs">Note / Suggestion</Label>
+                            <Label className="text-xs">Suggestion</Label>
                             <Input className="h-8 text-sm" value={transferLegs[activeLegIdx].note}
                               placeholder="e.g. Fast route"
                               onChange={e => setTransferLegs(prev => prev.map((l, i) => i === activeLegIdx ? { ...l, note: e.target.value } : l))} />
@@ -1422,7 +1516,6 @@ export default function AdminPage() {
                               routeName: l.routeName,
                               distance: parseFloat(l.distance),
                               stopAndTransfer: l.stopAndTransfer,
-                              fareDetails: l.fareDetails,
                               note: l.note,
                               pathCoordinates: l.pathCoordinates,
                             })),

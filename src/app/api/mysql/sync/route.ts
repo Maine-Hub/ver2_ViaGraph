@@ -4,7 +4,7 @@ import { query } from '@/lib/mysql';
 interface SyncPayload {
     nodes: { id: string; name: string; coordinates: { latitude: number; longitude: number } }[];
     routes: { name: string; description: string }[];
-    edges: { source: string; target: string; distance: number; routeName: string; stopAndTransfer?: string; fareDetails?: string }[];
+    edges: { source: string; target: string; distance: number; routeName: string; stopAndTransfer?: string }[];
 }
 
 export async function POST(request: Request) {
@@ -35,10 +35,10 @@ export async function POST(request: Request) {
         for (const edge of edges) {
             const edgeId = `${edge.source}_${edge.target}_${edge.routeName}`;
             await query(
-                `INSERT INTO edges (id, source, target, distance, route_name, stop_and_transfer, fare_details)
-         VALUES (?, ?, ?, ?, ?, ?, ?)
+                `INSERT INTO edges (id, source, target, distance, route_name, stop_and_transfer)
+         VALUES (?, ?, ?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE distance=VALUES(distance), route_name=VALUES(route_name)`,
-                [edgeId, edge.source, edge.target, edge.distance, edge.routeName, edge.stopAndTransfer ?? '', edge.fareDetails ?? '']
+                [edgeId, edge.source, edge.target, edge.distance, edge.routeName, edge.stopAndTransfer ?? '']
             );
         }
 

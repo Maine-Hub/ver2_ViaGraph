@@ -41,7 +41,8 @@ export async function findRouteAction(
       query<any[]>('SELECT id, name FROM nodes WHERE id IN (?, ?)', [startLocation, endLocation]),
       query<any[]>(
         `SELECT source, target, distance, route_name AS routeName,
-                stop_and_transfer AS stopAndTransfer, fare_details AS fareDetails, note,
+                stop_and_transfer AS stopAndTransfer, note,
+                regular_fare AS regularFare, discounted_fare AS discountedFare,
                 path_coordinates AS pathCoordinatesJson
          FROM edges
          WHERE (source = ? AND target = ?) OR (source = ? AND target = ?)`,
@@ -61,10 +62,9 @@ export async function findRouteAction(
         routeName: e.routeName,
         distance: e.distance,
         stopAndTransfer: e.stopAndTransfer || '',
-        fareDetails: e.fareDetails || '',
         note: e.note || '',
-        regularFare: calculateFare(e.distance),
-        discountedFare: calculateDiscountedFare(e.distance),
+        regularFare: e.regularFare !== null ? Number(e.regularFare) : calculateFare(e.distance),
+        discountedFare: e.discountedFare !== null ? Number(e.discountedFare) : calculateDiscountedFare(e.distance),
         pathCoordinates: e.pathCoordinatesJson ? JSON.parse(e.pathCoordinatesJson) : null,
       }));
 
@@ -106,10 +106,9 @@ export async function findRouteAction(
       routeName: leg.route_name,
       distance: leg.distance,
       stopAndTransfer: leg.stop_and_transfer || '',
-      fareDetails: leg.fare_details || '',
       note: leg.note || '',
-      regularFare: calculateFare(leg.distance),
-      discountedFare: calculateDiscountedFare(leg.distance),
+      regularFare: leg.regular_fare !== null ? Number(leg.regular_fare) : calculateFare(leg.distance),
+      discountedFare: leg.discounted_fare !== null ? Number(leg.discounted_fare) : calculateDiscountedFare(leg.distance),
       pathCoordinates: leg.path_coordinates ? JSON.parse(leg.path_coordinates) : null,
     }));
 

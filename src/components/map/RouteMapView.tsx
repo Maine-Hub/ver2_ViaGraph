@@ -67,7 +67,7 @@ type TileMode = keyof typeof TILES;
 
 function TileLayerSwitcher({ mode }: { mode: TileMode }) {
     const tile = TILES[mode];
-    return <TileLayer key={mode} attribution={tile.attribution} url={tile.url} />;
+    return <TileLayer key={mode} attribution={tile.attribution} url={tile.url} maxZoom={22} maxNativeZoom={19} />;
 }
 
 export default function RouteMapView({ nodes, path, className }: RouteMapViewProps) {
@@ -147,6 +147,8 @@ export default function RouteMapView({ nodes, path, className }: RouteMapViewPro
             <MapContainer
                 center={center}
                 zoom={14}
+                minZoom={2}
+                maxZoom={22}
                 style={{ height: '100%', width: '100%' }}
                 scrollWheelZoom={true}
                 ref={mapRef}
@@ -154,14 +156,21 @@ export default function RouteMapView({ nodes, path, className }: RouteMapViewPro
                 <TileLayerSwitcher mode={tileMode} />
                 <InvalidateSize />
 
-                {/* All location nodes */}
-                {nodes.map(node => (
+                {/* Only visible location nodes that are part of the path */}
+                {path && path.length > 0 && nodes.filter(node =>
+                    path.some(segment =>
+                        segment.from === node.name ||
+                        segment.from === node.id ||
+                        segment.to === node.name ||
+                        segment.to === node.id
+                    )
+                ).map(node => (
                     node.coordinates && (
                         <Marker
                             key={node.id}
                             position={[node.coordinates.latitude, node.coordinates.longitude]}
                             icon={defaultIcon}
-                            opacity={0.6}
+                            opacity={0.8}
                         >
                             <Popup>{node.name}</Popup>
                         </Marker>

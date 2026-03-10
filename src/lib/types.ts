@@ -20,7 +20,6 @@ export interface RouteSegment {
   distance: number; // distance in km
   routeName: string; // jeepney route name
   stopAndTransfer?: string;
-  fareDetails?: string;
 }
 
 export interface Graph {

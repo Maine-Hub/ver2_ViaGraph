@@ -190,16 +190,16 @@ export default function FindRoutePage() {
                   <span className="text-muted-foreground">Total Distance</span>
                   <span className="font-bold">{state.result.totalDistance.toFixed(2)} km</span>
                 </div>
-                {state.result.totalFare !== undefined && (
+                {state.result.totalFare != null && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Regular Fare</span>
-                    <span className="font-bold text-green-700">₱{state.result.totalFare.toFixed(2)}</span>
+                    <span className="font-bold text-green-700">₱{Number(state.result.totalFare).toFixed(2)}</span>
                   </div>
                 )}
-                {state.result.discountedFare !== undefined && (
+                {state.result.discountedFare != null && (
                   <div className="flex flex-col pt-1">
                     <span className="text-muted-foreground text-sm">Discounted Fare</span>
-                    <span className="font-bold text-blue-700 text-lg">₱{state.result.discountedFare.toFixed(2)}</span>
+                    <span className="font-bold text-blue-700 text-lg">₱{Number(state.result.discountedFare).toFixed(2)}</span>
                   </div>
                 )}
                 {state.result.discountedFare !== undefined && (

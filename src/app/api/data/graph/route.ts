@@ -6,7 +6,7 @@ export async function GET() {
         const [nodes, routes, edges] = await Promise.all([
             query<any[]>('SELECT id, name, latitude as lat, longitude as lng FROM nodes'),
             query<any[]>('SELECT name, description FROM routes'),
-            query<any[]>('SELECT id, source, target, distance, route_name as routeName, stop_and_transfer as stopAndTransfer, fare_details as fareDetails, note, path_coordinates as pathCoordinatesJson FROM edges'),
+            query<any[]>('SELECT id, source, target, distance, route_name as routeName, stop_and_transfer as stopAndTransfer, note, regular_fare as regularFare, discounted_fare as discountedFare, path_coordinates as pathCoordinatesJson FROM edges'),
         ]);
 
         // Reshape nodes to match Location type
@@ -24,8 +24,9 @@ export async function GET() {
             distance: e.distance,
             routeName: e.routeName,
             stopAndTransfer: e.stopAndTransfer,
-            fareDetails: e.fareDetails,
             note: e.note,
+            regularFare: e.regularFare,
+            discountedFare: e.discountedFare,
             pathCoordinates: e.pathCoordinatesJson ? JSON.parse(e.pathCoordinatesJson) : null,
         }));
 

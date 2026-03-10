@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/mysql';
+import { calculateFare, calculateDiscountedFare } from '@/lib/fare';
 
 // GET — list all transfer routes with their legs
 export async function GET() {
@@ -55,10 +56,15 @@ export async function POST(request: Request) {
             const leg = legs[i];
             const legId = `${transferId}_leg_${i}`;
             const pathJson = leg.pathCoordinates?.length > 1 ? JSON.stringify(leg.pathCoordinates) : null;
+
+            const distNum = parseFloat(leg.distance);
+            const regularFare = calculateFare(distNum);
+            const discountedFare = calculateDiscountedFare(distNum);
+
             await query(
-                `INSERT INTO transfer_legs (id, transfer_id, leg_order, route_name, distance, stop_and_transfer, fare_details, note, path_coordinates)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [legId, transferId, i, leg.routeName, leg.distance, leg.stopAndTransfer || '', leg.fareDetails || '', leg.note || '', pathJson]
+                `INSERT INTO transfer_legs (id, transfer_id, leg_order, route_name, distance, stop_and_transfer, note, path_coordinates, regular_fare, discounted_fare)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [legId, transferId, i, leg.routeName, leg.distance, leg.stopAndTransfer || '', leg.note || '', pathJson, regularFare, discountedFare]
             );
         }
 

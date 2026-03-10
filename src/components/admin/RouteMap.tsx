@@ -82,10 +82,18 @@ export default function RouteMap({ nodes, edges, selectedSource, selectedTarget,
     const sourceNode = nodes.find(n => n.id === selectedSource);
     const targetNode = nodes.find(n => n.id === selectedTarget);
 
+    const flattenLatLngs = (latlngs: any): L.LatLng[] => {
+        if (Array.isArray(latlngs) && latlngs.length > 0 && Array.isArray(latlngs[0])) {
+            return (latlngs as any).flat(Infinity);
+        }
+        return latlngs as L.LatLng[];
+    };
+
     const handleCreated = (e: any) => {
         const layer = e.layer;
         if (layer instanceof L.Polyline) {
-            const latlngs = layer.getLatLngs() as L.LatLng[];
+            const rawLatLngs = layer.getLatLngs();
+            const latlngs = flattenLatLngs(rawLatLngs);
             const coords: [number, number][] = latlngs.map(ll => [ll.lat, ll.lng]);
             if (onPathDrawn) onPathDrawn(coords);
         }
@@ -100,12 +108,16 @@ export default function RouteMap({ nodes, edges, selectedSource, selectedTarget,
             <MapContainer
                 center={center}
                 zoom={14}
+                minZoom={2}
+                maxZoom={22}
                 style={{ height: '100%', width: '100%' }}
                 scrollWheelZoom={true}
             >
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    maxZoom={22}
+                    maxNativeZoom={19}
                 />
 
                 <InvalidateSize />

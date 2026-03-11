@@ -7,7 +7,6 @@ import Link from 'next/link';
 
 export default function SignUpPage() {
     const [isLoading, setIsLoading] = useState(false);
-    const [role, setRole] = useState('user');
     const router = useRouter();
     const { toast } = useToast();
 
@@ -17,14 +16,13 @@ export default function SignUpPage() {
         const email = formData.get('email') as string;
         const password = formData.get('password') as string;
         const username = formData.get('username') as string;
-        const adminCode = formData.get('adminCode') as string;
 
         setIsLoading(true);
         try {
             const res = await fetch('/api/auth/signup', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password, username, role, adminCode }),
+                body: JSON.stringify({ email, password, username }),
             });
             const data = await res.json();
 
@@ -34,12 +32,7 @@ export default function SignUpPage() {
             }
 
             toast({ title: 'Account created', description: "You've successfully signed up." });
-
-            if (role === 'admin') {
-                router.push('/admin');
-            } else {
-                router.push('/find-route');
-            }
+            router.push('/find-route');
         } catch {
             toast({ variant: 'destructive', title: 'Signup Failed', description: 'An unexpected error occurred.' });
         } finally {
@@ -321,35 +314,14 @@ export default function SignUpPage() {
 
                         <form onSubmit={handleSignUp}>
                             <div className="signup-input-group">
-                                <label className="signup-label">Account Type</label>
-                                <select
-                                    name="role"
-                                    className="signup-select"
-                                    value={role}
-                                    onChange={(e) => setRole(e.target.value)}
-                                    required
-                                >
-                                    <option value="user">User</option>
-                                    <option value="admin">Admin</option>
-                                </select>
-                            </div>
-
-                            <div className="signup-input-group">
                                 <label className="signup-label">Username</label>
                                 <input name="username" type="text" className="signup-input" required />
                             </div>
 
                             <div className="signup-input-group">
                                 <label className="signup-label">Email</label>
-                                <input name="email" type="email" className="signup-input" placeholder={role === 'admin' ? "admin@gmail.com" : "your.name@g.msuiit.edu.ph"} required />
+                                <input name="email" type="email" className="signup-input" placeholder="your.name@g.msuiit.edu.ph" required />
                             </div>
-
-                            {role === 'admin' && (
-                                <div className="signup-input-group">
-                                    <label className="signup-label">Admin Access Code</label>
-                                    <input name="adminCode" type="password" className="signup-input" placeholder="Admin-only code" />
-                                </div>
-                            )}
 
                             <div className="signup-input-group">
                                 <label className="signup-label">Password</label>

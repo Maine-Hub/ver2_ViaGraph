@@ -2,19 +2,12 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/mysql';
 import { hashPassword, makeSessionCookie, SessionUser } from '@/lib/auth';
 
-const ADMIN_CODES = (process.env.NEXT_PUBLIC_ADMIN_ACCESS_CODES || 'ADMIN2024').split(',');
-
 export async function POST(request: Request) {
     try {
-        const { username, email, password, role, adminCode } = await request.json();
+        const { username, email, password } = await request.json();
 
         if (!email || !password || !username) {
             return NextResponse.json({ success: false, message: 'All fields are required.' }, { status: 400 });
-        }
-
-        // Validate admin code
-        if (role === 'admin' && !ADMIN_CODES.includes(adminCode)) {
-            return NextResponse.json({ success: false, message: 'Invalid Admin Access Code.' }, { status: 403 });
         }
 
         // Check if email already exists
@@ -25,14 +18,13 @@ export async function POST(request: Request) {
 
         const uid = crypto.randomUUID();
         const hashedPassword = await hashPassword(password);
-        const userRole = role === 'admin' ? 'admin' : 'user';
 
         await query(
             'INSERT INTO users (uid, email, username, role, password_hash) VALUES (?, ?, ?, ?, ?)',
-            [uid, email, username, userRole, hashedPassword]
+            [uid, email, username, 'user', hashedPassword]
         );
 
-        const user: SessionUser = { uid, email, username, role: userRole };
+        const user: SessionUser = { uid, email, username, role: 'user' };
         const cookie = makeSessionCookie(user);
 
         return NextResponse.json(

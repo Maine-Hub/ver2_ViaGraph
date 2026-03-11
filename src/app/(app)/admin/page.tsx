@@ -475,6 +475,8 @@ export default function AdminPage() {
   const [transfer2StopInfo, setTransfer2StopInfo] = useState('');
   const [transfer2Note, setTransfer2Note] = useState('');
   const [transfers, setTransfers] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [isUsersLoading, setIsUsersLoading] = useState(false);
   const [transferLegs, setTransferLegs] = useState<any[]>([
     { routeName: '', distance: '', stopAndTransfer: '', note: '', pathCoordinates: [] as [number, number][] },
   ]);
@@ -581,6 +583,32 @@ export default function AdminPage() {
       if (tData.success) setTransfers(tData.transfers ?? []);
     } catch { }
     setIsDataLoading(false);
+  };
+
+  const loadUsers = async () => {
+    setIsUsersLoading(true);
+    try {
+      const res = await fetch('/api/mysql/users');
+      const data = await res.json();
+      if (data.success) setUsers(data.users ?? []);
+    } catch { }
+    setIsUsersLoading(false);
+  };
+
+  const handleRoleChange = async (uid: string, newRole: 'user' | 'admin') => {
+    try {
+      const res = await fetch('/api/mysql/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid, role: newRole }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message);
+      toast({ title: 'Role Updated', description: `User role changed to ${newRole}.` });
+      loadUsers();
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Error', description: err.message });
+    }
   };
 
   useEffect(() => {
@@ -808,11 +836,12 @@ export default function AdminPage() {
       </div>
 
 
-      <Tabs value={activeTab} onValueChange={(tab) => { setActiveTab(tab); router.replace(`/admin?tab=${tab}`, { scroll: false }); }}>
+      <Tabs value={activeTab} onValueChange={(tab) => { setActiveTab(tab); router.replace(`/admin?tab=${tab}`, { scroll: false }); if (tab === 'users') loadUsers(); }}>
         <TabsList>
           <TabsTrigger value="routes">Routes</TabsTrigger>
           <TabsTrigger value="locations">Locations</TabsTrigger>
           <TabsTrigger value="jeepney-lines">Jeepney Lines</TabsTrigger>
+          <TabsTrigger value="users">Users</TabsTrigger>
         </TabsList>
 
         <TabsContent value="routes">
@@ -1573,6 +1602,86 @@ export default function AdminPage() {
                   )}
                 </TableBody>
               </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="users">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Manage Users</CardTitle>
+                <CardDescription>View all accounts and manage their roles.</CardDescription>
+              </div>
+              <Button variant="outline" onClick={loadUsers} disabled={isUsersLoading}>
+                {isUsersLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Refresh
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {isUsersLoading ? (
+                <div className="flex items-center justify-center py-12 text-muted-foreground">
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading users...
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Username</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {users.map((u: any) => (
+                      <TableRow key={u.uid}>
+                        <TableCell className="font-medium">{u.username}</TableCell>
+                        <TableCell>{u.email}</TableCell>
+                        <TableCell>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                            u.role === 'admin'
+                              ? 'bg-cyan-100 text-cyan-800'
+                              : 'bg-slate-100 text-slate-600'
+                          }`}>
+                            {u.role}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {u.uid === user?.uid ? (
+                            <span className="text-xs text-muted-foreground italic">You</span>
+                          ) : u.role === 'admin' ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-slate-600 border-slate-300 hover:bg-slate-50"
+                              onClick={() => handleRoleChange(u.uid, 'user')}
+                            >
+                              Remove Admin
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-cyan-700 border-cyan-300 hover:bg-cyan-50"
+                              onClick={() => handleRoleChange(u.uid, 'admin')}
+                            >
+                              Make Admin
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {users.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center text-muted-foreground py-6">
+                          No users found. Click Refresh to load.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

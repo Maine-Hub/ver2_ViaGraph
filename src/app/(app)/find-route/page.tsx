@@ -188,7 +188,7 @@ export default function FindRoutePage() {
               <div className="rounded-lg bg-muted/50 p-3 space-y-1">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Total Distance</span>
-                  <span className="font-bold">{state.result.totalDistance.toFixed(2)} km</span>
+                  <span className="font-bold">{Number(state.result.totalDistance).toFixed(2)} km</span>
                 </div>
                 {state.result.totalFare != null && (
                   <div className="flex justify-between">
@@ -220,7 +220,7 @@ export default function FindRoutePage() {
                       <span className="text-muted-foreground">Jeepney Line</span>
                       <span className="font-medium">{seg.routeName}</span>
                       <span className="text-muted-foreground">Distance</span>
-                      <span className="font-medium">{seg.distance.toFixed(2)} km</span>
+                      <span className="font-medium">{Number(seg.distance).toFixed(2)} km</span>
                       {seg.stopAndTransfer && (
                         <>
                           <span className="text-muted-foreground">Stop & Transfer</span>
@@ -235,10 +235,10 @@ export default function FindRoutePage() {
                       {seg.regularFare !== undefined && (
                         <>
                           <span className="text-muted-foreground">Regular Fare</span>
-                          <span className="font-medium text-green-700 text-right">₱{seg.regularFare.toFixed(2)}</span>
+                          <span className="font-medium text-green-700 text-right">₱{Number(seg.regularFare).toFixed(2)}</span>
                           <div className="col-span-2 flex flex-col pt-1">
                             <span className="text-muted-foreground">Discounted Fare</span>
-                            <span className="font-medium text-blue-700 text-sm">₱{seg.discountedFare?.toFixed(2)}</span>
+                            <span className="font-medium text-blue-700 text-sm">₱{Number(seg.discountedFare).toFixed(2)}</span>
                           </div>
                         </>
                       )}

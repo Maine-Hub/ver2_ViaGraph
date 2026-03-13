@@ -1,78 +1,101 @@
-/**
- * This file contains fare calculation logic based on the LTFRB fare matrix
- * for Traditional PUJ (Mega Manila), effective October 8, 2023.
- * The data is derived from the JSON provided by the user.
- */
+// Rules derived from LTFRB fare matrices, now can be managed via DB
+export type VehicleType = 'jeepney' | 'minibus' | 'walking';
 
-// Rules derived from the provided LTFRB JSON data.
-const fareRules = {
-  base: {
-    first_km_covered: 4,
-    regular_fare: 13.0,
+export interface FareRule {
+  vehicle_type: string;
+  base_fare: number;
+  first_km: number;
+  succeeding_km_fare: number;
+  discount_percentage: number;
+}
+
+export const defaultFareRules: Record<Exclude<VehicleType, 'walking'>, FareRule> = {
+  jeepney: {
+    vehicle_type: 'jeepney',
+    base_fare: 13.0,
+    first_km: 4,
+    succeeding_km_fare: 1.8,
+    discount_percentage: 0.20,
   },
-  succeeding_km_addon: {
-    regular_per_km: 1.8,
-  },
-  discount_percentage: 0.20,
-  rounding: {
-    increment: 0.25,
+  minibus: {
+    vehicle_type: 'minibus',
+    base_fare: 15.0,
+    first_km: 4,
+    succeeding_km_fare: 2.2,
+    discount_percentage: 0.20,
   },
 };
 
+const roundingIncrement = 0.25;
+
 /**
  * Rounds a number to the nearest quarter (0.25).
- * e.g., roundToNearestQuarter(14.8) => 14.75
- * e.g., roundToNearestQuarter(18.4) => 18.50
  * @param value The number to round.
  * @returns The rounded number.
  */
 function roundToNearestQuarter(value: number): number {
-  return Math.round(value / fareRules.rounding.increment) * fareRules.rounding.increment;
+  return Math.round(value / roundingIncrement) * roundingIncrement;
 }
 
 /**
- * Calculates the regular fare based on the distance, according to LTFRB rules.
+ * Calculates the regular fare based on the distance and vehicle type.
  * @param distance in kilometers
+ * @param type vehicle type (jeepney, minibus, walking)
+ * @param specificRule optional dynamic rules from DB
  * @returns the calculated and rounded regular fare
  */
-export function calculateFare(distance: number): number {
-  if (distance <= 0) {
+export function calculateFare(distance: number, type: VehicleType = 'jeepney', specificRule?: FareRule): number {
+  if (distance <= 0 || type === 'walking') {
     return 0;
   }
-  
-  if (distance <= fareRules.base.first_km_covered) {
-    // Base fare for the first 4km.
-    return fareRules.base.regular_fare;
+
+  const rules = specificRule || defaultFareRules[type as keyof typeof defaultFareRules];
+  if (!rules) return 0;
+
+  const baseFare = Number(rules.base_fare);
+  const firstKm = Number(rules.first_km);
+  const succeedingKmFare = Number(rules.succeeding_km_fare);
+
+  if (distance <= firstKm) {
+    return baseFare;
   }
-  
-  const additionalDistance = distance - fareRules.base.first_km_covered;
-  const rawFare = fareRules.base.regular_fare + (additionalDistance * fareRules.succeeding_km_addon.regular_per_km);
-  
+
+  const additionalDistance = distance - firstKm;
+  const rawFare = baseFare + (additionalDistance * succeedingKmFare);
+
   return roundToNearestQuarter(rawFare);
 }
 
 /**
- * Calculates the discounted fare for students, seniors, and PWDs.
- * The 20% discount is applied, and the result is rounded to the nearest ₱0.25.
+ * Calculates the discounted fare for students, seniors, and PWDs based on distance and vehicle type.
  * @param distance in kilometers
+ * @param type vehicle type (jeepney, minibus, walking)
+ * @param specificRule optional dynamic rules from DB
  * @returns the calculated and rounded discounted fare
  */
-export function calculateDiscountedFare(distance: number): number {
-  if (distance <= 0) {
+export function calculateDiscountedFare(distance: number, type: VehicleType = 'jeepney', specificRule?: FareRule): number {
+  if (distance <= 0 || type === 'walking') {
     return 0;
   }
 
-  // Calculate the raw regular fare *before* rounding
+  const rules = specificRule || defaultFareRules[type as keyof typeof defaultFareRules];
+  if (!rules) return 0;
+
+  const baseFare = Number(rules.base_fare);
+  const firstKm = Number(rules.first_km);
+  const succeedingKmFare = Number(rules.succeeding_km_fare);
+  const discountPercentage = Number(rules.discount_percentage);
+
   let rawRegularFare: number;
-  if (distance <= fareRules.base.first_km_covered) {
-    rawRegularFare = fareRules.base.regular_fare;
+  if (distance <= firstKm) {
+    rawRegularFare = baseFare;
   } else {
-    const additionalDistance = distance - fareRules.base.first_km_covered;
-    rawRegularFare = fareRules.base.regular_fare + (additionalDistance * fareRules.succeeding_km_addon.regular_per_km);
+    const additionalDistance = distance - firstKm;
+    rawRegularFare = baseFare + (additionalDistance * succeedingKmFare);
   }
 
-  // Apply 20% discount to the un-rounded regular fare
-  const rawDiscountedFare = rawRegularFare * (1 - fareRules.discount_percentage);
+  // Apply discount to the un-rounded regular fare
+  const rawDiscountedFare = rawRegularFare * (1 - discountPercentage);
 
   // Round the final discounted value to the nearest quarter
   return roundToNearestQuarter(rawDiscountedFare);

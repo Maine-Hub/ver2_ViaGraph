@@ -36,7 +36,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Upload, PlusCircle, Trash2, Edit, Database, Loader2, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { Upload, PlusCircle, Trash2, Edit, Database, Loader2, ChevronUp, ChevronDown, ChevronsUpDown, Bus, RefreshCw, AlertCircle, Map } from 'lucide-react';
+import { calculateFare, type VehicleType } from '@/lib/fare';
 import { graph as localGraph } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/app-context';
@@ -44,7 +45,6 @@ import { useEffect, useState, Fragment, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Textarea } from '@/components/ui/textarea';
-import { Map } from 'lucide-react';
 
 
 const RouteMap = dynamic(() => import('@/components/admin/RouteMap'), {
@@ -141,6 +141,7 @@ function EditRouteButton({ edge, nodes, onEdited }: { edge: any; nodes: any[]; o
   const [stop, setStop] = useState(edge.stopAndTransfer ?? '');
   const [note, setNote] = useState(edge.note ?? '');
   const [pathCoordinates, setPathCoordinates] = useState<[number, number][]>(edge.pathCoordinates ?? []);
+  const [vehicleType, setVehicleType] = useState(edge.vehicle_type || 'jeepney');
 
   const handleSave = async () => {
     try {
@@ -152,6 +153,7 @@ function EditRouteButton({ edge, nodes, onEdited }: { edge: any; nodes: any[]; o
           target: edge.target,
           distance: parseFloat(distance),
           routeName: edge.routeName,
+          vehicleType: vehicleType,
           stopAndTransfer: stop,
           note: note,
           pathCoordinates: pathCoordinates,
@@ -175,6 +177,7 @@ function EditRouteButton({ edge, nodes, onEdited }: { edge: any; nodes: any[]; o
         setStop(edge.stopAndTransfer ?? '');
         setNote(edge.note ?? '');
         setPathCoordinates(edge.pathCoordinates ?? []);
+        setVehicleType(edge.vehicle_type || 'jeepney');
       }
     }}>
       <DialogTrigger asChild>
@@ -203,6 +206,19 @@ function EditRouteButton({ edge, nodes, onEdited }: { edge: any; nodes: any[]; o
             </DialogHeader>
 
             <div className="grid gap-4 py-2">
+              <div className="grid gap-1">
+                <Label className="text-sm font-semibold text-slate-700">Vehicle Type</Label>
+                <Select value={vehicleType} onValueChange={setVehicleType}>
+                  <SelectTrigger className="bg-white border-slate-200">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="jeepney">Jeepney</SelectItem>
+                    <SelectItem value="minibus">Mini Bus</SelectItem>
+                    <SelectItem value="walking">Walking</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="grid gap-1">
                 <Label className="text-sm font-semibold text-slate-700">Distance (km)</Label>
                 <Input type="number" step="0.01" className="bg-white border-slate-200" value={distance} onChange={e => setDistance(e.target.value)} />
@@ -261,6 +277,7 @@ function EditTransferButton({ transfer, nodes, onEdited, initialLegIdx = 0 }: { 
           name: name,
           legs: legs.map((l: any) => ({
             routeName: l.route_name,
+            vehicleType: l.vehicle_type || 'jeepney',
             distance: parseFloat(l.distance),
             stopAndTransfer: l.stop_and_transfer,
             note: l.note,
@@ -322,7 +339,7 @@ function EditTransferButton({ transfer, nodes, onEdited, initialLegIdx = 0 }: { 
             <div className="flex items-center justify-between">
               <Label>Legs</Label>
               <Button size="sm" variant="outline" type="button" onClick={() => {
-                setLegs(prev => [...prev, { route_name: '', distance: '', stop_and_transfer: '', pathCoordinates: [] }]);
+                setLegs(prev => [...prev, { route_name: '', vehicle_type: 'jeepney', distance: '', stop_and_transfer: '', pathCoordinates: [] }]);
                 setActiveLegIdx(legs.length);
               }}>
                 <PlusCircle className="mr-1 h-3 w-3" /> Add Leg
@@ -347,6 +364,18 @@ function EditTransferButton({ transfer, nodes, onEdited, initialLegIdx = 0 }: { 
                       setActiveLegIdx(Math.max(0, activeLegIdx - 1));
                     }}>Remove</Button>
                   )}
+                </div>
+                <div className="grid gap-1">
+                  <Label className="text-xs">Vehicle Type</Label>
+                  <Select value={legs[activeLegIdx].vehicle_type || 'jeepney'}
+                    onValueChange={val => setLegs(prev => prev.map((l, i) => i === activeLegIdx ? { ...l, vehicle_type: val } : l))}>
+                    <SelectTrigger className="h-8 text-sm bg-white"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="jeepney">Jeepney</SelectItem>
+                      <SelectItem value="minibus">Mini Bus</SelectItem>
+                      <SelectItem value="walking">Walking</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="grid gap-1">
@@ -472,18 +501,20 @@ export default function AdminPage() {
   const [hasTransfer, setHasTransfer] = useState(false);
   const [transfer2RouteName, setTransfer2RouteName] = useState('');
   const [transfer2Distance, setTransfer2Distance] = useState('');
+  const [transfers, setTransfers] = useState<any[]>([]);
+  const [transferLegs, setTransferLegs] = useState<any[]>([
+    { routeName: '', vehicleType: 'jeepney', distance: '', stopAndTransfer: '', note: '', pathCoordinates: [] as [number, number][] },
+  ]);
+  const [vehicleType, setVehicleType] = useState('jeepney');
+  const [vehicleType2, setVehicleType2] = useState('jeepney');
   const [transfer2StopInfo, setTransfer2StopInfo] = useState('');
   const [transfer2Note, setTransfer2Note] = useState('');
-  const [transfers, setTransfers] = useState<any[]>([]);
-  const [users, setUsers] = useState<any[]>([]);
-  const [isUsersLoading, setIsUsersLoading] = useState(false);
-  const [transferLegs, setTransferLegs] = useState<any[]>([
-    { routeName: '', distance: '', stopAndTransfer: '', note: '', pathCoordinates: [] as [number, number][] },
-  ]);
   const [transferFrom, setTransferFrom] = useState('');
   const [transferTo, setTransferTo] = useState('');
   const [transferName, setTransferName] = useState('');
   const [activeLegIdx, setActiveLegIdx] = useState(0);
+  const [fareRules, setFareRules] = useState<any[]>([]);
+  const [isUpdatingFares, setIsUpdatingFares] = useState(false);
 
   // Sorting State
   const [nodesSort, setNodesSort] = useState<{ key: string; direction: 'asc' | 'desc' | null }>({ key: 'name', direction: 'asc' });
@@ -496,6 +527,16 @@ export default function AdminPage() {
       setter({ key, direction: current.direction === 'asc' ? 'desc' : 'asc' });
     } else {
       setter({ key, direction: 'asc' });
+    }
+  };
+
+  const fetchFareRules = async () => {
+    try {
+      const res = await fetch('/api/mysql/fare-rules');
+      const data = await res.json();
+      if (data.success) setFareRules(data.data);
+    } catch (err) {
+      console.error('Failed to load fare rules:', err);
     }
   };
 
@@ -581,35 +622,31 @@ export default function AdminPage() {
         edges: data.edges ?? [],
       });
       if (tData.success) setTransfers(tData.transfers ?? []);
-    } catch { }
+      fetchFareRules(); // Call fetchFareRules here
+    } catch (err) {
+      console.error('Failed to load transfers:', err);
+    }
     setIsDataLoading(false);
   };
 
-  const loadUsers = async () => {
-    setIsUsersLoading(true);
-    try {
-      const res = await fetch('/api/mysql/users');
-      const data = await res.json();
-      if (data.success) setUsers(data.users ?? []);
-    } catch { }
-    setIsUsersLoading(false);
-  };
-
-  const handleRoleChange = async (uid: string, newRole: 'user' | 'admin') => {
-    try {
-      const res = await fetch('/api/mysql/users', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid, role: newRole }),
-      });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.message);
-      toast({ title: 'Role Updated', description: `User role changed to ${newRole}.` });
-      loadUsers();
-    } catch (err: any) {
-      toast({ variant: 'destructive', title: 'Error', description: err.message });
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.replace('/signin');
+      return;
     }
-  };
+    if (!authLoading && user && role !== 'admin') {
+      toast({
+        variant: 'destructive',
+        title: 'Access Denied',
+        description: 'You must be an admin to view this page.',
+      });
+      router.replace('/find-route');
+    }
+    if (!authLoading && user && role === 'admin') {
+      loadData();
+      fetchFareRules(); // Also call fetchFareRules here
+    }
+  }, [user, role, authLoading, router, toast]);
 
   useEffect(() => {
     if (selectedSource && selectedTarget) {
@@ -639,23 +676,40 @@ export default function AdminPage() {
     }
   };
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.replace('/signin');
-      return;
-    }
-    if (!authLoading && user && role !== 'admin') {
-      toast({
-        variant: 'destructive',
-        title: 'Access Denied',
-        description: 'You must be an admin to view this page.',
+  const handleFareUpdate = async (vehicleType: string, rules: any) => {
+    setIsUpdatingFares(true);
+    try {
+      const res = await fetch('/api/mysql/fare-rules', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vehicleType, ...rules }),
       });
-      router.replace('/find-route');
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message);
+      toast({ title: 'Success', description: `Fare rules for ${vehicleType} updated.` });
+      fetchFareRules();
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error', description: error?.message || 'Failed to update fare rules.' });
+    } finally {
+      setIsUpdatingFares(false);
     }
-    if (!authLoading && user && role === 'admin') {
+  };
+
+  const handleUpdateAllFares = async () => {
+    setIsUpdatingFares(true);
+    try {
+      // Re-run init to update all fares based on new rules
+      const res = await fetch('/api/mysql/init', { method: 'POST' });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message);
+      toast({ title: 'Success', description: 'All route fares updated successfully.' });
       loadData();
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to update all route fares.' });
+    } finally {
+      setIsUpdatingFares(false);
     }
-  }, [user, role, authLoading, router, toast]);
+  };
 
   if (authLoading || isDataLoading) {
     return <div className="flex items-center justify-center min-h-[400px]">Loading admin dashboard...</div>;
@@ -730,8 +784,8 @@ export default function AdminPage() {
             toNodeId: target,
             name: `${graph.nodes.find(n => n.id === source)?.name ?? source} → ${graph.nodes.find(n => n.id === target)?.name ?? target}`,
             legs: [
-              { routeName, distance, stopAndTransfer: stopAndTransfer || '', note: note || '', pathCoordinates: drawnPath },
-              { routeName: transfer2RouteName, distance: parseFloat(transfer2Distance), stopAndTransfer: transfer2StopInfo || '', note: transfer2Note || '', pathCoordinates: [] },
+              { routeName, vehicleType, distance, stopAndTransfer: stopAndTransfer || '', note: note || '', pathCoordinates: drawnPath },
+              { routeName: transfer2RouteName, vehicleType: vehicleType2, distance: parseFloat(transfer2Distance), stopAndTransfer: transfer2StopInfo || '', note: transfer2Note || '', pathCoordinates: [] },
             ],
           }),
         });
@@ -740,6 +794,8 @@ export default function AdminPage() {
         toast({ title: 'Success', description: 'Transfer route added with 2 legs.' });
         setDrawnPath([]); setHasTransfer(false);
         setTransfer2RouteName(''); setTransfer2Distance(''); setTransfer2StopInfo(''); setTransfer2Note('');
+        setVehicleType('jeepney'); setVehicleType2('jeepney');
+        setSelectedSource(''); setSelectedTarget(''); setRouteDistance('');
         loadData();
       } catch (error: any) {
         toast({ variant: 'destructive', title: 'Error', description: error?.message || 'Failed to add transfer route.' });
@@ -750,12 +806,23 @@ export default function AdminPage() {
         const res = await fetch('/api/mysql/edges', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ source, target, distance, routeName, stopAndTransfer, note, pathCoordinates: drawnPath }),
+          body: JSON.stringify({
+            source,
+            target,
+            distance,
+            routeName,
+            vehicleType,
+            stopAndTransfer,
+            note,
+            pathCoordinates: drawnPath,
+          }),
         });
         const data = await res.json();
         if (!data.success) throw new Error(data.message);
         toast({ title: 'Success', description: 'Route added successfully.' });
         setDrawnPath([]);
+        setVehicleType('jeepney');
+        setSelectedSource(''); setSelectedTarget(''); setRouteDistance('');
         loadData();
       } catch (error: any) {
         toast({ variant: 'destructive', title: 'Error', description: error?.message || 'Failed to add route.' });
@@ -836,12 +903,15 @@ export default function AdminPage() {
       </div>
 
 
-      <Tabs value={activeTab} onValueChange={(tab) => { setActiveTab(tab); router.replace(`/admin?tab=${tab}`, { scroll: false }); if (tab === 'users') loadUsers(); }}>
+      <Tabs value={activeTab} onValueChange={(tab) => {
+        setActiveTab(tab);
+        router.replace(`/admin?tab=${tab}`, { scroll: false });
+      }}>
         <TabsList>
           <TabsTrigger value="routes">Routes</TabsTrigger>
           <TabsTrigger value="locations">Locations</TabsTrigger>
           <TabsTrigger value="jeepney-lines">Jeepney Lines</TabsTrigger>
-          <TabsTrigger value="users">Users</TabsTrigger>
+          <TabsTrigger value="fare-rules">Fare Rules</TabsTrigger>
         </TabsList>
 
         <TabsContent value="routes">
@@ -1041,6 +1111,20 @@ export default function AdminPage() {
                           </div>
 
                           <div className="grid gap-2">
+                            <Label className="text-sm font-semibold text-slate-700">Vehicle Type</Label>
+                            <Select value={vehicleType} onValueChange={setVehicleType}>
+                              <SelectTrigger className="bg-white border-slate-200">
+                                <SelectValue placeholder="Select type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="jeepney">Jeepney</SelectItem>
+                                <SelectItem value="minibus">Mini Bus</SelectItem>
+                                <SelectItem value="walking">Walking</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="grid gap-2">
                             <Label className="text-sm font-semibold text-slate-700">Jeepney Line</Label>
                             <Select name="routeName">
                               <SelectTrigger className="bg-white border-slate-200">
@@ -1081,6 +1165,19 @@ export default function AdminPage() {
                             <div className="border-l-4 border-cyan-400 pl-4 space-y-3 py-2 bg-cyan-50/50 rounded-r-xl">
                               <p className="text-xs font-bold text-cyan-700 uppercase tracking-wide">Transfer Leg 2</p>
                               <div className="grid gap-2">
+                                <Label className="text-sm font-semibold text-slate-700">Vehicle Type (Leg 2)</Label>
+                                <Select value={vehicleType2} onValueChange={setVehicleType2}>
+                                  <SelectTrigger className="bg-white border-slate-200">
+                                    <SelectValue placeholder="Select type" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="jeepney">Jeepney</SelectItem>
+                                    <SelectItem value="minibus">Mini Bus</SelectItem>
+                                    <SelectItem value="walking">Walking</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="grid gap-2">
                                 <Label className="text-sm font-semibold text-slate-700">Jeepney Line (Leg 2)</Label>
                                 <Select value={transfer2RouteName} onValueChange={setTransfer2RouteName}>
                                   <SelectTrigger className="bg-white border-slate-200">
@@ -1101,6 +1198,12 @@ export default function AdminPage() {
                                 <Label className="text-sm font-semibold text-slate-700">Note / Suggestion (Leg 2)</Label>
                                 <Textarea placeholder="Enter suggestions for this leg" className="bg-white border-slate-200 min-h-[50px]"
                                   value={transfer2Note} onChange={e => setTransfer2Note(e.target.value)} />
+                              </div>
+
+                              <div className="grid gap-2">
+                                <Label className="text-sm font-semibold text-slate-700">Stop & Transfer (Leg 1 to Leg 2)</Label>
+                                <Textarea placeholder="e.g. Stop at Crown Paper then transfer" className="bg-white border-slate-200 min-h-[50px]"
+                                  value={transfer2StopInfo} onChange={e => setTransfer2StopInfo(e.target.value)} />
                               </div>
                             </div>
                           )}
@@ -1414,7 +1517,7 @@ export default function AdminPage() {
                 if (open) {
                   setTransferFrom(''); setTransferTo(''); setTransferName('');
                   setActiveLegIdx(0);
-                  setTransferLegs([{ routeName: '', distance: '', stopAndTransfer: '', note: '', pathCoordinates: [] as [number, number][] }]);
+                  setTransferLegs([{ routeName: '', vehicleType: 'jeepney', distance: '', stopAndTransfer: '', note: '', pathCoordinates: [] as [number, number][] }]);
                 }
               }}>
                 <DialogTrigger asChild>
@@ -1454,7 +1557,7 @@ export default function AdminPage() {
                       <div className="flex items-center justify-between">
                         <Label>Legs</Label>
                         <Button size="sm" variant="outline" type="button" onClick={() => {
-                          setTransferLegs(prev => [...prev, { routeName: '', distance: '', stopAndTransfer: '', note: '', pathCoordinates: [] }]);
+                          setTransferLegs(prev => [...prev, { routeName: '', vehicleType: 'jeepney', distance: '', stopAndTransfer: '', note: '', pathCoordinates: [] }]);
                           setActiveLegIdx(transferLegs.length);
                         }}>
                           <PlusCircle className="mr-1 h-3 w-3" /> Add Leg
@@ -1494,6 +1597,18 @@ export default function AdminPage() {
                               <Label className="text-xs">Distance (km)</Label>
                               <Input className="h-8 text-sm" type="number" step="0.01" value={transferLegs[activeLegIdx].distance}
                                 onChange={e => setTransferLegs(prev => prev.map((l, i) => i === activeLegIdx ? { ...l, distance: e.target.value } : l))} />
+                            </div>
+                            <div className="grid gap-1">
+                              <Label className="text-xs">Vehicle Type</Label>
+                              <Select value={transferLegs[activeLegIdx].vehicleType}
+                                onValueChange={val => setTransferLegs(prev => prev.map((l, i) => i === activeLegIdx ? { ...l, vehicleType: val } : l))}>
+                                <SelectTrigger className="h-8 text-sm bg-white"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="jeepney">Jeepney</SelectItem>
+                                  <SelectItem value="minibus">Mini Bus</SelectItem>
+                                  <SelectItem value="walking">Walking</SelectItem>
+                                </SelectContent>
+                              </Select>
                             </div>
                           </div>
                           {activeLegIdx < transferLegs.length - 1 && (
@@ -1543,6 +1658,7 @@ export default function AdminPage() {
                             name: transferName,
                             legs: transferLegs.map(l => ({
                               routeName: l.routeName,
+                              vehicleType: l.vehicleType || 'jeepney',
                               distance: parseFloat(l.distance),
                               stopAndTransfer: l.stopAndTransfer,
                               note: l.note,
@@ -1606,82 +1722,123 @@ export default function AdminPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="users">
+        <TabsContent value="fare-rules">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Manage Users</CardTitle>
-                <CardDescription>View all accounts and manage their roles.</CardDescription>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Fare Rules Management</CardTitle>
+                  <CardDescription>Manage base fares, distance thresholds, and kilometer addons for different vehicle types.</CardDescription>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={handleUpdateAllFares}
+                  disabled={isUpdatingFares}
+                  className="bg-cyan-50 border-cyan-200 text-cyan-700 hover:bg-cyan-100"
+                >
+                  {isUpdatingFares ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                  Recalculate & Sync All Fares
+                </Button>
               </div>
-              <Button variant="outline" onClick={loadUsers} disabled={isUsersLoading}>
-                {isUsersLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Refresh
-              </Button>
             </CardHeader>
             <CardContent>
-              {isUsersLoading ? (
-                <div className="flex items-center justify-center py-12 text-muted-foreground">
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading users...
+              <div className="grid md:grid-cols-2 gap-6">
+                {['jeepney', 'minibus'].map((type) => {
+                  const rules = fareRules.find(r => r.vehicle_type === type);
+                  if (!rules) return null;
+
+                  return (
+                    <Card key={type} className="border-slate-200 shadow-sm overflow-hidden">
+                      <div className={`h-2 ${type === 'jeepney' ? 'bg-amber-400' : 'bg-blue-400'}`} />
+                      <CardHeader className="pb-3 text-slate-700 flex flex-row items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Bus className="h-5 w-5" />
+                          <CardTitle className="text-lg capitalize">{type} Fare Matrix</CardTitle>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label className="text-xs font-bold uppercase text-slate-500">Base Fare (₱)</Label>
+                            <Input
+                              type="number"
+                              step="0.10"
+                              defaultValue={rules.base_fare}
+                              onBlur={(e) => handleFareUpdate(type, { ...rules, baseFare: parseFloat(e.target.value) })}
+                              className="bg-white"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-xs font-bold uppercase text-slate-500">First distance (km)</Label>
+                            <Input
+                              type="number"
+                              step="1"
+                              defaultValue={rules.first_km}
+                              onBlur={(e) => handleFareUpdate(type, { ...rules, firstKm: parseFloat(e.target.value) })}
+                              className="bg-white"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label className="text-xs font-bold uppercase text-slate-500">Succeeding Km (₱)</Label>
+                            <Input
+                              type="number"
+                              step="0.05"
+                              defaultValue={rules.succeeding_km_fare}
+                              onBlur={(e) => handleFareUpdate(type, { ...rules, succeedingKmFare: parseFloat(e.target.value) })}
+                              className="bg-white"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-xs font-bold uppercase text-slate-500">Discount (%)</Label>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              defaultValue={rules.discount_percentage * 100}
+                              onBlur={(e) => handleFareUpdate(type, { ...rules, discountPercentage: parseFloat(e.target.value) / 100 })}
+                              className="bg-white"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="pt-4 mt-2 border-t border-slate-100">
+                          <p className="text-xs font-medium text-slate-400 mb-2">QUICK PREVIEW</p>
+                          <div className="grid grid-cols-3 gap-2">
+                            {[1, 5, 10].map(km => (
+                              <div key={km} className="bg-slate-50 rounded p-2 text-center">
+                                <p className="text-[10px] text-slate-500">{km}km</p>
+                                <p className="font-bold text-slate-700">₱{
+                                  Number(calculateFare(km, type as VehicleType, {
+                                    vehicle_type: type,
+                                    base_fare: rules.base_fare,
+                                    first_km: rules.first_km,
+                                    succeeding_km_fare: rules.succeeding_km_fare,
+                                    discount_percentage: rules.discount_percentage
+                                  })).toFixed(2)
+                                }</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+
+              <div className="mt-8 p-4 bg-amber-50 border border-amber-200 rounded-xl flex gap-3">
+                <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 text-amber-600">
+                  <AlertCircle className="h-6 w-6" />
                 </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Username</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {users.map((u: any) => (
-                      <TableRow key={u.uid}>
-                        <TableCell className="font-medium">{u.username}</TableCell>
-                        <TableCell>{u.email}</TableCell>
-                        <TableCell>
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                            u.role === 'admin'
-                              ? 'bg-cyan-100 text-cyan-800'
-                              : 'bg-slate-100 text-slate-600'
-                          }`}>
-                            {u.role}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {u.uid === user?.uid ? (
-                            <span className="text-xs text-muted-foreground italic">You</span>
-                          ) : u.role === 'admin' ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-slate-600 border-slate-300 hover:bg-slate-50"
-                              onClick={() => handleRoleChange(u.uid, 'user')}
-                            >
-                              Remove Admin
-                            </Button>
-                          ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-cyan-700 border-cyan-300 hover:bg-cyan-50"
-                              onClick={() => handleRoleChange(u.uid, 'admin')}
-                            >
-                              Make Admin
-                            </Button>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {users.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center text-muted-foreground py-6">
-                          No users found. Click Refresh to load.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              )}
+                <div>
+                  <p className="font-bold text-amber-800">Important Note</p>
+                  <p className="text-sm text-amber-700 leading-relaxed">
+                    Changing fare rules will only affect <strong>newly created</strong> routes immediately.
+                    To apply these changes to all existing routes in the system, click the <strong>"Recalculate & Sync All Fares"</strong> button at the top right.
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

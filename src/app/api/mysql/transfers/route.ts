@@ -58,13 +58,13 @@ export async function POST(request: Request) {
             const pathJson = leg.pathCoordinates?.length > 1 ? JSON.stringify(leg.pathCoordinates) : null;
 
             const distNum = parseFloat(leg.distance);
-            const regularFare = calculateFare(distNum);
-            const discountedFare = calculateDiscountedFare(distNum);
+            const regularFare = calculateFare(distNum, leg.vehicleType);
+            const discountedFare = calculateDiscountedFare(distNum, leg.vehicleType);
 
             await query(
-                `INSERT INTO transfer_legs (id, transfer_id, leg_order, route_name, distance, stop_and_transfer, note, path_coordinates, regular_fare, discounted_fare)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [legId, transferId, i, leg.routeName, leg.distance, leg.stopAndTransfer || '', leg.note || '', pathJson, regularFare, discountedFare]
+                `INSERT INTO transfer_legs (id, transfer_id, leg_order, route_name, vehicle_type, distance, stop_and_transfer, note, path_coordinates, regular_fare, discounted_fare)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [legId, transferId, i, leg.routeName, leg.vehicleType || 'jeepney', leg.distance, leg.stopAndTransfer || '', leg.note || '', pathJson, regularFare, discountedFare]
             );
         }
 

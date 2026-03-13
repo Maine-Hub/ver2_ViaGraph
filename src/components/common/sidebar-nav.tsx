@@ -12,7 +12,7 @@ import { Logo } from "@/components/common/logo";
 import { Separator } from "@/components/ui/separator";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Map, Shield, Settings, LifeBuoy } from "lucide-react";
+import { Map, Shield, Settings, LifeBuoy, Users, FileText } from "lucide-react";
 import { useAppContext } from "@/contexts/app-context";
 
 export function SidebarNav() {
@@ -38,17 +38,41 @@ export function SidebarNav() {
           </Link>
         </SidebarMenuItem>
         {!loading && role === 'admin' && (
-          <SidebarMenuItem>
-            <Link href="/admin" passHref>
-              <SidebarMenuButton
-                isActive={pathname === '/admin'}
-                tooltip="Admin Dashboard"
-              >
-                <Shield />
-                <span>Admin Dashboard</span>
-              </SidebarMenuButton>
-            </Link>
-          </SidebarMenuItem>
+          <>
+            <SidebarMenuItem>
+              <Link href="/admin" passHref>
+                <SidebarMenuButton
+                  isActive={pathname === '/admin'}
+                  tooltip="Admin Dashboard"
+                >
+                  <Shield />
+                  <span>Admin Dashboard</span>
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <Link href="/admin/users" passHref>
+                <SidebarMenuButton
+                  isActive={pathname === '/admin/users'}
+                  tooltip="Manage Users"
+                >
+                  <Users />
+                  <span>Manage Users</span>
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <Link href="/admin/activities" passHref>
+                <SidebarMenuButton
+                  isActive={pathname === '/admin/activities'}
+                  tooltip="Activity Log"
+                >
+                  <FileText />
+                  <span>Activity Log</span>
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+          </>
         )}
       </SidebarMenu>
       <Separator />

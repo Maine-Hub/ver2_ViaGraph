@@ -13,10 +13,15 @@ export async function GET() {
 
 export async function POST(request: Request) {
     try {
-        const { vehicleType, baseFare, firstKm, succeedingKmFare, discountPercentage } = await request.json();
+        const body = await request.json();
+        const vehicleType = body.vehicleType || body.vehicle_type;
+        const baseFare = body.baseFare !== undefined ? body.baseFare : body.base_fare;
+        const firstKm = body.firstKm !== undefined ? body.firstKm : body.first_km;
+        const succeedingKmFare = body.succeedingKmFare !== undefined ? body.succeedingKmFare : body.succeeding_km_fare;
+        const discountPercentage = body.discountPercentage !== undefined ? body.discountPercentage : body.discount_percentage;
 
         if (!vehicleType || baseFare === undefined || firstKm === undefined || succeedingKmFare === undefined || discountPercentage === undefined) {
-            return NextResponse.json({ success: false, message: 'Missing required fields' }, { status: 400 });
+            return NextResponse.json({ success: false, message: 'Missing required fields', received: body }, { status: 400 });
         }
 
         await query(

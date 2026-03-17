@@ -48,22 +48,27 @@ export async function POST() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`);
 
-    // 2. Data Migration: Populate missing fares for existing records
-    const existingEdges = await query<any[]>('SELECT id, distance, IFNULL(vehicle_type, "jeepney") as vehicle_type FROM edges WHERE regular_fare IS NULL OR regular_fare = 0');
+    // 2. Data Migration: Recalculate fares for ALL records using current rules
+    const rules = await query<any[]>('SELECT * FROM fare_rules');
+    const rulesMap = rules.reduce((acc, r) => ({ ...acc, [r.vehicle_type]: r }), {} as any);
+
+    const existingEdges = await query<any[]>('SELECT id, distance, IFNULL(vehicle_type, "jeepney") as vehicle_type FROM edges');
     for (const edge of existingEdges) {
-      const reg = calculateFare(edge.distance, edge.vehicle_type);
-      const disc = calculateDiscountedFare(edge.distance, edge.vehicle_type);
+      const rule = rulesMap[edge.vehicle_type];
+      const reg = calculateFare(edge.distance, edge.vehicle_type as any, rule);
+      const disc = calculateDiscountedFare(edge.distance, edge.vehicle_type as any, rule);
       await query('UPDATE edges SET regular_fare = ?, discounted_fare = ? WHERE id = ?', [reg, disc, edge.id]);
     }
 
-    const existingLegs = await query<any[]>('SELECT id, distance, IFNULL(vehicle_type, "jeepney") as vehicle_type FROM transfer_legs WHERE regular_fare IS NULL OR regular_fare = 0');
+    const existingLegs = await query<any[]>('SELECT id, distance, IFNULL(vehicle_type, "jeepney") as vehicle_type FROM transfer_legs');
     for (const leg of existingLegs) {
-      const reg = calculateFare(leg.distance, leg.vehicle_type);
-      const disc = calculateDiscountedFare(leg.distance, leg.vehicle_type);
+      const rule = rulesMap[leg.vehicle_type];
+      const reg = calculateFare(leg.distance, leg.vehicle_type as any, rule);
+      const disc = calculateDiscountedFare(leg.distance, leg.vehicle_type as any, rule);
       await query('UPDATE transfer_legs SET regular_fare = ?, discounted_fare = ? WHERE id = ?', [reg, disc, leg.id]);
     }
 
-    return NextResponse.json({ success: true, message: 'MySQL tables updated and fares populated successfully.' });
+    return NextResponse.json({ success: true, message: 'All route fares have been recalculated and updated.' });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }

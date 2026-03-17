@@ -715,15 +715,26 @@ export default function AdminPage() {
   const handleFareUpdate = async (vehicleType: string, rules: any) => {
     setIsUpdatingFares(true);
     try {
+      // Map potential snake_case from DB to camelCase for API
+      const payload = {
+        vehicleType,
+        baseFare: rules.baseFare !== undefined ? rules.baseFare : rules.base_fare,
+        firstKm: rules.firstKm !== undefined ? rules.firstKm : rules.first_km,
+        succeedingKmFare: rules.succeedingKmFare !== undefined ? rules.succeedingKmFare : rules.succeeding_km_fare,
+        discountPercentage: rules.discountPercentage !== undefined ? rules.discountPercentage : rules.discount_percentage,
+      };
+
       const res = await fetch('/api/mysql/fare-rules', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vehicleType, ...rules }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.message);
       toast({ title: 'Success', description: `Fare rules for ${vehicleType} updated.` });
       fetchFareRules();
+      // Automatically trigger recalculation of all existing route fares
+      handleUpdateAllFares();
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: error?.message || 'Failed to update fare rules.' });
     } finally {

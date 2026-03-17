@@ -36,7 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Upload, PlusCircle, Trash2, Edit, Database, Loader2, ChevronUp, ChevronDown, ChevronsUpDown, Bus, RefreshCw, AlertCircle, Map } from 'lucide-react';
+import { Upload, PlusCircle, Trash2, Edit, Database, Loader2, ChevronUp, ChevronDown, ChevronsUpDown, Bus, RefreshCw, AlertCircle, Map, Search } from 'lucide-react';
 import { calculateFare, type VehicleType } from '@/lib/fare';
 import { graph as localGraph } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
@@ -499,22 +499,30 @@ export default function AdminPage() {
   const [jsonImportError, setJsonImportError] = useState<string>('');
   const [isMysqlSyncing, setIsMysqlSyncing] = useState(false);
   const [hasTransfer, setHasTransfer] = useState(false);
-  const [transfer2RouteName, setTransfer2RouteName] = useState('');
-  const [transfer2Distance, setTransfer2Distance] = useState('');
+  const [routeExtraLegs, setRouteExtraLegs] = useState<{
+    routeName: string;
+    vehicleType: string;
+    distance: string;
+    stopAndTransfer: string;
+    note: string;
+    hasTransfer?: boolean;
+  }[]>([]);
   const [transfers, setTransfers] = useState<any[]>([]);
   const [transferLegs, setTransferLegs] = useState<any[]>([
     { routeName: '', vehicleType: 'jeepney', distance: '', stopAndTransfer: '', note: '', pathCoordinates: [] as [number, number][] },
   ]);
   const [vehicleType, setVehicleType] = useState('jeepney');
-  const [vehicleType2, setVehicleType2] = useState('jeepney');
-  const [transfer2StopInfo, setTransfer2StopInfo] = useState('');
-  const [transfer2Note, setTransfer2Note] = useState('');
   const [transferFrom, setTransferFrom] = useState('');
   const [transferTo, setTransferTo] = useState('');
   const [transferName, setTransferName] = useState('');
   const [activeLegIdx, setActiveLegIdx] = useState(0);
   const [fareRules, setFareRules] = useState<any[]>([]);
   const [isUpdatingFares, setIsUpdatingFares] = useState(false);
+
+  // Search States
+  const [nodesSearch, setNodesSearch] = useState('');
+  const [edgesSearch, setEdgesSearch] = useState('');
+  const [routesSearch, setRoutesSearch] = useState('');
 
   // Sorting State
   const [nodesSort, setNodesSort] = useState<{ key: string; direction: 'asc' | 'desc' | null }>({ key: 'name', direction: 'asc' });
@@ -548,26 +556,54 @@ export default function AdminPage() {
   };
 
   const sortedNodes = useMemo(() => {
-    if (!nodesSort.direction) return graph.nodes;
-    return [...graph.nodes].sort((a, b) => {
+    let filtered = graph.nodes;
+    if (nodesSearch) {
+      const s = nodesSearch.toLowerCase();
+      filtered = filtered.filter(n =>
+        n.id.toLowerCase().includes(s) ||
+        n.name.toLowerCase().includes(s)
+      );
+    }
+    if (!nodesSort.direction) return filtered;
+    return [...filtered].sort((a, b) => {
       const valA = String(a[nodesSort.key as keyof typeof a] || '').toLowerCase();
       const valB = String(b[nodesSort.key as keyof typeof b] || '').toLowerCase();
       return nodesSort.direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
     });
-  }, [graph.nodes, nodesSort]);
+  }, [graph.nodes, nodesSort, nodesSearch]);
 
   const sortedRoutes = useMemo(() => {
-    if (!routesSort.direction) return graph.routes;
-    return [...graph.routes].sort((a, b) => {
+    let filtered = graph.routes;
+    if (routesSearch) {
+      const s = routesSearch.toLowerCase();
+      filtered = filtered.filter(r =>
+        r.name.toLowerCase().includes(s) ||
+        (r.description && r.description.toLowerCase().includes(s))
+      );
+    }
+    if (!routesSort.direction) return filtered;
+    return [...filtered].sort((a, b) => {
       const valA = String(a[routesSort.key as keyof typeof a] || '').toLowerCase();
       const valB = String(b[routesSort.key as keyof typeof b] || '').toLowerCase();
       return routesSort.direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
     });
-  }, [graph.routes, routesSort]);
+  }, [graph.routes, routesSort, routesSearch]);
 
   const sortedEdges = useMemo(() => {
-    if (!edgesSort.direction) return graph.edges;
-    return [...graph.edges].sort((a, b) => {
+    let filtered = graph.edges;
+    if (edgesSearch) {
+      const s = edgesSearch.toLowerCase();
+      filtered = filtered.filter(e => {
+        const sourceName = graph.nodes.find(n => n.id === e.source)?.name || '';
+        const targetName = graph.nodes.find(n => n.id === e.target)?.name || '';
+        const routeName = e.routeName || '';
+        return sourceName.toLowerCase().includes(s) ||
+          targetName.toLowerCase().includes(s) ||
+          routeName.toLowerCase().includes(s);
+      });
+    }
+    if (!edgesSort.direction) return filtered;
+    return [...filtered].sort((a, b) => {
       let valA: any, valB: any;
       if (edgesSort.key === 'source' || edgesSort.key === 'target') {
         valA = graph.nodes.find(n => n.id === a[edgesSort.key as keyof typeof a])?.name || '';
@@ -587,7 +623,7 @@ export default function AdminPage() {
       if (valA > valB) return edgesSort.direction === 'asc' ? 1 : -1;
       return 0;
     });
-  }, [graph.edges, graph.nodes, edgesSort]);
+  }, [graph.edges, graph.nodes, edgesSort, edgesSearch]);
 
   const sortedTransfers = useMemo(() => {
     if (!transfersSort.direction) return transfers;
@@ -770,10 +806,17 @@ export default function AdminPage() {
     }
 
     if (hasTransfer) {
-      // Save as a transfer route with 2 legs
-      if (!transfer2RouteName || !transfer2Distance) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Please fill in the transfer leg jeepney line and distance.' });
-        return;
+      // Validate extra legs
+      for (let i = 0; i < routeExtraLegs.length; i++) {
+        const leg = routeExtraLegs[i];
+        if (!leg.routeName || !leg.distance || isNaN(parseFloat(leg.distance))) {
+          toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: `Please fill in the jeepney line and distance for Transfer Leg ${i + 2}.`
+          });
+          return;
+        }
       }
       try {
         const res = await fetch('/api/mysql/transfers', {
@@ -785,16 +828,23 @@ export default function AdminPage() {
             name: `${graph.nodes.find(n => n.id === source)?.name ?? source} → ${graph.nodes.find(n => n.id === target)?.name ?? target}`,
             legs: [
               { routeName, vehicleType, distance, stopAndTransfer: stopAndTransfer || '', note: note || '', pathCoordinates: drawnPath },
-              { routeName: transfer2RouteName, vehicleType: vehicleType2, distance: parseFloat(transfer2Distance), stopAndTransfer: transfer2StopInfo || '', note: transfer2Note || '', pathCoordinates: [] },
+              ...routeExtraLegs.map(leg => ({
+                routeName: leg.routeName,
+                vehicleType: leg.vehicleType,
+                distance: parseFloat(leg.distance),
+                stopAndTransfer: leg.stopAndTransfer || '',
+                note: leg.note || '',
+                pathCoordinates: []
+              }))
             ],
           }),
         });
         const data = await res.json();
         if (!data.success) throw new Error(data.message);
-        toast({ title: 'Success', description: 'Transfer route added with 2 legs.' });
+        toast({ title: 'Success', description: `Transfer route added with ${routeExtraLegs.length + 1} legs.` });
         setDrawnPath([]); setHasTransfer(false);
-        setTransfer2RouteName(''); setTransfer2Distance(''); setTransfer2StopInfo(''); setTransfer2Note('');
-        setVehicleType('jeepney'); setVehicleType2('jeepney');
+        setRouteExtraLegs([]);
+        setVehicleType('jeepney');
         setSelectedSource(''); setSelectedTarget(''); setRouteDistance('');
         loadData();
       } catch (error: any) {
@@ -923,308 +973,397 @@ export default function AdminPage() {
                   Add, edit, or delete route segments.
                 </CardDescription>
               </div>
-              <Dialog onOpenChange={(o) => {
-                if (o) {
-                  setSelectedSource('');
-                  setSelectedTarget('');
-                  setRouteDistance('');
-                  setDrawnPath([]);
-                }
-              }}>
-                <DialogTrigger asChild>
-                  <Button><PlusCircle className="mr-2 h-4 w-4" /> Add New Route</Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-6xl p-0 overflow-hidden border-none shadow-2xl">
-                  <div className="flex flex-col md:flex-row h-full max-h-[90vh]">
-                    {/* Left Column: Map */}
-                    <div className="hidden md:block md:w-3/5 bg-slate-50 relative border-r border-slate-100 min-h-[500px]">
-                      <RouteMap
-                        nodes={graph.nodes.filter(n => n.id === selectedSource || n.id === selectedTarget)}
-                        edges={graph.edges}
-                        selectedSource={selectedSource}
-                        selectedTarget={selectedTarget}
-                        className="h-full w-full border-none shadow-none rounded-none"
-                        onNodeClick={handleNodeClick}
-                        onPathDrawn={(coords) => setDrawnPath(coords)}
-                        initialPath={drawnPath}
-                      />
-                    </div>
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Input
+                    placeholder="Search routes..."
+                    value={edgesSearch}
+                    onChange={(e) => setEdgesSearch(e.target.value)}
+                    className="pl-10 w-64 bg-slate-50 border-slate-200 focus:bg-white transition-all"
+                  />
+                </div>
+                <Dialog onOpenChange={(o) => {
+                  if (o) {
+                    setSelectedSource('');
+                    setSelectedTarget('');
+                    setRouteDistance('');
+                    setDrawnPath([]);
+                    setHasTransfer(false);
+                    setRouteExtraLegs([]);
+                  }
+                }}>
+                  <DialogTrigger asChild>
+                    <Button><PlusCircle className="mr-2 h-4 w-4" /> Add New Route</Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-6xl p-0 overflow-hidden border-none shadow-2xl">
+                    <div className="flex flex-col md:flex-row h-full max-h-[90vh]">
+                      {/* Left Column: Map */}
+                      <div className="hidden md:block md:w-3/5 bg-slate-50 relative border-r border-slate-100 min-h-[500px]">
+                        <RouteMap
+                          nodes={graph.nodes.filter(n => n.id === selectedSource || n.id === selectedTarget)}
+                          edges={graph.edges}
+                          selectedSource={selectedSource}
+                          selectedTarget={selectedTarget}
+                          className="h-full w-full border-none shadow-none rounded-none"
+                          onNodeClick={handleNodeClick}
+                          onPathDrawn={(coords) => setDrawnPath(coords)}
+                          initialPath={drawnPath}
+                        />
+                      </div>
 
-                    {/* Right Column: Form */}
-                    <div className="w-full md:w-2/5 p-8 flex flex-col bg-white overflow-y-auto">
-                      <DialogHeader className="mb-2">
-                        <DialogTitle className="text-2xl font-bold text-slate-800">Add New Route Segment</DialogTitle>
-                      </DialogHeader>
-                      <DialogDescription className="text-slate-500 mb-6">
-                        Choose how you want to create the route and Fill in the details for the new route segment.
-                      </DialogDescription>
+                      {/* Right Column: Form */}
+                      <div className="w-full md:w-2/5 p-8 flex flex-col bg-white overflow-y-auto">
+                        <DialogHeader className="mb-2">
+                          <DialogTitle className="text-2xl font-bold text-slate-800">Add New Route Segment</DialogTitle>
+                        </DialogHeader>
+                        <DialogDescription className="text-slate-500 mb-6">
+                          Choose how you want to create the route and Fill in the details for the new route segment.
+                        </DialogDescription>
 
-                      <form action={handleAddRoute} className="space-y-6">
-                        <div className="flex p-1 bg-slate-100 rounded-xl mb-4">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            className={`flex-1 rounded-lg transition-all ${routeInputMode === 'manual'
-                              ? 'bg-cyan-400 text-white shadow-sm hover:bg-cyan-500'
-                              : 'text-slate-500 hover:bg-slate-200'
-                              }`}
-                            onClick={() => { setRouteInputMode('manual'); setJsonImportError(''); }}
-                          >
-                            <Map className="mr-2 h-4 w-4" /> Manual
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            className={`flex-1 rounded-lg transition-all ${routeInputMode === 'json'
-                              ? 'bg-cyan-400 text-white shadow-sm hover:bg-cyan-500'
-                              : 'text-slate-500 hover:bg-slate-200'
-                              }`}
-                            onClick={() => { setRouteInputMode('json'); setJsonImportError(''); }}
-                          >
-                            <Database className="mr-2 h-4 w-4" /> Import JSON
-                          </Button>
-                        </div>
-
-                        {/* Import Panel */}
-                        {routeInputMode === 'json' && (
-                          <div className="mb-4 p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
-                            <p className="text-sm text-slate-600 font-medium">Supported formats:</p>
-                            <ul className="text-xs text-slate-500 list-disc list-inside space-y-1">
-                              <li><code>.geojson</code> — GeoJSON LineString or Feature</li>
-                              <li><code>.topojson</code> — TopoJSON file</li>
-                              <li><code>.json</code> — Array of <code>[lat, lng]</code> pairs</li>
-                            </ul>
-                            <input
-                              type="file"
-                              accept=".json,.geojson,.topojson"
-                              className="block w-full text-sm text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-cyan-50 file:text-cyan-700 hover:file:bg-cyan-100 cursor-pointer"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (!file) return;
-                                const reader = new FileReader();
-                                reader.onload = (ev) => {
-                                  try {
-                                    const parsed = JSON.parse(ev.target?.result as string);
-                                    let coords: [number, number][] = [];
-
-                                    // GeoJSON LineString geometry
-                                    if (parsed?.type === 'LineString' && Array.isArray(parsed.coordinates)) {
-                                      coords = parsed.coordinates.map((c: number[]) => [c[1], c[0]] as [number, number]);
-                                    }
-                                    // GeoJSON Feature with LineString
-                                    else if (parsed?.type === 'Feature' && parsed.geometry?.type === 'LineString') {
-                                      coords = parsed.geometry.coordinates.map((c: number[]) => [c[1], c[0]] as [number, number]);
-                                    }
-                                    // GeoJSON FeatureCollection — merge ALL LineStrings into one continuous path
-                                    else if (parsed?.type === 'FeatureCollection' && Array.isArray(parsed.features)) {
-                                      parsed.features.forEach((f: any) => {
-                                        if (f.geometry?.type === 'LineString') {
-                                          const seg: [number, number][] = f.geometry.coordinates.map((c: number[]) => [c[1], c[0]] as [number, number]);
-                                          coords.push(...seg);
-                                        } else if (f.geometry?.type === 'MultiLineString') {
-                                          f.geometry.coordinates.forEach((line: number[][]) => {
-                                            const seg: [number, number][] = line.map((c: number[]) => [c[1], c[0]] as [number, number]);
-                                            coords.push(...seg);
-                                          });
-                                        }
-                                      });
-                                    }
-                                    // TopoJSON — extract first arc
-                                    else if (parsed?.type === 'Topology' && parsed.arcs) {
-                                      const firstArc: number[][] = Object.values<any>(parsed.arcs)[0] ?? [];
-                                      const scale = parsed.transform?.scale ?? [1, 1];
-                                      const translate = parsed.transform?.translate ?? [0, 0];
-                                      let x = 0, y = 0;
-                                      coords = firstArc.map((delta: number[]) => {
-                                        x += delta[0]; y += delta[1];
-                                        const lng = x * scale[0] + translate[0];
-                                        const lat = y * scale[1] + translate[1];
-                                        return [lat, lng] as [number, number];
-                                      });
-                                    }
-                                    // Fallback: plain [[lat, lng], ...] array
-                                    else if (Array.isArray(parsed) && parsed.every(p => Array.isArray(p) && p.length === 2)) {
-                                      coords = parsed as [number, number][];
-                                    }
-
-                                    if (coords.length > 0) {
-                                      setDrawnPath(coords);
-                                      setJsonImportError('');
-                                    } else {
-                                      setJsonImportError('Could not extract coordinates. Check that the file contains a LineString route.');
-                                    }
-                                  } catch {
-                                    setJsonImportError('Failed to parse file. Make sure it is valid JSON.');
-                                  }
-                                };
-                                reader.readAsText(file);
-                              }}
-                            />
-                            {jsonImportError && (
-                              <p className="text-xs text-red-500">{jsonImportError}</p>
-                            )}
-                            {drawnPath.length > 0 && !jsonImportError && (
-                              <p className="text-xs text-cyan-600">
-                                ✓ Loaded {drawnPath.length} coordinate points.
-                              </p>
-                            )}
-                          </div>
-                        )}
-
-                        <div className="space-y-4">
-                          <div className="grid gap-2" key={`source-select-${graph.nodes.length}`}>
-                            <Label className="text-sm font-semibold text-slate-700">Source</Label>
-                            <Select name="source" value={selectedSource} onValueChange={setSelectedSource}>
-                              <SelectTrigger className="bg-white border-slate-200">
-                                <SelectValue placeholder="Select source" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {graph.nodes.map(n => <SelectItem key={n.id} value={n.id}>{n.name}</SelectItem>)}
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <div className="grid gap-2" key={`target-select-${graph.nodes.length}`}>
-                            <Label className="text-sm font-semibold text-slate-700">Target</Label>
-                            <Select name="target" value={selectedTarget} onValueChange={setSelectedTarget}>
-                              <SelectTrigger className="bg-white border-slate-200">
-                                <SelectValue placeholder="Select target" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {graph.nodes.map(n => <SelectItem key={n.id} value={n.id}>{n.name}</SelectItem>)}
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <div className="grid gap-2">
-                            <Label className="text-sm font-semibold text-slate-700">Distance (km)</Label>
-                            <Input
-                              id="distance"
-                              name="distance"
-                              type="number"
-                              step="0.1"
-                              placeholder="Enter distance"
-                              className="bg-white border-slate-200"
-                              value={routeDistance}
-                              onChange={(e) => setRouteDistance(e.target.value)}
-                            />
-                          </div>
-
-                          <div className="grid gap-2">
-                            <Label className="text-sm font-semibold text-slate-700">Vehicle Type</Label>
-                            <Select value={vehicleType} onValueChange={setVehicleType}>
-                              <SelectTrigger className="bg-white border-slate-200">
-                                <SelectValue placeholder="Select type" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="jeepney">Jeepney</SelectItem>
-                                <SelectItem value="minibus">Mini Bus</SelectItem>
-                                <SelectItem value="walking">Walking</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <div className="grid gap-2">
-                            <Label className="text-sm font-semibold text-slate-700">Jeepney Line</Label>
-                            <Select name="routeName">
-                              <SelectTrigger className="bg-white border-slate-200">
-                                <SelectValue placeholder="Select line" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {graph.routes.map(r => <SelectItem key={r.name} value={r.name}>{r.name}</SelectItem>)}
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <div className="grid gap-2">
-                            <Label className="text-sm font-semibold text-slate-700">Stop & Transfer (if any)</Label>
-                            <Textarea name="stopAndTransfer" placeholder="Enter stop details or transfer info" className="bg-white border-slate-200 min-h-[60px]" />
-                          </div>
-
-                          <div className="grid gap-2">
-                            <Label className="text-sm font-semibold text-slate-700">Suggestion</Label>
-                            <Textarea name="note" placeholder="Enter additional suggestions or notes" className="bg-white border-slate-200 min-h-[60px]" />
-                          </div>
-
-                          {/* Transfer toggle */}
-                          <div className="flex items-center gap-3 pt-1">
-                            <button
+                        <form action={handleAddRoute} className="space-y-6">
+                          <div className="flex p-1 bg-slate-100 rounded-xl mb-4">
+                            <Button
                               type="button"
-                              onClick={() => setHasTransfer(h => !h)}
-                              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${hasTransfer ? 'bg-cyan-500' : 'bg-slate-300'}`}
+                              variant="ghost"
+                              className={`flex-1 rounded-lg transition-all ${routeInputMode === 'manual'
+                                ? 'bg-cyan-400 text-white shadow-sm hover:bg-cyan-500'
+                                : 'text-slate-500 hover:bg-slate-200'
+                                }`}
+                              onClick={() => { setRouteInputMode('manual'); setJsonImportError(''); }}
                             >
-                              <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform shadow ${hasTransfer ? 'translate-x-6' : 'translate-x-1'}`} />
-                            </button>
-                            <Label className="text-sm font-semibold text-slate-700 cursor-pointer" onClick={() => setHasTransfer(h => !h)}>
-                              Has Transfer (add 2nd leg)
-                            </Label>
+                              <Map className="mr-2 h-4 w-4" /> Manual
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              className={`flex-1 rounded-lg transition-all ${routeInputMode === 'json'
+                                ? 'bg-cyan-400 text-white shadow-sm hover:bg-cyan-500'
+                                : 'text-slate-500 hover:bg-slate-200'
+                                }`}
+                              onClick={() => { setRouteInputMode('json'); setJsonImportError(''); }}
+                            >
+                              <Database className="mr-2 h-4 w-4" /> Import JSON
+                            </Button>
                           </div>
 
-                          {/* Second leg fields */}
-                          {hasTransfer && (
-                            <div className="border-l-4 border-cyan-400 pl-4 space-y-3 py-2 bg-cyan-50/50 rounded-r-xl">
-                              <p className="text-xs font-bold text-cyan-700 uppercase tracking-wide">Transfer Leg 2</p>
-                              <div className="grid gap-2">
-                                <Label className="text-sm font-semibold text-slate-700">Vehicle Type (Leg 2)</Label>
-                                <Select value={vehicleType2} onValueChange={setVehicleType2}>
-                                  <SelectTrigger className="bg-white border-slate-200">
-                                    <SelectValue placeholder="Select type" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="jeepney">Jeepney</SelectItem>
-                                    <SelectItem value="minibus">Mini Bus</SelectItem>
-                                    <SelectItem value="walking">Walking</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div className="grid gap-2">
-                                <Label className="text-sm font-semibold text-slate-700">Jeepney Line (Leg 2)</Label>
-                                <Select value={transfer2RouteName} onValueChange={setTransfer2RouteName}>
-                                  <SelectTrigger className="bg-white border-slate-200">
-                                    <SelectValue placeholder="Select line" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {graph.routes.map(r => <SelectItem key={r.name} value={r.name}>{r.name}</SelectItem>)}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div className="grid gap-2">
-                                <Label className="text-sm font-semibold text-slate-700">Distance (km) (Leg 2)</Label>
-                                <Input type="number" step="0.1" placeholder="Enter distance" className="bg-white border-slate-200"
-                                  value={transfer2Distance} onChange={e => setTransfer2Distance(e.target.value)} />
-                              </div>
+                          {/* Import Panel */}
+                          {routeInputMode === 'json' && (
+                            <div className="mb-4 p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                              <p className="text-sm text-slate-600 font-medium">Supported formats:</p>
+                              <ul className="text-xs text-slate-500 list-disc list-inside space-y-1">
+                                <li><code>.geojson</code> — GeoJSON LineString or Feature</li>
+                                <li><code>.topojson</code> — TopoJSON file</li>
+                                <li><code>.json</code> — Array of <code>[lat, lng]</code> pairs</li>
+                              </ul>
+                              <input
+                                type="file"
+                                accept=".json,.geojson,.topojson"
+                                className="block w-full text-sm text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-cyan-50 file:text-cyan-700 hover:file:bg-cyan-100 cursor-pointer"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  const reader = new FileReader();
+                                  reader.onload = (ev) => {
+                                    try {
+                                      const parsed = JSON.parse(ev.target?.result as string);
+                                      let coords: [number, number][] = [];
 
-                              <div className="grid gap-2">
-                                <Label className="text-sm font-semibold text-slate-700">Note / Suggestion (Leg 2)</Label>
-                                <Textarea placeholder="Enter suggestions for this leg" className="bg-white border-slate-200 min-h-[50px]"
-                                  value={transfer2Note} onChange={e => setTransfer2Note(e.target.value)} />
-                              </div>
+                                      // GeoJSON LineString geometry
+                                      if (parsed?.type === 'LineString' && Array.isArray(parsed.coordinates)) {
+                                        coords = parsed.coordinates.map((c: number[]) => [c[1], c[0]] as [number, number]);
+                                      }
+                                      // GeoJSON Feature with LineString
+                                      else if (parsed?.type === 'Feature' && parsed.geometry?.type === 'LineString') {
+                                        coords = parsed.geometry.coordinates.map((c: number[]) => [c[1], c[0]] as [number, number]);
+                                      }
+                                      // GeoJSON FeatureCollection — merge ALL LineStrings into one continuous path
+                                      else if (parsed?.type === 'FeatureCollection' && Array.isArray(parsed.features)) {
+                                        parsed.features.forEach((f: any) => {
+                                          if (f.geometry?.type === 'LineString') {
+                                            const seg: [number, number][] = f.geometry.coordinates.map((c: number[]) => [c[1], c[0]] as [number, number]);
+                                            coords.push(...seg);
+                                          } else if (f.geometry?.type === 'MultiLineString') {
+                                            f.geometry.coordinates.forEach((line: number[][]) => {
+                                              const seg: [number, number][] = line.map((c: number[]) => [c[1], c[0]] as [number, number]);
+                                              coords.push(...seg);
+                                            });
+                                          }
+                                        });
+                                      }
+                                      // TopoJSON — extract first arc
+                                      else if (parsed?.type === 'Topology' && parsed.arcs) {
+                                        const firstArc: number[][] = Object.values<any>(parsed.arcs)[0] ?? [];
+                                        const scale = parsed.transform?.scale ?? [1, 1];
+                                        const translate = parsed.transform?.translate ?? [0, 0];
+                                        let x = 0, y = 0;
+                                        coords = firstArc.map((delta: number[]) => {
+                                          x += delta[0]; y += delta[1];
+                                          const lng = x * scale[0] + translate[0];
+                                          const lat = y * scale[1] + translate[1];
+                                          return [lat, lng] as [number, number];
+                                        });
+                                      }
+                                      // Fallback: plain [[lat, lng], ...] array
+                                      else if (Array.isArray(parsed) && parsed.every(p => Array.isArray(p) && p.length === 2)) {
+                                        coords = parsed as [number, number][];
+                                      }
 
-                              <div className="grid gap-2">
-                                <Label className="text-sm font-semibold text-slate-700">Stop & Transfer (Leg 1 to Leg 2)</Label>
-                                <Textarea placeholder="e.g. Stop at Crown Paper then transfer" className="bg-white border-slate-200 min-h-[50px]"
-                                  value={transfer2StopInfo} onChange={e => setTransfer2StopInfo(e.target.value)} />
-                              </div>
+                                      if (coords.length > 0) {
+                                        setDrawnPath(coords);
+                                        setJsonImportError('');
+                                      } else {
+                                        setJsonImportError('Could not extract coordinates. Check that the file contains a LineString route.');
+                                      }
+                                    } catch {
+                                      setJsonImportError('Failed to parse file. Make sure it is valid JSON.');
+                                    }
+                                  };
+                                  reader.readAsText(file);
+                                }}
+                              />
+                              {jsonImportError && (
+                                <p className="text-xs text-red-500">{jsonImportError}</p>
+                              )}
+                              {drawnPath.length > 0 && !jsonImportError && (
+                                <p className="text-xs text-cyan-600">
+                                  ✓ Loaded {drawnPath.length} coordinate points.
+                                </p>
+                              )}
                             </div>
                           )}
-                        </div>
 
-                        {drawnPath.length > 0 && (
-                          <div className="text-xs text-cyan-600 bg-cyan-50 border border-cyan-200 rounded-lg px-3 py-2">
-                            ✓ Path drawn: {drawnPath.length} points recorded
+                          <div className="space-y-4">
+                            <div className="grid gap-2" key={`source-select-${graph.nodes.length}`}>
+                              <Label className="text-sm font-semibold text-slate-700">Source</Label>
+                              <Select name="source" value={selectedSource} onValueChange={setSelectedSource}>
+                                <SelectTrigger className="bg-white border-slate-200">
+                                  <SelectValue placeholder="Select source" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {graph.nodes.map(n => <SelectItem key={n.id} value={n.id}>{n.name}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="grid gap-2" key={`target-select-${graph.nodes.length}`}>
+                              <Label className="text-sm font-semibold text-slate-700">Target</Label>
+                              <Select name="target" value={selectedTarget} onValueChange={setSelectedTarget}>
+                                <SelectTrigger className="bg-white border-slate-200">
+                                  <SelectValue placeholder="Select target" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {graph.nodes.map(n => <SelectItem key={n.id} value={n.id}>{n.name}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="grid gap-2">
+                              <Label className="text-sm font-semibold text-slate-700">Distance (km)</Label>
+                              <Input
+                                id="distance"
+                                name="distance"
+                                type="number"
+                                step="0.1"
+                                placeholder="Enter distance"
+                                className="bg-white border-slate-200"
+                                value={routeDistance}
+                                onChange={(e) => setRouteDistance(e.target.value)}
+                              />
+                            </div>
+
+                            <div className="grid gap-2">
+                              <Label className="text-sm font-semibold text-slate-700">Vehicle Type</Label>
+                              <Select value={vehicleType} onValueChange={setVehicleType}>
+                                <SelectTrigger className="bg-white border-slate-200">
+                                  <SelectValue placeholder="Select type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="jeepney">Jeepney</SelectItem>
+                                  <SelectItem value="minibus">Mini Bus</SelectItem>
+                                  <SelectItem value="walking">Walking</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="grid gap-2">
+                              <Label className="text-sm font-semibold text-slate-700">Jeepney Line</Label>
+                              <Select name="routeName">
+                                <SelectTrigger className="bg-white border-slate-200">
+                                  <SelectValue placeholder="Select line" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {graph.routes.map(r => <SelectItem key={r.name} value={r.name}>{r.name}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="grid gap-2">
+                              <Label className="text-sm font-semibold text-slate-700">Stop & Transfer (if any)</Label>
+                              <Textarea name="stopAndTransfer" placeholder="Enter stop details or transfer info" className="bg-white border-slate-200 min-h-[60px]" />
+                            </div>
+
+                            <div className="grid gap-2">
+                              <Label className="text-sm font-semibold text-slate-700">Suggestion</Label>
+                              <Textarea name="note" placeholder="Enter additional suggestions or notes" className="bg-white border-slate-200 min-h-[60px]" />
+                            </div>
+
+                            {/* Transfer toggle */}
+                            <div className="flex items-center gap-3 pt-1">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newState = !hasTransfer;
+                                  setHasTransfer(newState);
+                                  if (newState && routeExtraLegs.length === 0) {
+                                    setRouteExtraLegs([{ routeName: '', vehicleType: 'jeepney', distance: '', stopAndTransfer: '', note: '', hasTransfer: false }]);
+                                  } else if (!newState) {
+                                    setRouteExtraLegs([]);
+                                  }
+                                }}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${hasTransfer ? 'bg-cyan-500' : 'bg-slate-300'}`}
+                              >
+                                <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform shadow ${hasTransfer ? 'translate-x-6' : 'translate-x-1'}`} />
+                              </button>
+                              <Label className="text-sm font-semibold text-slate-700 cursor-pointer" onClick={() => {
+                                const newState = !hasTransfer;
+                                setHasTransfer(newState);
+                                if (newState && routeExtraLegs.length === 0) {
+                                  setRouteExtraLegs([{ routeName: '', vehicleType: 'jeepney', distance: '', stopAndTransfer: '', note: '', hasTransfer: false }]);
+                                } else if (!newState) {
+                                  setRouteExtraLegs([]);
+                                }
+                              }}>
+                                Has Transfer (add 2nd leg)
+                              </Label>
+                            </div>
+
+                            {/* Dynamic extra legs */}
+                            {hasTransfer && routeExtraLegs.map((leg, idx) => (
+                              <div key={idx} className="border-l-4 border-cyan-400 pl-4 space-y-3 py-2 bg-cyan-50/50 rounded-r-xl">
+                                <p className="text-xs font-bold text-cyan-700 uppercase tracking-wide">Transfer Leg {idx + 2}</p>
+                                <div className="grid gap-2">
+                                  <Label className="text-sm font-semibold text-slate-700">Vehicle Type (Leg {idx + 2})</Label>
+                                  <Select value={leg.vehicleType} onValueChange={(val) => {
+                                    const newLegs = [...routeExtraLegs];
+                                    newLegs[idx].vehicleType = val;
+                                    setRouteExtraLegs(newLegs);
+                                  }}>
+                                    <SelectTrigger className="bg-white border-slate-200">
+                                      <SelectValue placeholder="Select type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="jeepney">Jeepney</SelectItem>
+                                      <SelectItem value="minibus">Mini Bus</SelectItem>
+                                      <SelectItem value="walking">Walking</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="grid gap-2">
+                                  <Label className="text-sm font-semibold text-slate-700">Jeepney Line (Leg {idx + 2})</Label>
+                                  <Select value={leg.routeName} onValueChange={(val) => {
+                                    const newLegs = [...routeExtraLegs];
+                                    newLegs[idx].routeName = val;
+                                    setRouteExtraLegs(newLegs);
+                                  }}>
+                                    <SelectTrigger className="bg-white border-slate-200">
+                                      <SelectValue placeholder="Select line" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {graph.routes.map(r => <SelectItem key={r.name} value={r.name}>{r.name}</SelectItem>)}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="grid gap-2">
+                                  <Label className="text-sm font-semibold text-slate-700">Distance (km) (Leg {idx + 2})</Label>
+                                  <Input type="number" step="0.1" placeholder="Enter distance" className="bg-white border-slate-200"
+                                    value={leg.distance} onChange={e => {
+                                      const newLegs = [...routeExtraLegs];
+                                      newLegs[idx].distance = e.target.value;
+                                      setRouteExtraLegs(newLegs);
+                                    }} />
+                                </div>
+
+                                <div className="grid gap-2">
+                                  <Label className="text-sm font-semibold text-slate-700">Note / Suggestion (Leg {idx + 2})</Label>
+                                  <Textarea placeholder="Enter suggestions for this leg" className="bg-white border-slate-200 min-h-[50px]"
+                                    value={leg.note} onChange={e => {
+                                      const newLegs = [...routeExtraLegs];
+                                      newLegs[idx].note = e.target.value;
+                                      setRouteExtraLegs(newLegs);
+                                    }} />
+                                </div>
+
+                                <div className="grid gap-2 text-right">
+                                  <Label className="text-sm font-semibold text-slate-700 text-left">Stop & Transfer (Leg {idx + 1} to Leg {idx + 2})</Label>
+                                  <Textarea placeholder="e.g. Stop at Crown Paper then transfer" className="bg-white border-slate-200 min-h-[50px]"
+                                    value={leg.stopAndTransfer} onChange={e => {
+                                      const newLegs = [...routeExtraLegs];
+                                      newLegs[idx].stopAndTransfer = e.target.value;
+                                      setRouteExtraLegs(newLegs);
+                                    }} />
+                                </div>
+
+                                {/* Toggle for next leg */}
+                                <div className="flex items-center gap-3 pt-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const newLegs = [...routeExtraLegs];
+                                      const currentlyHasTransfer = !!newLegs[idx].hasTransfer;
+                                      newLegs[idx].hasTransfer = !currentlyHasTransfer;
+                                      if (newLegs[idx].hasTransfer) {
+                                        // Add next leg if it doesn't exist
+                                        if (idx === routeExtraLegs.length - 1) {
+                                          newLegs.push({ routeName: '', vehicleType: 'jeepney', distance: '', stopAndTransfer: '', note: '', hasTransfer: false });
+                                        }
+                                      } else {
+                                        // Remove all subsequent legs
+                                        newLegs.splice(idx + 1);
+                                      }
+                                      setRouteExtraLegs(newLegs);
+                                    }}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${leg.hasTransfer ? 'bg-cyan-500' : 'bg-slate-300'}`}
+                                  >
+                                    <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform shadow ${leg.hasTransfer ? 'translate-x-6' : 'translate-x-1'}`} />
+                                  </button>
+                                  <Label className="text-sm font-semibold text-slate-700 cursor-pointer" onClick={() => {
+                                    const newLegs = [...routeExtraLegs];
+                                    const currentlyHasTransfer = !!newLegs[idx].hasTransfer;
+                                    newLegs[idx].hasTransfer = !currentlyHasTransfer;
+                                    if (newLegs[idx].hasTransfer) {
+                                      if (idx === routeExtraLegs.length - 1) {
+                                        newLegs.push({ routeName: '', vehicleType: 'jeepney', distance: '', stopAndTransfer: '', note: '', hasTransfer: false });
+                                      }
+                                    } else {
+                                      newLegs.splice(idx + 1);
+                                    }
+                                    setRouteExtraLegs(newLegs);
+                                  }}>
+                                    Has Transfer (add {idx + 3}rd leg)
+                                  </Label>
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        )}
-                        <input type="hidden" name="drawnPath" value={JSON.stringify(drawnPath)} />
-                        <div className="pt-4">
-                          <Button type="submit" className="w-full bg-cyan-400 hover:bg-cyan-500 text-white h-12 text-lg font-bold rounded-xl shadow-lg shadow-cyan-50 transition-all active:scale-95">
-                            Add Route
-                          </Button>
-                        </div>
-                      </form>
+
+                          {drawnPath.length > 0 && (
+                            <div className="text-xs text-cyan-600 bg-cyan-50 border border-cyan-200 rounded-lg px-3 py-2">
+                              ✓ Path drawn: {drawnPath.length} points recorded
+                            </div>
+                          )}
+                          <input type="hidden" name="drawnPath" value={JSON.stringify(drawnPath)} />
+                          <div className="pt-4">
+                            <Button type="submit" className="w-full bg-cyan-400 hover:bg-cyan-500 text-white h-12 text-lg font-bold rounded-xl shadow-lg shadow-cyan-50 transition-all active:scale-95">
+                              Add Route
+                            </Button>
+                          </div>
+                        </form>
+                      </div>
                     </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
@@ -1333,85 +1472,96 @@ export default function AdminPage() {
                 <CardTitle>Manage Locations</CardTitle>
                 <CardDescription>Add, edit, or delete key locations.</CardDescription>
               </div>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button><PlusCircle className="mr-2 h-4 w-4" /> Add New Location</Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-6xl p-0 overflow-hidden border-none shadow-2xl">
-                  <div className="flex flex-col md:flex-row h-full max-h-[90vh]">
-                    {/* Left Column: Map */}
-                    <div className="hidden md:block md:w-3/5 bg-slate-50 relative border-r border-slate-100 min-h-[500px]">
-                      <LocationPickerMap
-                        onLocationSelect={(lat, lng) => {
-                          setPickedLat(lat);
-                          setPickedLng(lng);
-                        }}
-                        selectedLat={pickedLat}
-                        selectedLng={pickedLng}
-                        className="h-full w-full border-none shadow-none rounded-none"
-                      />
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Input
+                    placeholder="Search locations..."
+                    value={nodesSearch}
+                    onChange={(e) => setNodesSearch(e.target.value)}
+                    className="pl-10 w-64 bg-slate-50 border-slate-200 focus:bg-white transition-all"
+                  />
+                </div>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button><PlusCircle className="mr-2 h-4 w-4" /> Add New Location</Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-6xl p-0 overflow-hidden border-none shadow-2xl">
+                    <div className="flex flex-col md:flex-row h-full max-h-[90vh]">
+                      {/* Left Column: Map */}
+                      <div className="hidden md:block md:w-3/5 bg-slate-50 relative border-r border-slate-100 min-h-[500px]">
+                        <LocationPickerMap
+                          onLocationSelect={(lat, lng) => {
+                            setPickedLat(lat);
+                            setPickedLng(lng);
+                          }}
+                          selectedLat={pickedLat}
+                          selectedLng={pickedLng}
+                          className="h-full w-full border-none shadow-none rounded-none"
+                        />
+                      </div>
+
+                      {/* Right Column: Form */}
+                      <div className="w-full md:w-2/5 p-8 flex flex-col bg-white overflow-y-auto">
+                        <DialogHeader className="mb-2">
+                          <DialogTitle className="text-2xl font-bold text-slate-800">Add New Location</DialogTitle>
+                        </DialogHeader>
+                        <DialogDescription className="text-slate-500 mb-6">
+                          Provide a unique ID and name for the new location.
+                        </DialogDescription>
+
+                        <form action={handleAddLocation} className="space-y-6">
+                          <div className="space-y-4">
+                            <div className="grid gap-2">
+                              <Label className="text-sm font-semibold text-slate-700">Location ID</Label>
+                              <Input id="id" name="id" className="bg-white border-slate-200" placeholder="e.g. msu-iit" required />
+                            </div>
+
+                            <div className="grid gap-2">
+                              <Label className="text-sm font-semibold text-slate-700">Location Name</Label>
+                              <Input id="name" name="name" className="bg-white border-slate-200" placeholder="Enter location name" required />
+                            </div>
+
+                            <div className="grid gap-2">
+                              <Label className="text-sm font-semibold text-slate-700">Latitude</Label>
+                              <Input
+                                id="latitude"
+                                name="latitude"
+                                type="number"
+                                step="any"
+                                className="bg-white border-slate-200"
+                                value={pickedLat || ''}
+                                onChange={(e) => setPickedLat(parseFloat(e.target.value))}
+                                required
+                              />
+                            </div>
+
+                            <div className="grid gap-2">
+                              <Label className="text-sm font-semibold text-slate-700">Longitude</Label>
+                              <Input
+                                id="longitude"
+                                name="longitude"
+                                type="number"
+                                step="any"
+                                className="bg-white border-slate-200"
+                                value={pickedLng || ''}
+                                onChange={(e) => setPickedLng(parseFloat(e.target.value))}
+                                required
+                              />
+                            </div>
+                          </div>
+
+                          <div className="pt-4">
+                            <Button type="submit" className="w-full bg-cyan-400 hover:bg-cyan-500 text-white h-12 text-lg font-bold rounded-xl shadow-lg shadow-cyan-50 transition-all active:scale-95">
+                              Add Location
+                            </Button>
+                          </div>
+                        </form>
+                      </div>
                     </div>
-
-                    {/* Right Column: Form */}
-                    <div className="w-full md:w-2/5 p-8 flex flex-col bg-white overflow-y-auto">
-                      <DialogHeader className="mb-2">
-                        <DialogTitle className="text-2xl font-bold text-slate-800">Add New Location</DialogTitle>
-                      </DialogHeader>
-                      <DialogDescription className="text-slate-500 mb-6">
-                        Provide a unique ID and name for the new location.
-                      </DialogDescription>
-
-                      <form action={handleAddLocation} className="space-y-6">
-                        <div className="space-y-4">
-                          <div className="grid gap-2">
-                            <Label className="text-sm font-semibold text-slate-700">Location ID</Label>
-                            <Input id="id" name="id" className="bg-white border-slate-200" placeholder="e.g. msu-iit" required />
-                          </div>
-
-                          <div className="grid gap-2">
-                            <Label className="text-sm font-semibold text-slate-700">Location Name</Label>
-                            <Input id="name" name="name" className="bg-white border-slate-200" placeholder="Enter location name" required />
-                          </div>
-
-                          <div className="grid gap-2">
-                            <Label className="text-sm font-semibold text-slate-700">Latitude</Label>
-                            <Input
-                              id="latitude"
-                              name="latitude"
-                              type="number"
-                              step="any"
-                              className="bg-white border-slate-200"
-                              value={pickedLat || ''}
-                              onChange={(e) => setPickedLat(parseFloat(e.target.value))}
-                              required
-                            />
-                          </div>
-
-                          <div className="grid gap-2">
-                            <Label className="text-sm font-semibold text-slate-700">Longitude</Label>
-                            <Input
-                              id="longitude"
-                              name="longitude"
-                              type="number"
-                              step="any"
-                              className="bg-white border-slate-200"
-                              value={pickedLng || ''}
-                              onChange={(e) => setPickedLng(parseFloat(e.target.value))}
-                              required
-                            />
-                          </div>
-                        </div>
-
-                        <div className="pt-4">
-                          <Button type="submit" className="w-full bg-cyan-400 hover:bg-cyan-500 text-white h-12 text-lg font-bold rounded-xl shadow-lg shadow-cyan-50 transition-all active:scale-95">
-                            Add Location
-                          </Button>
-                        </div>
-                      </form>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
@@ -1449,32 +1599,43 @@ export default function AdminPage() {
                 <CardTitle>Manage Jeepney Lines</CardTitle>
                 <CardDescription>View and manage jeepney line information.</CardDescription>
               </div>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button><PlusCircle className="mr-2 h-4 w-4" /> Add New Jeepney Line</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <form action={handleAddJeepneyLine}>
-                    <DialogHeader>
-                      <DialogTitle>Add New Jeepney Line</DialogTitle>
-                      <DialogDescription>Enter the name and description of the new jeepney line.</DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="line-name" className="text-right">Line Name</Label>
-                        <Input id="line-name" name="name" className="col-span-3" placeholder="e.g., Tibanga-Palao" />
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Input
+                    placeholder="Search lines..."
+                    value={routesSearch}
+                    onChange={(e) => setRoutesSearch(e.target.value)}
+                    className="pl-10 w-64 bg-slate-50 border-slate-200 focus:bg-white transition-all"
+                  />
+                </div>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button><PlusCircle className="mr-2 h-4 w-4" /> Add New Jeepney Line</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <form action={handleAddJeepneyLine}>
+                      <DialogHeader>
+                        <DialogTitle>Add New Jeepney Line</DialogTitle>
+                        <DialogDescription>Enter the name and description of the new jeepney line.</DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="line-name" className="text-right">Line Name</Label>
+                          <Input id="line-name" name="name" className="col-span-3" placeholder="e.g., Tibanga-Palao" />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="line-description" className="text-right">Description</Label>
+                          <Input id="line-description" name="description" className="col-span-3" placeholder="e.g., Routes through Tibanga and Palao" />
+                        </div>
                       </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="line-description" className="text-right">Description</Label>
-                        <Input id="line-description" name="description" className="col-span-3" placeholder="e.g., Routes through Tibanga and Palao" />
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <DialogClose asChild><Button type="submit">Add Line</Button></DialogClose>
-                    </DialogFooter>
-                  </form>
-                </DialogContent>
-              </Dialog>
+                      <DialogFooter>
+                        <DialogClose asChild><Button type="submit">Add Line</Button></DialogClose>
+                      </DialogFooter>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </CardHeader>
             <CardContent>
               <Table>

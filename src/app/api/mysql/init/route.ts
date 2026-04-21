@@ -8,7 +8,8 @@ export async function POST() {
     // 1. Create/Alter tables
     await query(`CREATE TABLE IF NOT EXISTS nodes (id VARCHAR(100) PRIMARY KEY, name VARCHAR(255) NOT NULL, latitude DOUBLE NOT NULL, longitude DOUBLE NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
     await query(`CREATE TABLE IF NOT EXISTS users (uid VARCHAR(128) PRIMARY KEY, email VARCHAR(255) NOT NULL UNIQUE, username VARCHAR(255), role ENUM('user', 'admin') DEFAULT 'user', password_hash VARCHAR(255), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
-    await query(`CREATE TABLE IF NOT EXISTS routes (name VARCHAR(255) PRIMARY KEY, description TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+    await query(`CREATE TABLE IF NOT EXISTS routes (name VARCHAR(255) PRIMARY KEY, description TEXT, color VARCHAR(7) DEFAULT '#6366f1', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+    await query(`ALTER TABLE routes ADD COLUMN IF NOT EXISTS color VARCHAR(7) DEFAULT '#6366f1'`).catch(() => { });
     await query(`CREATE TABLE IF NOT EXISTS edges (id VARCHAR(300) PRIMARY KEY, source VARCHAR(100) NOT NULL, target VARCHAR(100) NOT NULL, distance DOUBLE NOT NULL, route_name VARCHAR(255) NOT NULL, vehicle_type VARCHAR(50) DEFAULT 'jeepney', stop_and_transfer TEXT, note TEXT, path_coordinates LONGTEXT, regular_fare DECIMAL(10,2), discounted_fare DECIMAL(10,2), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
 
     await query(`ALTER TABLE edges ADD COLUMN IF NOT EXISTS vehicle_type VARCHAR(50) DEFAULT 'jeepney'`).catch(() => { });

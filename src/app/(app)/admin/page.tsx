@@ -134,7 +134,7 @@ function EditLocationButton({ node, onEdited }: { node: any; onEdited: () => voi
   );
 }
 
-function EditRouteButton({ edge, nodes, onEdited }: { edge: any; nodes: any[]; onEdited: () => void }) {
+function EditRouteButton({ edge, nodes, onEdited, graph }: { edge: any; nodes: any[]; onEdited: () => void, graph: any }) {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [distance, setDistance] = useState(String(edge.distance ?? ''));
@@ -142,26 +142,66 @@ function EditRouteButton({ edge, nodes, onEdited }: { edge: any; nodes: any[]; o
   const [note, setNote] = useState(edge.note ?? '');
   const [pathCoordinates, setPathCoordinates] = useState<[number, number][]>(edge.pathCoordinates ?? []);
   const [vehicleType, setVehicleType] = useState(edge.vehicle_type || 'jeepney');
+  const [routeInputMode, setRouteInputMode] = useState<'manual' | 'json'>('manual');
+  const [jsonImportError, setJsonImportError] = useState('');
+  const [hasTransfer, setHasTransfer] = useState(false);
+  const [routeExtraLegs, setRouteExtraLegs] = useState<{
+    routeName: string;
+    vehicleType: string;
+    distance: string;
+    stopAndTransfer: string;
+    note: string;
+    hasTransfer?: boolean;
+  }[]>([]);
 
   const handleSave = async () => {
     try {
-      const res = await fetch('/api/mysql/edges', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          source: edge.source,
-          target: edge.target,
-          distance: parseFloat(distance),
-          routeName: edge.routeName,
-          vehicleType: vehicleType,
-          stopAndTransfer: stop,
-          note: note,
-          pathCoordinates: pathCoordinates,
-        }),
-      });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.message);
-      toast({ title: 'Updated', description: 'Route updated.' });
+      if (hasTransfer) {
+        // Convert edge to transfer: delete edge first then create transfer
+        await fetch(`/api/mysql/edges/${encodeURIComponent(edge.id)}`, { method: 'DELETE' });
+
+        const res = await fetch('/api/mysql/transfers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fromNodeId: edge.source,
+            toNodeId: edge.target,
+            name: `${nodes.find(n => n.id === edge.source)?.name ?? edge.source} → ${nodes.find(n => n.id === edge.target)?.name ?? edge.target}`,
+            legs: [
+              { routeName: edge.routeName, vehicleType: vehicleType, distance: parseFloat(distance), stopAndTransfer: stop || '', note: note || '', pathCoordinates: pathCoordinates },
+              ...routeExtraLegs.map(leg => ({
+                routeName: leg.routeName,
+                vehicleType: leg.vehicleType,
+                distance: parseFloat(leg.distance),
+                stopAndTransfer: leg.stopAndTransfer || '',
+                note: leg.note || '',
+                pathCoordinates: []
+              }))
+            ],
+          }),
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.message);
+        toast({ title: 'Converted', description: 'Route segment converted to transfer route.' });
+      } else {
+        const res = await fetch('/api/mysql/edges', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            source: edge.source,
+            target: edge.target,
+            distance: parseFloat(distance),
+            routeName: edge.routeName,
+            vehicleType: vehicleType,
+            stopAndTransfer: stop,
+            note: note,
+            pathCoordinates: pathCoordinates,
+          }),
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.message);
+        toast({ title: 'Updated', description: 'Route updated.' });
+      }
       setOpen(false);
       onEdited();
     } catch (err: any) {
@@ -178,6 +218,10 @@ function EditRouteButton({ edge, nodes, onEdited }: { edge: any; nodes: any[]; o
         setNote(edge.note ?? '');
         setPathCoordinates(edge.pathCoordinates ?? []);
         setVehicleType(edge.vehicle_type || 'jeepney');
+        setRouteInputMode('manual');
+        setJsonImportError('');
+        setHasTransfer(false);
+        setRouteExtraLegs([]);
       }
     }}>
       <DialogTrigger asChild>
@@ -205,38 +249,235 @@ function EditRouteButton({ edge, nodes, onEdited }: { edge: any; nodes: any[]; o
               </DialogDescription>
             </DialogHeader>
 
-            <div className="grid gap-4 py-2">
-              <div className="grid gap-1">
-                <Label className="text-sm font-semibold text-slate-700">Vehicle Type</Label>
-                <Select value={vehicleType} onValueChange={setVehicleType}>
-                  <SelectTrigger className="bg-white border-slate-200">
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="jeepney">Jeepney</SelectItem>
-                    <SelectItem value="minibus">Mini Bus</SelectItem>
-                    <SelectItem value="walking">Walking</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-1">
-                <Label className="text-sm font-semibold text-slate-700">Distance (km)</Label>
-                <Input type="number" step="0.01" className="bg-white border-slate-200" value={distance} onChange={e => setDistance(e.target.value)} />
-              </div>
-              <div className="grid gap-1">
-                <Label className="text-sm font-semibold text-slate-700">Stop & Transfer</Label>
-                <Input className="bg-white border-slate-200" value={stop} onChange={e => setStop(e.target.value)} placeholder="e.g. Transfer at Terminal" />
-              </div>
-              <div className="grid gap-1">
-                <Label className="text-sm font-semibold text-slate-700">Suggestion</Label>
-                <Input className="bg-white border-slate-200" value={note} onChange={e => setNote(e.target.value)} placeholder="e.g. Take this route for faster travel" />
+            <div className="space-y-6">
+              <div className="flex p-1 bg-slate-100 rounded-xl mb-4">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className={`flex-1 rounded-lg transition-all ${routeInputMode === 'manual'
+                    ? 'bg-cyan-400 text-white shadow-sm hover:bg-cyan-500'
+                    : 'text-slate-500 hover:bg-slate-200'
+                    }`}
+                  onClick={() => { setRouteInputMode('manual'); setJsonImportError(''); }}
+                >
+                  <Map className="mr-2 h-4 w-4" /> Manual
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className={`flex-1 rounded-lg transition-all ${routeInputMode === 'json'
+                    ? 'bg-cyan-400 text-white shadow-sm hover:bg-cyan-500'
+                    : 'text-slate-500 hover:bg-slate-200'
+                    }`}
+                  onClick={() => { setRouteInputMode('json'); setJsonImportError(''); }}
+                >
+                  <Database className="mr-2 h-4 w-4" /> Import JSON
+                </Button>
               </div>
 
-              {pathCoordinates.length > 0 && (
-                <p className="text-xs text-cyan-600 bg-cyan-50 border border-cyan-200 rounded-lg px-3 py-2">
-                  ✓ {pathCoordinates.length} coordinate points recorded.
-                </p>
+              {routeInputMode === 'json' && (
+                <div className="mb-4 p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                  <p className="text-sm text-slate-600 font-medium">Supported formats: .geojson, .topojson, .json</p>
+                  <input
+                    type="file"
+                    accept=".json,.geojson,.topojson"
+                    className="block w-full text-sm text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-cyan-50 file:text-cyan-700 hover:file:bg-cyan-100 cursor-pointer"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = (ev) => {
+                        try {
+                          const parsed = JSON.parse(ev.target?.result as string);
+                          let coords: [number, number][] = [];
+                          if (parsed?.type === 'LineString' && Array.isArray(parsed.coordinates)) {
+                            coords = parsed.coordinates.map((c: number[]) => [c[1], c[0]] as [number, number]);
+                          } else if (parsed?.type === 'Feature' && parsed.geometry?.type === 'LineString') {
+                            coords = parsed.geometry.coordinates.map((c: number[]) => [c[1], c[0]] as [number, number]);
+                          } else if (parsed?.type === 'FeatureCollection' && Array.isArray(parsed.features)) {
+                            parsed.features.forEach((f: any) => {
+                              if (f.geometry?.type === 'LineString') {
+                                const seg: [number, number][] = f.geometry.coordinates.map((c: number[]) => [c[1], c[0]] as [number, number]);
+                                coords.push(...seg);
+                              }
+                            });
+                          } else if (Array.isArray(parsed) && parsed.every(p => Array.isArray(p) && p.length === 2)) {
+                            coords = parsed as [number, number][];
+                          }
+                          if (coords.length > 0) {
+                            setPathCoordinates(coords);
+                            setJsonImportError('');
+                          } else {
+                            setJsonImportError('Could not extract coordinates.');
+                          }
+                        } catch {
+                          setJsonImportError('Failed to parse file.');
+                        }
+                      };
+                      reader.readAsText(file);
+                    }}
+                  />
+                  {jsonImportError && <p className="text-xs text-red-500">{jsonImportError}</p>}
+                </div>
               )}
+
+              <div className="grid gap-4 py-2">
+                <div className="grid gap-1">
+                  <Label className="text-sm font-semibold text-slate-700">Vehicle Type</Label>
+                  <Select value={vehicleType} onValueChange={setVehicleType}>
+                    <SelectTrigger className="bg-white border-slate-200">
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="jeepney">Jeepney</SelectItem>
+                      <SelectItem value="minibus">Mini Bus</SelectItem>
+                      <SelectItem value="walking">Walking</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-1">
+                  <Label className="text-sm font-semibold text-slate-700">Distance (km)</Label>
+                  <Input type="number" step="0.01" className="bg-white border-slate-200" value={distance} onChange={e => setDistance(e.target.value)} />
+                </div>
+                <div className="grid gap-1">
+                  <Label className="text-sm font-semibold text-slate-700">Stop & Transfer</Label>
+                  <Input className="bg-white border-slate-200" value={stop} onChange={e => setStop(e.target.value)} placeholder="e.g. Transfer at Terminal" />
+                </div>
+                <div className="grid gap-1">
+                  <Label className="text-sm font-semibold text-slate-700">Suggestion</Label>
+                  <Input className="bg-white border-slate-200" value={note} onChange={e => setNote(e.target.value)} placeholder="e.g. Take this route for faster travel" />
+                </div>
+
+                {/* Transfer toggle */}
+                <div className="flex items-center gap-3 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newState = !hasTransfer;
+                      setHasTransfer(newState);
+                      if (newState && routeExtraLegs.length === 0) {
+                        setRouteExtraLegs([{ routeName: '', vehicleType: 'jeepney', distance: '', stopAndTransfer: '', note: '', hasTransfer: false }]);
+                      } else if (!newState) {
+                        setRouteExtraLegs([]);
+                      }
+                    }}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${hasTransfer ? 'bg-cyan-500' : 'bg-slate-300'}`}
+                  >
+                    <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform shadow ${hasTransfer ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
+                  <Label className="text-sm font-semibold text-slate-700 cursor-pointer" onClick={() => {
+                    const newState = !hasTransfer;
+                    setHasTransfer(newState);
+                    if (newState && routeExtraLegs.length === 0) {
+                      setRouteExtraLegs([{ routeName: '', vehicleType: 'jeepney', distance: '', stopAndTransfer: '', note: '', hasTransfer: false }]);
+                    } else if (!newState) {
+                      setRouteExtraLegs([]);
+                    }
+                  }}>
+                    Has Transfer (add 2nd leg)
+                  </Label>
+                </div>
+
+                {/* Dynamic extra legs */}
+                {hasTransfer && routeExtraLegs.map((leg, idx) => (
+                  <div key={idx} className="border-l-4 border-cyan-400 pl-4 space-y-3 py-2 bg-cyan-50/50 rounded-r-xl">
+                    <p className="text-xs font-bold text-cyan-700 uppercase tracking-wide">Transfer Leg {idx + 2}</p>
+                    <div className="grid gap-2">
+                      <Label className="text-sm font-semibold text-slate-700">Vehicle Type (Leg {idx + 2})</Label>
+                      <Select value={leg.vehicleType} onValueChange={(val) => {
+                        const newLegs = [...routeExtraLegs];
+                        newLegs[idx].vehicleType = val;
+                        setRouteExtraLegs(newLegs);
+                      }}>
+                        <SelectTrigger className="bg-white border-slate-200">
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="jeepney">Jeepney</SelectItem>
+                          <SelectItem value="minibus">Mini Bus</SelectItem>
+                          <SelectItem value="walking">Walking</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label className="text-sm font-semibold text-slate-700">Jeepney Line (Leg {idx + 2})</Label>
+                      <Select value={leg.routeName} onValueChange={(val) => {
+                        const newLegs = [...routeExtraLegs];
+                        newLegs[idx].routeName = val;
+                        setRouteExtraLegs(newLegs);
+                      }}>
+                        <SelectTrigger className="bg-white border-slate-200">
+                          <SelectValue placeholder="Select line" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {graph.routes.map((r: any) => <SelectItem key={r.name} value={r.name}>{r.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label className="text-sm font-semibold text-slate-700">Distance (km) (Leg {idx + 2})</Label>
+                      <Input type="number" step="0.1" placeholder="Enter distance" className="bg-white border-slate-200"
+                        value={leg.distance} onChange={e => {
+                          const newLegs = [...routeExtraLegs];
+                          newLegs[idx].distance = e.target.value;
+                          setRouteExtraLegs(newLegs);
+                        }} />
+                    </div>
+                    <div className="grid gap-2 text-right">
+                      <Label className="text-sm font-semibold text-slate-700 text-left">Stop & Transfer (Leg {idx + 1} to Leg {idx + 2})</Label>
+                      <Textarea placeholder="e.g. Stop at Crown Paper then transfer" className="bg-white border-slate-200 min-h-[50px]"
+                        value={leg.stopAndTransfer} onChange={e => {
+                          const newLegs = [...routeExtraLegs];
+                          newLegs[idx].stopAndTransfer = e.target.value;
+                          setRouteExtraLegs(newLegs);
+                        }} />
+                    </div>
+
+                    <div className="flex items-center gap-3 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newLegs = [...routeExtraLegs];
+                          const currentlyHasTransfer = !!newLegs[idx].hasTransfer;
+                          newLegs[idx].hasTransfer = !currentlyHasTransfer;
+                          if (newLegs[idx].hasTransfer) {
+                            if (idx === routeExtraLegs.length - 1) {
+                              newLegs.push({ routeName: '', vehicleType: 'jeepney', distance: '', stopAndTransfer: '', note: '', hasTransfer: false });
+                            }
+                          } else {
+                            newLegs.splice(idx + 1);
+                          }
+                          setRouteExtraLegs(newLegs);
+                        }}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${leg.hasTransfer ? 'bg-cyan-500' : 'bg-slate-300'}`}
+                      >
+                        <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform shadow ${leg.hasTransfer ? 'translate-x-6' : 'translate-x-1'}`} />
+                      </button>
+                      <Label className="text-sm font-semibold text-slate-700 cursor-pointer" onClick={() => {
+                        const newLegs = [...routeExtraLegs];
+                        const currentlyHasTransfer = !!newLegs[idx].hasTransfer;
+                        newLegs[idx].hasTransfer = !currentlyHasTransfer;
+                        if (newLegs[idx].hasTransfer) {
+                          if (idx === routeExtraLegs.length - 1) {
+                            newLegs.push({ routeName: '', vehicleType: 'jeepney', distance: '', stopAndTransfer: '', note: '', hasTransfer: false });
+                          }
+                        } else {
+                          newLegs.splice(idx + 1);
+                        }
+                        setRouteExtraLegs(newLegs);
+                      }}>
+                        Has Transfer (add {idx + 3}rd leg)
+                      </Label>
+                    </div>
+                  </div>
+                ))}
+
+                {pathCoordinates.length > 0 && (
+                  <p className="text-xs text-cyan-600 bg-cyan-50 border border-cyan-200 rounded-lg px-3 py-2">
+                    ✓ {pathCoordinates.length} coordinate points recorded.
+                  </p>
+                )}
+              </div>
             </div>
 
             <DialogFooter className="mt-8 pt-4 border-t border-slate-100">
@@ -260,6 +501,8 @@ function EditTransferButton({ transfer, nodes, onEdited, initialLegIdx = 0 }: { 
   const [to, setTo] = useState(transfer.to_node_id);
   const [legs, setLegs] = useState<any[]>(transfer.legs || []);
   const [activeLegIdx, setActiveLegIdx] = useState(0);
+  const [routeInputMode, setRouteInputMode] = useState<'manual' | 'json'>('manual');
+  const [jsonImportError, setJsonImportError] = useState('');
 
   const handleSave = async () => {
     if (!from || !to || legs.some((l: any) => !l.route_name || !l.distance)) {
@@ -304,6 +547,8 @@ function EditTransferButton({ transfer, nodes, onEdited, initialLegIdx = 0 }: { 
         setTo(transfer.to_node_id);
         setLegs(transfer.legs || []);
         setActiveLegIdx(initialLegIdx);
+        setRouteInputMode('manual');
+        setJsonImportError('');
       }
     }}>
       <DialogTrigger asChild>
@@ -365,6 +610,74 @@ function EditTransferButton({ transfer, nodes, onEdited, initialLegIdx = 0 }: { 
                     }}>Remove</Button>
                   )}
                 </div>
+
+                <div className="flex p-1 bg-slate-200/50 rounded-lg mb-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className={`flex-1 h-7 text-xs rounded transition-all ${routeInputMode === 'manual' ? 'bg-white shadow-sm' : 'text-slate-500'}`}
+                    onClick={() => { setRouteInputMode('manual'); setJsonImportError(''); }}
+                  >
+                    Manual
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className={`flex-1 h-7 text-xs rounded transition-all ${routeInputMode === 'json' ? 'bg-white shadow-sm' : 'text-slate-500'}`}
+                    onClick={() => { setRouteInputMode('json'); setJsonImportError(''); }}
+                  >
+                    Import JSON
+                  </Button>
+                </div>
+
+                {routeInputMode === 'json' && (
+                  <div className="p-3 bg-white border border-slate-200 rounded-lg space-y-2">
+                    <p className="text-[10px] text-slate-500">Supported: .geojson, .topojson, .json (lat,lng pairs)</p>
+                    <input
+                      type="file"
+                      accept=".json,.geojson,.topojson"
+                      className="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-cyan-50 file:text-cyan-700 hover:file:bg-cyan-100 cursor-pointer"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          try {
+                            const parsed = JSON.parse(ev.target?.result as string);
+                            let coords: [number, number][] = [];
+                            if (parsed?.type === 'LineString' && Array.isArray(parsed.coordinates)) {
+                              coords = parsed.coordinates.map((c: number[]) => [c[1], c[0]] as [number, number]);
+                            } else if (parsed?.type === 'Feature' && parsed.geometry?.type === 'LineString') {
+                              coords = parsed.geometry.coordinates.map((c: number[]) => [c[1], c[0]] as [number, number]);
+                            } else if (parsed?.type === 'FeatureCollection' && Array.isArray(parsed.features)) {
+                              parsed.features.forEach((f: any) => {
+                                if (f.geometry?.type === 'LineString') {
+                                  const seg: [number, number][] = f.geometry.coordinates.map((c: number[]) => [c[1], c[0]] as [number, number]);
+                                  coords.push(...seg);
+                                }
+                              });
+                            } else if (Array.isArray(parsed) && parsed.every(p => Array.isArray(p) && p.length === 2)) {
+                              coords = parsed as [number, number][];
+                            }
+                            if (coords.length > 0) {
+                              setLegs(prev => prev.map((l, i) => i === activeLegIdx ? { ...l, pathCoordinates: coords } : l));
+                              setJsonImportError('');
+                            } else {
+                              setJsonImportError('Could not extract coordinates.');
+                            }
+                          } catch {
+                            setJsonImportError('Failed to parse file.');
+                          }
+                        };
+                        reader.readAsText(file);
+                      }}
+                    />
+                    {jsonImportError && <p className="text-[10px] text-red-500">{jsonImportError}</p>}
+                  </div>
+                )}
+
                 <div className="grid gap-1">
                   <Label className="text-xs">Vehicle Type</Label>
                   <Select value={legs[activeLegIdx].vehicle_type || 'jeepney'}
@@ -436,13 +749,14 @@ function EditJeepneyLineButton({ route, onEdited }: { route: any; onEdited: () =
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(route.name);
   const [description, setDescription] = useState(route.description ?? '');
+  const [color, setColor] = useState(route.color ?? '#6366f1');
 
   const handleSave = async () => {
     try {
       const res = await fetch(`/api/mysql/routes/${encodeURIComponent(route.name)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ newName: name, description }),
+        body: JSON.stringify({ newName: name, description, color }),
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.message);
@@ -455,7 +769,7 @@ function EditJeepneyLineButton({ route, onEdited }: { route: any; onEdited: () =
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (o) { setName(route.name); setDescription(route.description ?? ''); } }}>
+    <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (o) { setName(route.name); setDescription(route.description ?? ''); setColor(route.color ?? '#6366f1'); } }}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button>
       </DialogTrigger>
@@ -469,6 +783,22 @@ function EditJeepneyLineButton({ route, onEdited }: { route: any; onEdited: () =
           <div className="grid gap-1">
             <Label>Description</Label>
             <Input value={description} onChange={e => setDescription(e.target.value)} placeholder="e.g. Route from downtown to..." />
+          </div>
+          <div className="grid gap-1">
+            <Label>Line Color</Label>
+            <div className="flex items-center gap-3">
+              <input
+                type="color"
+                value={color}
+                onChange={e => setColor(e.target.value)}
+                className="h-10 w-14 rounded-lg border border-slate-200 cursor-pointer p-0.5 bg-white"
+              />
+              <span className="text-sm font-mono text-slate-600">{color}</span>
+              <span
+                className="inline-block h-6 w-24 rounded-full border border-black/10"
+                style={{ backgroundColor: color }}
+              />
+            </div>
           </div>
         </div>
         <DialogFooter>
@@ -506,6 +836,9 @@ export default function AdminPage() {
     stopAndTransfer: string;
     note: string;
     hasTransfer?: boolean;
+    pathCoordinates: [number, number][];
+    inputMode: 'manual' | 'json';
+    jsonError: string;
   }[]>([]);
   const [transfers, setTransfers] = useState<any[]>([]);
   const [transferLegs, setTransferLegs] = useState<any[]>([
@@ -845,7 +1178,7 @@ export default function AdminPage() {
                 distance: parseFloat(leg.distance),
                 stopAndTransfer: leg.stopAndTransfer || '',
                 note: leg.note || '',
-                pathCoordinates: []
+                pathCoordinates: leg.pathCoordinates ?? []
               }))
             ],
           }),
@@ -894,6 +1227,7 @@ export default function AdminPage() {
   const handleAddJeepneyLine = async (formData: FormData) => {
     const name = (formData.get('name') as string)?.trim();
     const description = (formData.get('description') as string)?.trim();
+    const color = (formData.get('color') as string)?.trim() || '#6366f1';
     if (!name) {
       toast({ variant: 'destructive', title: 'Error', description: 'Line name is required.' });
       return;
@@ -902,7 +1236,7 @@ export default function AdminPage() {
       const res = await fetch('/api/mysql/routes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, description }),
+        body: JSON.stringify({ name, description, color }),
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.message);
@@ -1002,6 +1336,8 @@ export default function AdminPage() {
                     setDrawnPath([]);
                     setHasTransfer(false);
                     setRouteExtraLegs([]);
+                    setRouteInputMode('manual');
+                    setJsonImportError('');
                   }
                 }}>
                   <DialogTrigger asChild>
@@ -1020,7 +1356,39 @@ export default function AdminPage() {
                           onNodeClick={handleNodeClick}
                           onPathDrawn={(coords) => setDrawnPath(coords)}
                           initialPath={drawnPath}
+                          extraPaths={routeExtraLegs
+                            .filter(leg => leg.pathCoordinates && leg.pathCoordinates.length > 1)
+                            .map((leg, i) => ({
+                              coords: leg.pathCoordinates,
+                              color: ['#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#f97316'][i % 5],
+                              label: `Leg ${i + 2}`,
+                            }))
+                          }
                         />
+                        {/* Legend for transfer leg paths */}
+                        {hasTransfer && routeExtraLegs.some(leg => leg.pathCoordinates?.length > 1) && (
+                          <div className="absolute bottom-3 left-3 z-[1000] bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-slate-200 px-3 py-2.5 space-y-1.5 max-w-[160px]">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Path Legend</p>
+                            <div className="flex items-center gap-2">
+                              <span className="inline-block w-5 border-t-2 border-cyan-400 flex-shrink-0" style={{ borderStyle: 'solid' }} />
+                              <span className="text-xs font-medium text-slate-700">Leg 1 (Main)</span>
+                            </div>
+                            {routeExtraLegs.map((leg, i) =>
+                              leg.pathCoordinates?.length > 1 && (
+                                <div key={i} className="flex items-center gap-2">
+                                  <span
+                                    className="inline-block w-5 border-t-2 flex-shrink-0"
+                                    style={{
+                                      borderColor: ['#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#f97316'][i % 5],
+                                      borderStyle: 'dashed',
+                                    }}
+                                  />
+                                  <span className="text-xs font-medium text-slate-700">Leg {i + 2}</span>
+                                </div>
+                              )
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {/* Right Column: Form */}
@@ -1227,7 +1595,7 @@ export default function AdminPage() {
                                   const newState = !hasTransfer;
                                   setHasTransfer(newState);
                                   if (newState && routeExtraLegs.length === 0) {
-                                    setRouteExtraLegs([{ routeName: '', vehicleType: 'jeepney', distance: '', stopAndTransfer: '', note: '', hasTransfer: false }]);
+                                    setRouteExtraLegs([{ routeName: '', vehicleType: 'jeepney', distance: '', stopAndTransfer: '', note: '', hasTransfer: false, pathCoordinates: [], inputMode: 'manual', jsonError: '' }]);
                                   } else if (!newState) {
                                     setRouteExtraLegs([]);
                                   }
@@ -1253,6 +1621,120 @@ export default function AdminPage() {
                             {hasTransfer && routeExtraLegs.map((leg, idx) => (
                               <div key={idx} className="border-l-4 border-cyan-400 pl-4 space-y-3 py-2 bg-cyan-50/50 rounded-r-xl">
                                 <p className="text-xs font-bold text-cyan-700 uppercase tracking-wide">Transfer Leg {idx + 2}</p>
+
+                                {/* Manual / Import JSON toggle for this leg */}
+                                <div className="flex p-1 bg-slate-100 rounded-xl">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className={`flex-1 rounded-lg text-xs transition-all ${
+                                      leg.inputMode === 'manual'
+                                        ? 'bg-cyan-400 text-white shadow-sm hover:bg-cyan-500'
+                                        : 'text-slate-500 hover:bg-slate-200'
+                                    }`}
+                                    onClick={() => {
+                                      const newLegs = [...routeExtraLegs];
+                                      newLegs[idx].inputMode = 'manual';
+                                      newLegs[idx].jsonError = '';
+                                      setRouteExtraLegs(newLegs);
+                                    }}
+                                  >
+                                    <Map className="mr-1.5 h-3 w-3" /> Manual
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className={`flex-1 rounded-lg text-xs transition-all ${
+                                      leg.inputMode === 'json'
+                                        ? 'bg-cyan-400 text-white shadow-sm hover:bg-cyan-500'
+                                        : 'text-slate-500 hover:bg-slate-200'
+                                    }`}
+                                    onClick={() => {
+                                      const newLegs = [...routeExtraLegs];
+                                      newLegs[idx].inputMode = 'json';
+                                      newLegs[idx].jsonError = '';
+                                      setRouteExtraLegs(newLegs);
+                                    }}
+                                  >
+                                    <Database className="mr-1.5 h-3 w-3" /> Import JSON
+                                  </Button>
+                                </div>
+
+                                {/* JSON import panel for this leg */}
+                                {leg.inputMode === 'json' && (
+                                  <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-2">
+                                    <p className="text-xs font-semibold text-slate-600">Supported formats:</p>
+                                    <ul className="text-xs text-slate-500 list-disc list-inside space-y-0.5">
+                                      <li><code>.geojson</code> — GeoJSON LineString or Feature</li>
+                                      <li><code>.topojson</code> — TopoJSON file</li>
+                                      <li><code>.json</code> — Array of <code>[lat, lng]</code> pairs</li>
+                                    </ul>
+                                    <input
+                                      type="file"
+                                      accept=".json,.geojson,.topojson"
+                                      className="block w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-cyan-50 file:text-cyan-700 hover:file:bg-cyan-100 cursor-pointer"
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (!file) return;
+                                        const reader = new FileReader();
+                                        reader.onload = (ev) => {
+                                          try {
+                                            const parsed = JSON.parse(ev.target?.result as string);
+                                            let coords: [number, number][] = [];
+                                            if (parsed?.type === 'LineString' && Array.isArray(parsed.coordinates)) {
+                                              coords = parsed.coordinates.map((c: number[]) => [c[1], c[0]] as [number, number]);
+                                            } else if (parsed?.type === 'Feature' && parsed.geometry?.type === 'LineString') {
+                                              coords = parsed.geometry.coordinates.map((c: number[]) => [c[1], c[0]] as [number, number]);
+                                            } else if (parsed?.type === 'FeatureCollection' && Array.isArray(parsed.features)) {
+                                              parsed.features.forEach((f: any) => {
+                                                if (f.geometry?.type === 'LineString') {
+                                                  const seg: [number, number][] = f.geometry.coordinates.map((c: number[]) => [c[1], c[0]] as [number, number]);
+                                                  coords.push(...seg);
+                                                } else if (f.geometry?.type === 'MultiLineString') {
+                                                  f.geometry.coordinates.forEach((line: number[][]) => {
+                                                    const seg: [number, number][] = line.map((c: number[]) => [c[1], c[0]] as [number, number]);
+                                                    coords.push(...seg);
+                                                  });
+                                                }
+                                              });
+                                            } else if (parsed?.type === 'Topology' && parsed.arcs) {
+                                              const firstArc: number[][] = Object.values<any>(parsed.arcs)[0] ?? [];
+                                              const scale = parsed.transform?.scale ?? [1, 1];
+                                              const translate = parsed.transform?.translate ?? [0, 0];
+                                              let x = 0, y = 0;
+                                              coords = firstArc.map((delta: number[]) => {
+                                                x += delta[0]; y += delta[1];
+                                                return [y * scale[1] + translate[1], x * scale[0] + translate[0]] as [number, number];
+                                              });
+                                            } else if (Array.isArray(parsed) && parsed.every(p => Array.isArray(p) && p.length === 2)) {
+                                              coords = parsed as [number, number][];
+                                            }
+                                            const newLegs = [...routeExtraLegs];
+                                            if (coords.length > 0) {
+                                              newLegs[idx].pathCoordinates = coords;
+                                              newLegs[idx].jsonError = '';
+                                            } else {
+                                              newLegs[idx].jsonError = 'Could not extract coordinates. Check that the file contains a LineString route.';
+                                            }
+                                            setRouteExtraLegs(newLegs);
+                                          } catch {
+                                            const newLegs = [...routeExtraLegs];
+                                            newLegs[idx].jsonError = 'Failed to parse file. Make sure it is valid JSON.';
+                                            setRouteExtraLegs(newLegs);
+                                          }
+                                        };
+                                        reader.readAsText(file);
+                                      }}
+                                    />
+                                    {leg.jsonError && <p className="text-xs text-red-500">{leg.jsonError}</p>}
+                                    {leg.pathCoordinates.length > 0 && !leg.jsonError && (
+                                      <p className="text-xs text-cyan-600">✓ Loaded {leg.pathCoordinates.length} coordinate points.</p>
+                                    )}
+                                  </div>
+                                )}
+
                                 <div className="grid gap-2">
                                   <Label className="text-sm font-semibold text-slate-700">Vehicle Type (Leg {idx + 2})</Label>
                                   <Select value={leg.vehicleType} onValueChange={(val) => {
@@ -1326,7 +1808,7 @@ export default function AdminPage() {
                                       if (newLegs[idx].hasTransfer) {
                                         // Add next leg if it doesn't exist
                                         if (idx === routeExtraLegs.length - 1) {
-                                          newLegs.push({ routeName: '', vehicleType: 'jeepney', distance: '', stopAndTransfer: '', note: '', hasTransfer: false });
+                                          newLegs.push({ routeName: '', vehicleType: 'jeepney', distance: '', stopAndTransfer: '', note: '', hasTransfer: false, pathCoordinates: [], inputMode: 'manual', jsonError: '' });
                                         }
                                       } else {
                                         // Remove all subsequent legs
@@ -1344,7 +1826,7 @@ export default function AdminPage() {
                                     newLegs[idx].hasTransfer = !currentlyHasTransfer;
                                     if (newLegs[idx].hasTransfer) {
                                       if (idx === routeExtraLegs.length - 1) {
-                                        newLegs.push({ routeName: '', vehicleType: 'jeepney', distance: '', stopAndTransfer: '', note: '', hasTransfer: false });
+                                        newLegs.push({ routeName: '', vehicleType: 'jeepney', distance: '', stopAndTransfer: '', note: '', hasTransfer: false, pathCoordinates: [], inputMode: 'manual', jsonError: '' });
                                       }
                                     } else {
                                       newLegs.splice(idx + 1);
@@ -1415,7 +1897,7 @@ export default function AdminPage() {
                       <TableCell className="font-mono text-blue-700">₱{(edge as any).discountedFare ? Number((edge as any).discountedFare).toFixed(2) : '—'}</TableCell>
                       <TableCell>{(edge as any).note || '—'}</TableCell>
                       <TableCell className="text-right">
-                        <EditRouteButton edge={edge} nodes={graph.nodes} onEdited={loadData} />
+                        <EditRouteButton edge={edge} nodes={graph.nodes} onEdited={loadData} graph={graph} />
                         <DeleteButton type="route" id={edge.id ?? `${edge.source}_${edge.target}_${edge.routeName}`} onDeleted={loadData} />
                       </TableCell>
                     </TableRow>
@@ -1628,7 +2110,7 @@ export default function AdminPage() {
                     <form action={handleAddJeepneyLine}>
                       <DialogHeader>
                         <DialogTitle>Add New Jeepney Line</DialogTitle>
-                        <DialogDescription>Enter the name and description of the new jeepney line.</DialogDescription>
+                        <DialogDescription>Enter the name, description, and color of the new jeepney line.</DialogDescription>
                       </DialogHeader>
                       <div className="grid gap-4 py-4">
                         <div className="grid grid-cols-4 items-center gap-4">
@@ -1638,6 +2120,19 @@ export default function AdminPage() {
                         <div className="grid grid-cols-4 items-center gap-4">
                           <Label htmlFor="line-description" className="text-right">Description</Label>
                           <Input id="line-description" name="description" className="col-span-3" placeholder="e.g., Routes through Tibanga and Palao" />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="line-color" className="text-right">Color</Label>
+                          <div className="col-span-3 flex items-center gap-3">
+                            <input
+                              id="line-color"
+                              type="color"
+                              name="color"
+                              defaultValue="#6366f1"
+                              className="h-10 w-14 rounded-lg border border-slate-200 cursor-pointer p-0.5 bg-white"
+                            />
+                            <span className="text-xs text-slate-500">Pick a color for the map route line</span>
+                          </div>
                         </div>
                       </div>
                       <DialogFooter>
@@ -1655,6 +2150,7 @@ export default function AdminPage() {
                     <TableHead className="cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => toggleSort(setRoutesSort, routesSort, 'name')}>
                       <div className="flex items-center">Line Name <SortIcon sort={routesSort} column="name" /></div>
                     </TableHead>
+                    <TableHead>Color</TableHead>
                     <TableHead className="cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => toggleSort(setRoutesSort, routesSort, 'description')}>
                       <div className="flex items-center">Description <SortIcon sort={routesSort} column="description" /></div>
                     </TableHead>
@@ -1665,6 +2161,15 @@ export default function AdminPage() {
                   {sortedRoutes.map(route => (
                     <TableRow key={route.name}>
                       <TableCell className="font-bold">{route.name}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="inline-block w-5 h-5 rounded-full border border-black/10 shadow-sm"
+                            style={{ backgroundColor: (route as any).color ?? '#6366f1' }}
+                          />
+                          <span className="text-xs font-mono text-slate-500">{(route as any).color ?? '#6366f1'}</span>
+                        </div>
+                      </TableCell>
                       <TableCell>{route.description}</TableCell>
                       <TableCell className="text-right">
                         <EditJeepneyLineButton route={route} onEdited={loadData} />

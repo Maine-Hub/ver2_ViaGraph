@@ -59,10 +59,11 @@ interface RouteMapProps {
     onNodeClick?: (nodeId: string) => void;
     onPathDrawn?: (coords: [number, number][]) => void;
     initialPath?: [number, number][];
+    extraPaths?: { coords: [number, number][]; color: string; label: string }[];
 }
 
 
-export default function RouteMap({ nodes, edges, selectedSource, selectedTarget, className, onNodeClick, onPathDrawn, initialPath }: RouteMapProps) {
+export default function RouteMap({ nodes, edges, selectedSource, selectedTarget, className, onNodeClick, onPathDrawn, initialPath, extraPaths }: RouteMapProps) {
     const [isMounted, setIsMounted] = useState(false);
     const featureGroupRef = useRef<L.FeatureGroup>(null);
 
@@ -148,6 +149,20 @@ export default function RouteMap({ nodes, edges, selectedSource, selectedTarget,
                         <Polyline positions={initialPath} color="#22d3ee" weight={5} />
                     )}
                 </FeatureGroup>
+
+                {/* Extra paths for transfer legs */}
+                {extraPaths && extraPaths.map((ep, i) =>
+                    ep.coords.length > 1 && (
+                        <Polyline
+                            key={`extra-${i}`}
+                            positions={ep.coords}
+                            color={ep.color}
+                            weight={5}
+                            opacity={0.85}
+                            dashArray="8 4"
+                        />
+                    )
+                )}
 
                 {nodes.map(node => (
                     node.coordinates && (

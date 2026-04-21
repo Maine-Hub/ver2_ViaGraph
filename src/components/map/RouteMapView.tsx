@@ -3,7 +3,7 @@
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Location, PathSegment } from '@/lib/types';
+import { JeepneyRoute, Location, PathSegment } from '@/lib/types';
 import { useEffect, useRef, useState } from 'react';
 
 // Fix Leaflet marker icons
@@ -39,6 +39,7 @@ L.Marker.prototype.options.icon = defaultIcon;
 
 interface RouteMapViewProps {
     nodes: Location[];
+    routes?: JeepneyRoute[];
     path?: PathSegment[];
     className?: string;
 }
@@ -70,7 +71,13 @@ function TileLayerSwitcher({ mode }: { mode: TileMode }) {
     return <TileLayer key={mode} attribution={tile.attribution} url={tile.url} maxZoom={22} maxNativeZoom={19} />;
 }
 
-export default function RouteMapView({ nodes, path, className }: RouteMapViewProps) {
+// Fallback palette when a route has no color defined
+const FALLBACK_COLORS = [
+    '#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6',
+    '#ec4899', '#14b8a6', '#f97316', '#06b6d4', '#84cc16',
+];
+
+export default function RouteMapView({ nodes, routes, path, className }: RouteMapViewProps) {
     const [isMounted, setIsMounted] = useState(false);
     const [tileMode, setTileMode] = useState<TileMode>('standard');
     const mapRef = useRef<L.Map | null>(null);
@@ -87,18 +94,29 @@ export default function RouteMapView({ nodes, path, className }: RouteMapViewPro
 
     const center: [number, number] = [8.2415, 124.2435];
 
+    // Build a lookup: routeName → color
+    const routeColorMap: Record<string, string> = {};
+    if (routes && routes.length > 0) {
+        routes.forEach((r, i) => {
+            routeColorMap[r.name] = r.color || FALLBACK_COLORS[i % FALLBACK_COLORS.length];
+        });
+    }
+
     // Build path polylines per segment using stored drawn coords or node fallback
-    const segmentPolylines: { coords: [number, number][]; color: string }[] = [];
-    const segmentColors = ['#ef4444', '#ef4444', '#ef4444', '#ef4444', '#ef4444'];
+    const segmentPolylines: { coords: [number, number][]; color: string; routeName: string }[] = [];
 
     if (path) {
         path.forEach((segment, index) => {
             const anySegment = segment as any;
+            // Determine color: prefer line color from routes, fallback to palette
+            const color = routeColorMap[segment.routeName]
+                || FALLBACK_COLORS[index % FALLBACK_COLORS.length];
+
             if (anySegment.pathCoordinates && anySegment.pathCoordinates.length > 1) {
-                // Use the admin-drawn path coordinates
                 segmentPolylines.push({
                     coords: anySegment.pathCoordinates,
-                    color: segmentColors[index % segmentColors.length],
+                    color,
+                    routeName: segment.routeName,
                 });
             } else {
                 // Fallback: straight line between nodes
@@ -110,15 +128,23 @@ export default function RouteMapView({ nodes, path, className }: RouteMapViewPro
                             [fromNode.coordinates.latitude, fromNode.coordinates.longitude],
                             [toNode.coordinates.latitude, toNode.coordinates.longitude],
                         ],
-                        color: segmentColors[index % segmentColors.length],
+                        color,
+                        routeName: segment.routeName,
                     });
                 }
             }
         });
     }
 
-    // Flatten all segment coords to find start/end markers
-    const allCoords = segmentPolylines.flatMap(s => s.coords);
+    // Unique lines actually used in this path (for the legend)
+    const legendLines: { name: string; color: string }[] = [];
+    const seen = new Set<string>();
+    segmentPolylines.forEach(s => {
+        if (!seen.has(s.routeName)) {
+            seen.add(s.routeName);
+            legendLines.push({ name: s.routeName, color: s.color });
+        }
+    });
 
     return (
         <div className={`relative w-full rounded-xl overflow-hidden border border-slate-200 shadow-xl ${className || 'h-[400px] md:h-[600px]'}`}>
@@ -143,6 +169,22 @@ export default function RouteMapView({ nodes, path, className }: RouteMapViewPro
                     🛰️ Satellite
                 </button>
             </div>
+
+            {/* Route legend */}
+            {legendLines.length > 0 && (
+                <div className="absolute bottom-3 left-3 z-[1000] bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-slate-200 px-3 py-2.5 space-y-1.5 max-w-[180px]">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Route Lines</p>
+                    {legendLines.map(line => (
+                        <div key={line.name} className="flex items-center gap-2">
+                            <span
+                                className="inline-block w-4 h-2 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: line.color }}
+                            />
+                            <span className="text-xs font-medium text-slate-700 truncate">{line.name}</span>
+                        </div>
+                    ))}
+                </div>
+            )}
 
             <MapContainer
                 center={center}
@@ -177,7 +219,7 @@ export default function RouteMapView({ nodes, path, className }: RouteMapViewPro
                     )
                 ))}
 
-                {/* Highlight Path — one polyline per segment with its color */}
+                {/* Highlight Path — one polyline per segment with its line color */}
                 {segmentPolylines.map((seg, i) => (
                     <Polyline
                         key={i}

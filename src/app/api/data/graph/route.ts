@@ -5,7 +5,7 @@ export async function GET() {
     try {
         const [nodes, routes, edges] = await Promise.all([
             query<any[]>('SELECT id, name, latitude as lat, longitude as lng FROM nodes'),
-            query<any[]>('SELECT name, description FROM routes'),
+            query<any[]>('SELECT name, description, IFNULL(color, \'#6366f1\') as color FROM routes'),
             query<any[]>('SELECT id, source, target, distance, route_name as routeName, stop_and_transfer as stopAndTransfer, note, regular_fare as regularFare, discounted_fare as discountedFare, path_coordinates as pathCoordinatesJson FROM edges'),
         ]);
 

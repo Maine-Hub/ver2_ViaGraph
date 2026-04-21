@@ -11,6 +11,7 @@ export interface Location {
 export interface JeepneyRoute {
   name: string;
   description: string;
+  color?: string;
 }
 
 export interface RouteSegment {

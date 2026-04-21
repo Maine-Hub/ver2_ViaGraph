@@ -215,10 +215,31 @@ export default function FindRoutePage() {
                     <div className="flex items-center gap-2 font-semibold text-primary">
                       <Bus className="h-4 w-4 shrink-0" />
                       <span>Segment {index + 1}: {seg.routeName}</span>
+                      {(() => {
+                        const lineColor = graphData.routes.find((r: any) => r.name === seg.routeName)?.color;
+                        return lineColor ? (
+                          <span
+                            className="inline-block w-3 h-3 rounded-full flex-shrink-0 ring-1 ring-black/10"
+                            style={{ backgroundColor: lineColor }}
+                            title={`Line color: ${lineColor}`}
+                          />
+                        ) : null;
+                      })()}
                     </div>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
                       <span className="text-muted-foreground">Jeepney Line</span>
-                      <span className="font-medium">{seg.routeName}</span>
+                      <span className="font-medium flex items-center gap-1.5">
+                        {(() => {
+                          const lineColor = graphData.routes.find((r: any) => r.name === seg.routeName)?.color;
+                          return lineColor ? (
+                            <span
+                              className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: lineColor }}
+                            />
+                          ) : null;
+                        })()}
+                        {seg.routeName}
+                      </span>
                       <span className="text-muted-foreground">Distance</span>
                       <span className="font-medium">{Number(seg.distance).toFixed(2)} km</span>
                       {seg.stopAndTransfer && (
@@ -263,6 +284,7 @@ export default function FindRoutePage() {
       <div className="lg:col-span-2 h-full min-h-[400px]">
         <RouteMapView
           nodes={graphData.nodes}
+          routes={graphData.routes}
           path={state.result ? state.result.path : undefined}
           className="h-full"
         />

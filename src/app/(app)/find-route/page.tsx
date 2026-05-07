@@ -104,7 +104,13 @@ export default function FindRoutePage() {
             </CardDescription>
           </CardHeader>
           <Form {...form}>
-            <form action={formAction}>
+            <form action={(formData) => {
+              const data = form.getValues();
+              const customFormData = new FormData();
+              customFormData.append('startLocation', data.startLocation);
+              customFormData.append('endLocation', data.endLocation);
+              formAction(customFormData);
+            }}>
               <CardContent className="space-y-4">
                 <FormField
                   control={form.control}
@@ -114,7 +120,7 @@ export default function FindRoutePage() {
                       <FormLabel>Current Location</FormLabel>
                       <Select
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value}
                         name="startLocation"
                       >
                         <FormControl>
@@ -143,7 +149,7 @@ export default function FindRoutePage() {
                       <FormLabel>Destination</FormLabel>
                       <Select
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value}
                         name="endLocation"
                       >
                         <FormControl>

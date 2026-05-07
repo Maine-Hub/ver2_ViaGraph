@@ -20,9 +20,13 @@ export async function findRouteAction(
   prevState: FormState,
   formData: FormData
 ): Promise<FormState> {
+  const startLoc = formData.get('startLocation');
+  const endLoc = formData.get('endLocation');
+  console.log('findRouteAction called. formData:', { startLoc, endLoc });
+
   const validatedFields = FindRouteSchema.safeParse({
-    startLocation: formData.get('startLocation'),
-    endLocation: formData.get('endLocation'),
+    startLocation: startLoc,
+    endLocation: endLoc,
   });
 
   if (!validatedFields.success) {

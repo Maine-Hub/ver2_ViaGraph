@@ -5,7 +5,7 @@ import { useAppContext } from '@/contexts/app-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Mail, Shield, User, Calendar, MapPin, Loader2, CheckCircle2, AlertCircle, KeyRound } from 'lucide-react';
+import { Mail, Shield, User, Calendar, MapPin, Loader2, CheckCircle2, AlertCircle, KeyRound, ShieldQuestion } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function ProfilePage() {
     const { user, setUser, role, loading } = useAppContext();
@@ -37,6 +38,12 @@ export default function ProfilePage() {
     const [pwdLoading, setPwdLoading] = useState(false);
     const [lastPwdChanged, setLastPwdChanged] = useState<string>('3 months ago');
 
+    // Security Question States
+    const [isEditingSecurity, setIsEditingSecurity] = useState(false);
+    const [securityQuestion, setSecurityQuestion] = useState('');
+    const [securityAnswer, setSecurityAnswer] = useState('');
+    const [isSavingSecurity, setIsSavingSecurity] = useState(false);
+
     useEffect(() => {
         if (user) {
             setNewUsername(user.username || '');
@@ -48,8 +55,13 @@ export default function ProfilePage() {
         try {
             const res = await fetch('/api/mysql/users/me');
             const data = await res.json();
-            if (data.success && data.user.password_changed_at) {
-                setLastPwdChanged(formatRelativeTime(data.user.password_changed_at));
+            if (data.success) {
+                if (data.user.password_changed_at) {
+                    setLastPwdChanged(formatRelativeTime(data.user.password_changed_at));
+                }
+                if (data.user.security_question) {
+                    setSecurityQuestion(data.user.security_question);
+                }
             }
         } catch (err) {
             console.error('Failed to fetch detailed user info', err);
@@ -111,6 +123,46 @@ export default function ProfilePage() {
             });
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleUpdateSecurity = async () => {
+        if (!securityQuestion || !securityAnswer) {
+            toast({
+                variant: "destructive",
+                title: "Incomplete fields",
+                description: "Please select a question and provide an answer.",
+            });
+            return;
+        }
+
+        setIsSavingSecurity(true);
+        try {
+            const res = await fetch('/api/mysql/users', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ securityQuestion, securityAnswer }),
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                toast({
+                    title: "Security updated",
+                    description: "Your security question has been set successfully.",
+                });
+                setIsEditingSecurity(false);
+                setSecurityAnswer('');
+            } else {
+                throw new Error(data.message);
+            }
+        } catch (error: any) {
+            toast({
+                variant: "destructive",
+                title: "Update failed",
+                description: error.message || "Something went wrong.",
+            });
+        } finally {
+            setIsSavingSecurity(false);
         }
     };
 
@@ -276,6 +328,77 @@ export default function ProfilePage() {
                         )}
                     </Card>
 
+                    <Card className="border-slate-200/60 shadow-sm">
+                        <CardHeader className="pb-4">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <ShieldQuestion className="h-5 w-5 text-teal-600" /> Account Recovery
+                                    </CardTitle>
+                                    <CardDescription>Setup alternative ways to recover your account.</CardDescription>
+                                </div>
+                                {!isEditingSecurity && (
+                                    <Button variant="outline" size="sm" onClick={() => setIsEditingSecurity(true)}>
+                                        {securityQuestion ? 'Update Question' : 'Setup Recovery'}
+                                    </Button>
+                                )}
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-2xl">
+                                {isEditingSecurity ? (
+                                    <div className="space-y-4">
+                                        <div className="space-y-2">
+                                            <Label>Security Question</Label>
+                                            <Select value={securityQuestion} onValueChange={setSecurityQuestion}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select a question" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="In what city were you born?">In what city were you born?</SelectItem>
+                                                    <SelectItem value="What is the name of your first pet?">What is the name of your first pet?</SelectItem>
+                                                    <SelectItem value="What was your first car?">What was your first car?</SelectItem>
+                                                    <SelectItem value="What is your mother's maiden name?">What is your mother&apos;s maiden name?</SelectItem>
+                                                    <SelectItem value="What was the name of your elementary school?">What was the name of your elementary school?</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Your Secret Answer</Label>
+                                            <Input 
+                                                type="text" 
+                                                value={securityAnswer} 
+                                                onChange={e => setSecurityAnswer(e.target.value)} 
+                                                placeholder="Answer is case-insensitive"
+                                            />
+                                        </div>
+                                        <div className="flex justify-end gap-2 pt-2">
+                                            <Button variant="ghost" size="sm" onClick={() => setIsEditingSecurity(false)}>Cancel</Button>
+                                            <Button size="sm" onClick={handleUpdateSecurity} disabled={isSavingSecurity}>
+                                                {isSavingSecurity && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                                                Save Security Setup
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-4">
+                                        <div className="p-3 bg-teal-50 dark:bg-teal-900/20 rounded-xl">
+                                            <ShieldCheck className="h-6 w-6 text-teal-600" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                                                {securityQuestion ? 'Security Question Active' : 'No Security Question Set'}
+                                            </p>
+                                            <p className="text-xs text-slate-500">
+                                                {securityQuestion ? securityQuestion : 'Add a security question to recover your account if you lose email access.'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+
                     <Card className="border-red-100/50 shadow-sm overflow-hidden">
                         <CardHeader className="bg-red-50/30 dark:bg-red-950/10 pb-4">
                             <CardTitle className="text-red-800 dark:text-red-400 flex items-center gap-2 text-lg">
@@ -331,4 +454,24 @@ export default function ProfilePage() {
             </div>
         </div>
     );
+}
+
+function ShieldCheck(props: any) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
+  )
 }

@@ -9,18 +9,22 @@ export async function GET() {
         const sessionToken = cookieStore.get('viagraph_session')?.value;
         const session = getSessionFromCookie(sessionToken ? `viagraph_session=${sessionToken}` : null);
 
-        if (!session?.uid) {
-            return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
-        }
-
-        // Ensure column exists for persistent tracking (robust check for all MySQL versions)
-        const columns = await query<any[]>('SHOW COLUMNS FROM users LIKE "password_changed_at"');
-        if (columns.length === 0) {
+        // Ensure columns exist for persistent tracking and security
+        const columns = await query<any[]>('SHOW COLUMNS FROM users');
+        const colNames = columns.map(c => c.Field);
+        
+        if (!colNames.includes('password_changed_at')) {
             await query('ALTER TABLE users ADD COLUMN password_changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
+        }
+        if (!colNames.includes('security_question')) {
+            await query('ALTER TABLE users ADD COLUMN security_question TEXT');
+        }
+        if (!colNames.includes('security_answer_hash')) {
+            await query('ALTER TABLE users ADD COLUMN security_answer_hash TEXT');
         }
 
         const users = await query<any[]>(
-            'SELECT uid, email, username, role, password_changed_at FROM users WHERE uid = ?',
+            'SELECT uid, email, username, role, password_changed_at, security_question FROM users WHERE uid = ?',
             [session.uid]
         );
 

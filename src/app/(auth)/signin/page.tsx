@@ -412,6 +412,21 @@ export default function SignInPage() {
                 .auth-footer a:hover {
                     color: #5eead4;
                 }
+
+                .auth-field-footer {
+                    display: flex;
+                    justify-content: flex-end;
+                    margin-top: 8px;
+                }
+                .auth-field-footer a {
+                    font-size: 12px;
+                    color: #2dd4bf;
+                    text-decoration: none;
+                    font-weight: 500;
+                }
+                .auth-field-footer a:hover {
+                    color: #5eead4;
+                }
             `}} />
             <div className="auth-page">
                 <div className="auth-container">
@@ -507,6 +522,9 @@ export default function SignInPage() {
                                             onFocus={() => setFocusedField('password')}
                                             onBlur={() => setFocusedField(null)}
                                         />
+                                        <div className="auth-field-footer">
+                                            <Link href="/forgot-password">Forgot password?</Link>
+                                        </div>
                                     </div>
 
                                     <button className="auth-btn-primary" type="submit" disabled={isLoading}>

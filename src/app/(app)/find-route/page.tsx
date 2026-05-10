@@ -59,7 +59,7 @@ function SubmitButton() {
       ) : (
         <>
           <Route className="mr-2 h-4 w-4" />
-          Find Shortest Route
+          Find Route
         </>
       )}
     </Button>
@@ -99,8 +99,8 @@ export default function FindRoutePage() {
           <CardHeader>
             <CardTitle>Plan Your Trip</CardTitle>
             <CardDescription>
-              Enter your location and destination to find the shortest jeepney
-              route.
+              Enter your location and destination to view mapped transportation
+              routes and fare information.
             </CardDescription>
           </CardHeader>
           <Form {...form}>

@@ -16,6 +16,7 @@ interface AppContextType {
   role: Role;
   setRole: (role: Role) => void;
   user: SessionUser | null;
+  setUser: (user: SessionUser | null) => void;
   loading: boolean;
   signOut: () => Promise<void>;
 }
@@ -54,7 +55,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AppContext.Provider value={{ role, setRole, user, loading, signOut }}>
+    <AppContext.Provider value={{ role, setRole, user, setUser, loading, signOut }}>
       {children}
     </AppContext.Provider>
   );

@@ -144,64 +144,32 @@ function EditRouteButton({ edge, nodes, onEdited, graph }: { edge: any; nodes: a
   const [vehicleType, setVehicleType] = useState(edge.vehicle_type || 'jeepney');
   const [routeInputMode, setRouteInputMode] = useState<'manual' | 'json'>('manual');
   const [jsonImportError, setJsonImportError] = useState('');
-  const [hasTransfer, setHasTransfer] = useState(false);
-  const [routeExtraLegs, setRouteExtraLegs] = useState<{
-    routeName: string;
-    vehicleType: string;
-    distance: string;
-    stopAndTransfer: string;
-    note: string;
-    hasTransfer?: boolean;
-  }[]>([]);
+  const [regularFare, setRegularFare] = useState(String(edge.regular_fare ?? ''));
+  const [discountedFare, setDiscountedFare] = useState(String(edge.discounted_fare ?? ''));
+  const [isActive, setIsActive] = useState(edge.is_active !== 0 && edge.is_active !== false);
 
   const handleSave = async () => {
     try {
-      if (hasTransfer) {
-        // Convert edge to transfer: delete edge first then create transfer
-        await fetch(`/api/mysql/edges/${encodeURIComponent(edge.id)}`, { method: 'DELETE' });
-
-        const res = await fetch('/api/mysql/transfers', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            fromNodeId: edge.source,
-            toNodeId: edge.target,
-            name: `${nodes.find(n => n.id === edge.source)?.name ?? edge.source} → ${nodes.find(n => n.id === edge.target)?.name ?? edge.target}`,
-            legs: [
-              { routeName: edge.routeName, vehicleType: vehicleType, distance: parseFloat(distance), stopAndTransfer: stop || '', note: note || '', pathCoordinates: pathCoordinates },
-              ...routeExtraLegs.map(leg => ({
-                routeName: leg.routeName,
-                vehicleType: leg.vehicleType,
-                distance: parseFloat(leg.distance),
-                stopAndTransfer: leg.stopAndTransfer || '',
-                note: leg.note || '',
-                pathCoordinates: []
-              }))
-            ],
-          }),
-        });
-        const data = await res.json();
-        if (!data.success) throw new Error(data.message);
-        toast({ title: 'Converted', description: 'Route segment converted to transfer route.' });
-      } else {
-        const res = await fetch('/api/mysql/edges', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            source: edge.source,
-            target: edge.target,
-            distance: parseFloat(distance),
-            routeName: edge.routeName,
-            vehicleType: vehicleType,
-            stopAndTransfer: stop,
-            note: note,
-            pathCoordinates: pathCoordinates,
-          }),
-        });
-        const data = await res.json();
-        if (!data.success) throw new Error(data.message);
-        toast({ title: 'Updated', description: 'Route updated.' });
-      }
+      const res = await fetch('/api/mysql/edges', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          source: edge.source,
+          target: edge.target,
+          distance: parseFloat(distance),
+          routeName: edge.routeName,
+          vehicleType: vehicleType,
+          stopAndTransfer: stop,
+          note: note,
+          pathCoordinates: pathCoordinates,
+          regularFare: regularFare,
+          discountedFare: discountedFare,
+          isActive: isActive,
+        }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message);
+      toast({ title: 'Updated', description: 'Route updated.' });
       setOpen(false);
       onEdited();
     } catch (err: any) {
@@ -220,8 +188,9 @@ function EditRouteButton({ edge, nodes, onEdited, graph }: { edge: any; nodes: a
         setVehicleType(edge.vehicle_type || 'jeepney');
         setRouteInputMode('manual');
         setJsonImportError('');
-        setHasTransfer(false);
-        setRouteExtraLegs([]);
+        setRegularFare(String(edge.regular_fare ?? ''));
+        setDiscountedFare(String(edge.discounted_fare ?? ''));
+        setIsActive(edge.is_active !== 0 && edge.is_active !== false);
       }
     }}>
       <DialogTrigger asChild>
@@ -348,129 +317,23 @@ function EditRouteButton({ edge, nodes, onEdited, graph }: { edge: any; nodes: a
                   <Input className="bg-white border-slate-200" value={note} onChange={e => setNote(e.target.value)} placeholder="e.g. Take this route for faster travel" />
                 </div>
 
-                {/* Transfer toggle */}
-                <div className="flex items-center gap-3 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const newState = !hasTransfer;
-                      setHasTransfer(newState);
-                      if (newState && routeExtraLegs.length === 0) {
-                        setRouteExtraLegs([{ routeName: '', vehicleType: 'jeepney', distance: '', stopAndTransfer: '', note: '', hasTransfer: false }]);
-                      } else if (!newState) {
-                        setRouteExtraLegs([]);
-                      }
-                    }}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${hasTransfer ? 'bg-cyan-500' : 'bg-slate-300'}`}
-                  >
-                    <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform shadow ${hasTransfer ? 'translate-x-6' : 'translate-x-1'}`} />
-                  </button>
-                  <Label className="text-sm font-semibold text-slate-700 cursor-pointer" onClick={() => {
-                    const newState = !hasTransfer;
-                    setHasTransfer(newState);
-                    if (newState && routeExtraLegs.length === 0) {
-                      setRouteExtraLegs([{ routeName: '', vehicleType: 'jeepney', distance: '', stopAndTransfer: '', note: '', hasTransfer: false }]);
-                    } else if (!newState) {
-                      setRouteExtraLegs([]);
-                    }
-                  }}>
-                    Has Transfer (add 2nd leg)
-                  </Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label className="text-sm font-semibold text-slate-700">Regular Fare</Label>
+                    <Input name="regularFare" type="number" step="0.01" className="bg-white border-slate-200" placeholder="Auto-calculated if blank" value={regularFare} onChange={e => setRegularFare(e.target.value)} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label className="text-sm font-semibold text-slate-700">Discounted Fare</Label>
+                    <Input name="discountedFare" type="number" step="0.01" className="bg-white border-slate-200" placeholder="Auto-calculated if blank" value={discountedFare} onChange={e => setDiscountedFare(e.target.value)} />
+                  </div>
                 </div>
 
-                {/* Dynamic extra legs */}
-                {hasTransfer && routeExtraLegs.map((leg, idx) => (
-                  <div key={idx} className="border-l-4 border-cyan-400 pl-4 space-y-3 py-2 bg-cyan-50/50 rounded-r-xl">
-                    <p className="text-xs font-bold text-cyan-700 uppercase tracking-wide">Transfer Leg {idx + 2}</p>
-                    <div className="grid gap-2">
-                      <Label className="text-sm font-semibold text-slate-700">Vehicle Type (Leg {idx + 2})</Label>
-                      <Select value={leg.vehicleType} onValueChange={(val) => {
-                        const newLegs = [...routeExtraLegs];
-                        newLegs[idx].vehicleType = val;
-                        setRouteExtraLegs(newLegs);
-                      }}>
-                        <SelectTrigger className="bg-white border-slate-200">
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="jeepney">Jeepney</SelectItem>
-                          <SelectItem value="minibus">Mini Bus</SelectItem>
-                          <SelectItem value="walking">Walking</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label className="text-sm font-semibold text-slate-700">Jeepney Line (Leg {idx + 2})</Label>
-                      <Select value={leg.routeName} onValueChange={(val) => {
-                        const newLegs = [...routeExtraLegs];
-                        newLegs[idx].routeName = val;
-                        setRouteExtraLegs(newLegs);
-                      }}>
-                        <SelectTrigger className="bg-white border-slate-200">
-                          <SelectValue placeholder="Select line" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {graph.routes.map((r: any) => <SelectItem key={r.name} value={r.name}>{r.name}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label className="text-sm font-semibold text-slate-700">Distance (km) (Leg {idx + 2})</Label>
-                      <Input type="number" step="0.1" placeholder="Enter distance" className="bg-white border-slate-200"
-                        value={leg.distance} onChange={e => {
-                          const newLegs = [...routeExtraLegs];
-                          newLegs[idx].distance = e.target.value;
-                          setRouteExtraLegs(newLegs);
-                        }} />
-                    </div>
-                    <div className="grid gap-2 text-right">
-                      <Label className="text-sm font-semibold text-slate-700 text-left">Stop & Transfer (Leg {idx + 1} to Leg {idx + 2})</Label>
-                      <Textarea placeholder="e.g. Stop at Crown Paper then transfer" className="bg-white border-slate-200 min-h-[50px]"
-                        value={leg.stopAndTransfer} onChange={e => {
-                          const newLegs = [...routeExtraLegs];
-                          newLegs[idx].stopAndTransfer = e.target.value;
-                          setRouteExtraLegs(newLegs);
-                        }} />
-                    </div>
-
-                    <div className="flex items-center gap-3 pt-1">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const newLegs = [...routeExtraLegs];
-                          const currentlyHasTransfer = !!newLegs[idx].hasTransfer;
-                          newLegs[idx].hasTransfer = !currentlyHasTransfer;
-                          if (newLegs[idx].hasTransfer) {
-                            if (idx === routeExtraLegs.length - 1) {
-                              newLegs.push({ routeName: '', vehicleType: 'jeepney', distance: '', stopAndTransfer: '', note: '', hasTransfer: false });
-                            }
-                          } else {
-                            newLegs.splice(idx + 1);
-                          }
-                          setRouteExtraLegs(newLegs);
-                        }}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${leg.hasTransfer ? 'bg-cyan-500' : 'bg-slate-300'}`}
-                      >
-                        <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform shadow ${leg.hasTransfer ? 'translate-x-6' : 'translate-x-1'}`} />
-                      </button>
-                      <Label className="text-sm font-semibold text-slate-700 cursor-pointer" onClick={() => {
-                        const newLegs = [...routeExtraLegs];
-                        const currentlyHasTransfer = !!newLegs[idx].hasTransfer;
-                        newLegs[idx].hasTransfer = !currentlyHasTransfer;
-                        if (newLegs[idx].hasTransfer) {
-                          if (idx === routeExtraLegs.length - 1) {
-                            newLegs.push({ routeName: '', vehicleType: 'jeepney', distance: '', stopAndTransfer: '', note: '', hasTransfer: false });
-                          }
-                        } else {
-                          newLegs.splice(idx + 1);
-                        }
-                        setRouteExtraLegs(newLegs);
-                      }}>
-                        Has Transfer (add {idx + 3}rd leg)
-                      </Label>
-                    </div>
-                  </div>
-                ))}
+                <div className="flex items-center gap-3 pt-2">
+                  <input type="checkbox" name="isActive" id="editIsActive" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="h-5 w-5 rounded border-slate-300 text-cyan-500 focus:ring-cyan-500" />
+                  <Label htmlFor="editIsActive" className="text-sm font-semibold text-slate-700 cursor-pointer">
+                    Active Segment
+                  </Label>
+                </div>
 
                 {pathCoordinates.length > 0 && (
                   <p className="text-xs text-cyan-600 bg-cyan-50 border border-cyan-200 rounded-lg px-3 py-2">
@@ -828,6 +691,9 @@ export default function AdminPage() {
   const [routeInputMode, setRouteInputMode] = useState<'manual' | 'json'>('manual');
   const [jsonImportError, setJsonImportError] = useState<string>('');
   const [isMysqlSyncing, setIsMysqlSyncing] = useState(false);
+  const [regularFare, setRegularFare] = useState('');
+  const [discountedFare, setDiscountedFare] = useState('');
+  const [isActive, setIsActive] = useState(true);
   const [hasTransfer, setHasTransfer] = useState(false);
   const [routeExtraLegs, setRouteExtraLegs] = useState<{
     routeName: string;
@@ -1190,6 +1056,7 @@ export default function AdminPage() {
         setRouteExtraLegs([]);
         setVehicleType('jeepney');
         setSelectedSource(''); setSelectedTarget(''); setRouteDistance('');
+        setRegularFare(''); setDiscountedFare(''); setIsActive(true);
         loadData();
       } catch (error: any) {
         toast({ variant: 'destructive', title: 'Error', description: error?.message || 'Failed to add transfer route.' });
@@ -1209,6 +1076,9 @@ export default function AdminPage() {
             stopAndTransfer,
             note,
             pathCoordinates: drawnPath,
+            regularFare,
+            discountedFare,
+            isActive,
           }),
         });
         const data = await res.json();
@@ -1217,6 +1087,7 @@ export default function AdminPage() {
         setDrawnPath([]);
         setVehicleType('jeepney');
         setSelectedSource(''); setSelectedTarget(''); setRouteDistance('');
+        setRegularFare(''); setDiscountedFare(''); setIsActive(true);
         loadData();
       } catch (error: any) {
         toast({ variant: 'destructive', title: 'Error', description: error?.message || 'Failed to add route.' });
@@ -1336,6 +1207,9 @@ export default function AdminPage() {
                     setDrawnPath([]);
                     setHasTransfer(false);
                     setRouteExtraLegs([]);
+                    setRegularFare('');
+                    setDiscountedFare('');
+                    setIsActive(true);
                     setRouteInputMode('manual');
                     setJsonImportError('');
                   }
@@ -1357,8 +1231,8 @@ export default function AdminPage() {
                           onPathDrawn={(coords) => setDrawnPath(coords)}
                           initialPath={drawnPath}
                           extraPaths={routeExtraLegs
-                            .filter(leg => leg.pathCoordinates && leg.pathCoordinates.length > 1)
-                            .map((leg, i) => ({
+                            .filter((leg: any) => leg.pathCoordinates && leg.pathCoordinates.length > 1)
+                            .map((leg: any, i: number) => ({
                               coords: leg.pathCoordinates,
                               color: ['#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#f97316'][i % 5],
                               label: `Leg ${i + 2}`,
@@ -1366,14 +1240,14 @@ export default function AdminPage() {
                           }
                         />
                         {/* Legend for transfer leg paths */}
-                        {hasTransfer && routeExtraLegs.some(leg => leg.pathCoordinates?.length > 1) && (
+                        {hasTransfer && routeExtraLegs.some((leg: any) => leg.pathCoordinates?.length > 1) && (
                           <div className="absolute bottom-3 left-3 z-[1000] bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-slate-200 px-3 py-2.5 space-y-1.5 max-w-[160px]">
                             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Path Legend</p>
                             <div className="flex items-center gap-2">
                               <span className="inline-block w-5 border-t-2 border-cyan-400 flex-shrink-0" style={{ borderStyle: 'solid' }} />
                               <span className="text-xs font-medium text-slate-700">Leg 1 (Main)</span>
                             </div>
-                            {routeExtraLegs.map((leg, i) =>
+                            {routeExtraLegs.map((leg: any, i: number) =>
                               leg.pathCoordinates?.length > 1 && (
                                 <div key={i} className="flex items-center gap-2">
                                   <span
@@ -1587,6 +1461,23 @@ export default function AdminPage() {
                               <Textarea name="note" placeholder="Enter additional suggestions or notes" className="bg-white border-slate-200 min-h-[60px]" />
                             </div>
 
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="grid gap-2">
+                                <Label className="text-sm font-semibold text-slate-700">Regular Fare</Label>
+                                <Input name="regularFare" type="number" step="0.01" className="bg-white border-slate-200" placeholder="Auto-calculated if blank" value={regularFare} onChange={e => setRegularFare(e.target.value)} />
+                              </div>
+                              <div className="grid gap-2">
+                                <Label className="text-sm font-semibold text-slate-700">Discounted Fare</Label>
+                                <Input name="discountedFare" type="number" step="0.01" className="bg-white border-slate-200" placeholder="Auto-calculated if blank" value={discountedFare} onChange={e => setDiscountedFare(e.target.value)} />
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-3 pt-2">
+                              <input type="checkbox" name="isActive" id="isActive" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="h-5 w-5 rounded border-slate-300 text-cyan-500 focus:ring-cyan-500" />
+                              <Label htmlFor="isActive" className="text-sm font-semibold text-slate-700 cursor-pointer">
+                                Active Segment
+                              </Label>
+                            </div>
                             {/* Transfer toggle */}
                             <div className="flex items-center gap-3 pt-1">
                               <button
@@ -1608,7 +1499,7 @@ export default function AdminPage() {
                                 const newState = !hasTransfer;
                                 setHasTransfer(newState);
                                 if (newState && routeExtraLegs.length === 0) {
-                                  setRouteExtraLegs([{ routeName: '', vehicleType: 'jeepney', distance: '', stopAndTransfer: '', note: '', hasTransfer: false }]);
+                                  setRouteExtraLegs([{ routeName: '', vehicleType: 'jeepney', distance: '', stopAndTransfer: '', note: '', hasTransfer: false, pathCoordinates: [], inputMode: 'manual', jsonError: '' }]);
                                 } else if (!newState) {
                                   setRouteExtraLegs([]);
                                 }
@@ -1662,19 +1553,14 @@ export default function AdminPage() {
                                   </Button>
                                 </div>
 
-                                {/* JSON import panel for this leg */}
+                                {/* JSON import for this leg */}
                                 {leg.inputMode === 'json' && (
-                                  <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-2">
-                                    <p className="text-xs font-semibold text-slate-600">Supported formats:</p>
-                                    <ul className="text-xs text-slate-500 list-disc list-inside space-y-0.5">
-                                      <li><code>.geojson</code> — GeoJSON LineString or Feature</li>
-                                      <li><code>.topojson</code> — TopoJSON file</li>
-                                      <li><code>.json</code> — Array of <code>[lat, lng]</code> pairs</li>
-                                    </ul>
+                                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                                    <p className="text-xs text-slate-600 font-medium">Supported: .geojson, .topojson, .json</p>
                                     <input
                                       type="file"
                                       accept=".json,.geojson,.topojson"
-                                      className="block w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-cyan-50 file:text-cyan-700 hover:file:bg-cyan-100 cursor-pointer"
+                                      className="block w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-cyan-50 file:text-cyan-700 hover:file:bg-cyan-100 cursor-pointer"
                                       onChange={(e) => {
                                         const file = e.target.files?.[0];
                                         if (!file) return;
@@ -1763,7 +1649,7 @@ export default function AdminPage() {
                                       <SelectValue placeholder="Select line" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      {graph.routes.map(r => <SelectItem key={r.name} value={r.name}>{r.name}</SelectItem>)}
+                                      {graph.routes.map((r: any) => <SelectItem key={r.name} value={r.name}>{r.name}</SelectItem>)}
                                     </SelectContent>
                                   </Select>
                                 </div>

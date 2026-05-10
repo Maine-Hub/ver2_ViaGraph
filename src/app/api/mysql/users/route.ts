@@ -6,7 +6,13 @@ import { cookies } from 'next/headers';
 
 export async function GET() {
     try {
-        const users = await query<any[]>('SELECT uid, email, username, role FROM users ORDER BY username ASC');
+        // Ensure column exists for persistent tracking (robust check for all MySQL versions)
+        const columns = await query<any[]>('SHOW COLUMNS FROM users LIKE "password_changed_at"');
+        if (columns.length === 0) {
+            await query('ALTER TABLE users ADD COLUMN password_changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
+        }
+        
+        const users = await query<any[]>('SELECT uid, email, username, role, password_changed_at FROM users ORDER BY username ASC');
         return NextResponse.json({ success: true, users });
     } catch (error: any) {
         return NextResponse.json({ success: false, message: error.message }, { status: 500 });
@@ -51,6 +57,53 @@ export async function PATCH(request: Request) {
         });
 
         return NextResponse.json({ success: true });
+    } catch (error: any) {
+        return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+    }
+}
+export async function PUT(request: Request) {
+    try {
+        const { username } = await request.json();
+        const cookieStore = await cookies();
+        const sessionToken = cookieStore.get('viagraph_session')?.value;
+        const session = getSessionFromCookie(sessionToken ? `viagraph_session=${sessionToken}` : null);
+
+        if (!session?.uid) {
+            return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+        }
+
+        if (!username || username.trim().length < 3) {
+            return NextResponse.json({ success: false, message: 'Username must be at least 3 characters.' }, { status: 400 });
+        }
+
+        // Update database
+        await query('UPDATE users SET username = ? WHERE uid = ?', [username, session.uid]);
+
+        // Record activity
+        await recordActivity({
+            uid: session.uid,
+            username: username,
+            action: 'Updated Profile',
+            details: `Updated username from ${session.username} to ${username}`,
+            category: 'user'
+        });
+
+        // Refresh session cookie
+        const { exp, iat, nbf, ...cleanSession } = session as any;
+        const newUser: any = { ...cleanSession, username };
+        const response = NextResponse.json({ success: true, user: newUser });
+        
+        // We need to sign a new token and set the cookie
+        const { signToken } = await import('@/lib/auth');
+        const newToken = signToken(newUser);
+        response.cookies.set('viagraph_session', newToken, {
+            path: '/',
+            httpOnly: true,
+            sameSite: 'lax',
+            maxAge: 7 * 24 * 60 * 60
+        });
+
+        return response;
     } catch (error: any) {
         return NextResponse.json({ success: false, message: error.message }, { status: 500 });
     }

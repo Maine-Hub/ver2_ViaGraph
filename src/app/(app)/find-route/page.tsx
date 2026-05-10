@@ -31,8 +31,13 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { findRouteAction } from '@/lib/actions';
-import { graph } from '@/lib/data';
-import { MapPlaceholder } from '@/components/map-placeholder';
+import { Graph } from '@/lib/types';
+import dynamic from 'next/dynamic';
+
+const RouteMapView = dynamic(() => import('@/components/map/RouteMapView'), {
+  ssr: false,
+  loading: () => <div className="h-[400px] md:h-[600px] w-full bg-slate-100 animate-pulse flex items-center justify-center rounded-xl border border-slate-200 text-slate-400 italic font-medium">Loading Interactive Map...</div>
+});
 import { Bus, Footprints, Hourglass, Route, Wallet } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
@@ -54,7 +59,7 @@ function SubmitButton() {
       ) : (
         <>
           <Route className="mr-2 h-4 w-4" />
-          Find Shortest Route
+          Find Route
         </>
       )}
     </Button>
@@ -63,6 +68,21 @@ function SubmitButton() {
 
 export default function FindRoutePage() {
   const [state, formAction] = useActionState(findRouteAction, { message: '' });
+  const [graphData, setGraphData] = React.useState<Graph>({ nodes: [], routes: [], edges: [] });
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const res = await fetch('/api/data/graph');
+        const data = await res.json();
+        setGraphData(data);
+      } catch { }
+      setIsLoading(false);
+    };
+    loadData();
+  }, []);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -73,18 +93,24 @@ export default function FindRoutePage() {
   });
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-      <div className="lg:col-span-1">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 h-full">
+      <div className="lg:col-span-1 overflow-y-auto">
         <Card>
           <CardHeader>
             <CardTitle>Plan Your Trip</CardTitle>
             <CardDescription>
-              Enter your location and destination to find the shortest jeepney
-              route.
+              Enter your location and destination to view mapped transportation
+              routes and fare information.
             </CardDescription>
           </CardHeader>
           <Form {...form}>
-            <form action={formAction}>
+            <form action={(formData) => {
+              const data = form.getValues();
+              const customFormData = new FormData();
+              customFormData.append('startLocation', data.startLocation);
+              customFormData.append('endLocation', data.endLocation);
+              formAction(customFormData);
+            }}>
               <CardContent className="space-y-4">
                 <FormField
                   control={form.control}
@@ -94,7 +120,7 @@ export default function FindRoutePage() {
                       <FormLabel>Current Location</FormLabel>
                       <Select
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value}
                         name="startLocation"
                       >
                         <FormControl>
@@ -103,7 +129,7 @@ export default function FindRoutePage() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {graph.nodes.map(node => (
+                          {graphData.nodes.map(node => (
                             <SelectItem key={node.id} value={node.id}>
                               {node.name}
                             </SelectItem>
@@ -123,7 +149,7 @@ export default function FindRoutePage() {
                       <FormLabel>Destination</FormLabel>
                       <Select
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value}
                         name="endLocation"
                       >
                         <FormControl>
@@ -132,7 +158,7 @@ export default function FindRoutePage() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {graph.nodes.map(node => (
+                          {graphData.nodes.map(node => (
                             <SelectItem key={node.id} value={node.id}>
                               {node.name}
                             </SelectItem>
@@ -150,101 +176,123 @@ export default function FindRoutePage() {
             </form>
           </Form>
         </Card>
-        
+
         {state.message && state.error && (
-            <Alert variant="destructive" className="mt-4">
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{state.message}</AlertDescription>
-            </Alert>
+          <Alert variant="destructive" className="mt-4">
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{state.message}</AlertDescription>
+          </Alert>
         )}
 
         {state.result && (
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle>Your Route</CardTitle>
-              <CardDescription>
-                Follow these steps to reach your destination.
-              </CardDescription>
+          <Card className="mt-4">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Your Route</CardTitle>
             </CardHeader>
-            <CardContent>
-                <div className="mb-4 space-y-2 text-sm text-muted-foreground">
-                    <div className="flex items-center justify-between">
-                        <span>Total Distance</span>
-                        <span className="font-bold text-foreground">{state.result.totalDistance.toFixed(2)} km</span>
-                    </div>
-                    {state.result.totalFare !== undefined && (
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <Wallet className="h-4 w-4" />
-                            <span>Total Regular Fare</span>
-                        </div>
-                        <span className="font-bold text-foreground">₱{state.result.totalFare.toFixed(2)}</span>
-                    </div>
-                    )}
-                    {state.result.discountedFare !== undefined && (
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <Wallet className="h-4 w-4" />
-                            <span>Total Discounted Fare</span>
-                        </div>
-                        <span className="font-bold text-foreground">₱{state.result.discountedFare.toFixed(2)}</span>
-                    </div>
-                    )}
+            <CardContent className="space-y-3 text-sm">
+              {/* Totals */}
+              <div className="rounded-lg bg-muted/50 p-3 space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Total Distance</span>
+                  <span className="font-bold">{Number(state.result.totalDistance).toFixed(2)} km</span>
                 </div>
-                {state.result.discountedFare !== undefined && (
-                    <p className="text-xs text-muted-foreground/80 -mt-2 mb-4">
-                        Discount applies to students, seniors, and PWDs.
-                    </p>
+                {state.result.totalFare != null && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Regular Fare</span>
+                    <span className="font-bold text-green-700">₱{Number(state.result.totalFare).toFixed(2)}</span>
+                  </div>
                 )}
-              <Separator className="mb-4" />
-              <div className="space-y-4">
-                {state.result.path.map((segment, index) => (
-                  <div key={index} className="flex items-start gap-4">
-                    <div className="flex flex-col items-center">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-accent-foreground">
-                        <Bus className="h-4 w-4" />
-                      </div>
-                      {index < state.result.path.length - 1 && (
-                        <div className="h-16 w-px bg-border" />
+                {state.result.discountedFare != null && (
+                  <div className="flex flex-col pt-1">
+                    <span className="text-muted-foreground text-sm">Discounted Fare</span>
+                    <span className="font-bold text-blue-700 text-lg">₱{Number(state.result.discountedFare).toFixed(2)}</span>
+                  </div>
+                )}
+                {state.result.discountedFare !== undefined && (
+                  <p className="text-xs text-muted-foreground/70">* Discount for students, seniors & PWDs</p>
+                )}
+              </div>
+
+              {/* Per-segment details */}
+              {state.result.path.map((segment, index) => {
+                const seg = segment as any;
+                return (
+                  <div key={index} className="rounded-lg border border-border p-3 space-y-2">
+                    <div className="flex items-center gap-2 font-semibold text-primary">
+                      <Bus className="h-4 w-4 shrink-0" />
+                      <span>Segment {index + 1}: {seg.routeName}</span>
+                      {(() => {
+                        const lineColor = graphData.routes.find((r: any) => r.name === seg.routeName)?.color;
+                        return lineColor ? (
+                          <span
+                            className="inline-block w-3 h-3 rounded-full flex-shrink-0 ring-1 ring-black/10"
+                            style={{ backgroundColor: lineColor }}
+                            title={`Line color: ${lineColor}`}
+                          />
+                        ) : null;
+                      })()}
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                      <span className="text-muted-foreground">Jeepney Line</span>
+                      <span className="font-medium flex items-center gap-1.5">
+                        {(() => {
+                          const lineColor = graphData.routes.find((r: any) => r.name === seg.routeName)?.color;
+                          return lineColor ? (
+                            <span
+                              className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: lineColor }}
+                            />
+                          ) : null;
+                        })()}
+                        {seg.routeName}
+                      </span>
+                      <span className="text-muted-foreground">Distance</span>
+                      <span className="font-medium">{Number(seg.distance).toFixed(2)} km</span>
+                      {seg.stopAndTransfer && (
+                        <>
+                          <span className="text-muted-foreground">Stop & Transfer</span>
+                          <span className="font-medium">{seg.stopAndTransfer}</span>
+                        </>
+                      )}
+                      {seg.note && (
+                        <div className="col-span-2 mt-1 p-2 bg-yellow-50 border border-yellow-200 rounded text-yellow-800 italic">
+                          Tip: {seg.note}
+                        </div>
+                      )}
+                      {seg.regularFare !== undefined && (
+                        <>
+                          <span className="text-muted-foreground">Regular Fare</span>
+                          <span className="font-medium text-green-700 text-right">₱{Number(seg.regularFare).toFixed(2)}</span>
+                          <div className="col-span-2 flex flex-col pt-1">
+                            <span className="text-muted-foreground">Discounted Fare</span>
+                            <span className="font-medium text-blue-700 text-sm">₱{Number(seg.discountedFare).toFixed(2)}</span>
+                          </div>
+                        </>
                       )}
                     </div>
-                    <div className="flex-1 pt-1">
-                      <p className="font-semibold">
-                        Take Jeepney <span className="text-primary">{segment.routeName}</span>
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        From <span className="font-medium text-foreground">{segment.from}</span>
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        To <span className="font-medium text-foreground">{segment.to}</span>
-                      </p>
-                       <p className="text-xs text-muted-foreground/80 mt-1">
-                        ({segment.distance.toFixed(2)} km)
-                        {segment.regularFare !== undefined &&
-                          ` - Reg: ₱${segment.regularFare.toFixed(2)} / Disc: ₱${segment.discountedFare?.toFixed(2)}`}
-                       </p>
-                    </div>
                   </div>
-                ))}
-                 <div className="flex items-start gap-4">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                      <Footprints className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1 pt-1.5">
-                        <p className="font-semibold">Arrive at Destination</p>
-                        <p className="text-sm text-muted-foreground">{state.result.path[state.result.path.length - 1].to}</p>
-                    </div>
-                 </div>
+                );
+              })}
+
+              {/* Destination */}
+              <div className="flex items-center gap-2 pt-1">
+                <Footprints className="h-4 w-4 text-primary shrink-0" />
+                <div>
+                  <p className="font-semibold text-xs">Arrive at Destination</p>
+                  <p className="text-xs text-muted-foreground">{state.result.path[state.result.path.length - 1].to}</p>
+                </div>
               </div>
             </CardContent>
           </Card>
         )}
       </div>
 
-      <div className="lg:col-span-2">
-        <MapPlaceholder 
-          start={state.result ? state.result.path[0].from : undefined}
-          end={state.result ? state.result.path[state.result.path.length - 1].to : undefined}
+      <div className="lg:col-span-2 h-full min-h-[400px]">
+        <RouteMapView
+          nodes={graphData.nodes}
+          routes={graphData.routes}
+          path={state.result ? state.result.path : undefined}
+          className="h-full"
         />
       </div>
     </div>

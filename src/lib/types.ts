@@ -1,4 +1,3 @@
-import { GeoPoint } from "firebase/firestore";
 
 export interface Location {
   id: string;
@@ -12,6 +11,7 @@ export interface Location {
 export interface JeepneyRoute {
   name: string;
   description: string;
+  color?: string;
 }
 
 export interface RouteSegment {
@@ -20,6 +20,7 @@ export interface RouteSegment {
   target: string; // location id
   distance: number; // distance in km
   routeName: string; // jeepney route name
+  stopAndTransfer?: string;
 }
 
 export interface Graph {

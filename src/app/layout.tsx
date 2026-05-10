@@ -1,10 +1,17 @@
-import type {Metadata} from 'next';
+import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
   title: 'ViaGraph',
   description: 'Your intelligent route finder',
+  icons: {
+    icon: [
+      { url: '/images/ViaGraph_LOGO.png', type: 'image/png' },
+    ],
+    shortcut: '/images/ViaGraph_LOGO.png',
+    apple: '/images/ViaGraph_LOGO.png',
+  },
 };
 
 export default function RootLayout({

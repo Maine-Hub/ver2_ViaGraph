@@ -6,7 +6,7 @@ const pool = mysql.createPool({
     port: 3306,
     user: 'root',
     password: '',          // XAMPP default: no password
-    database: 'viagraph',
+    database: 'viagraph_experiment',
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,

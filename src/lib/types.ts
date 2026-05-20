@@ -36,6 +36,7 @@ export interface PathSegment {
   distance: number;
   regularFare?: number;
   discountedFare?: number;
+  pathCoordinates?: [number, number][] | null;
 }
 
 export interface ShortestPathResult {
@@ -43,4 +44,5 @@ export interface ShortestPathResult {
   totalDistance: number;
   totalFare?: number;
   discountedFare?: number;
+  alternatives?: ShortestPathResult[];
 }

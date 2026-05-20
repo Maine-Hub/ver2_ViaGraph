@@ -202,14 +202,19 @@ export default function FindRoutePage() {
                     <span className="font-bold text-green-700">₱{Number(state.result.totalFare).toFixed(2)}</span>
                   </div>
                 )}
-                {state.result.discountedFare != null && (
-                  <div className="flex flex-col pt-1">
-                    <span className="text-muted-foreground text-sm">Discounted Fare</span>
-                    <span className="font-bold text-blue-700 text-lg">₱{Number(state.result.discountedFare).toFixed(2)}</span>
-                  </div>
-                )}
+                {state.result.discountedFare != null && (() => {
+                  // Total must be sum of per-segment ceiled fares, not Math.ceil of the raw total
+                  const totalCeiled = state.result.path.reduce((sum, seg: any) => sum + Math.ceil(Number(seg.discountedFare || 0)), 0);
+                  return (
+                    <div className="flex flex-col pt-1">
+                      <span className="text-muted-foreground text-sm">Discounted Fare</span>
+                      <span className="font-bold text-blue-700 text-lg">₱{totalCeiled.toFixed(2)}</span>
+                      <span className="text-xs text-muted-foreground/60 italic mt-0.5">† Always rounded up to nearest peso per segment</span>
+                    </div>
+                  );
+                })()}
                 {state.result.discountedFare !== undefined && (
-                  <p className="text-xs text-muted-foreground/70">* Discount for students, seniors & PWDs</p>
+                  <p className="text-xs text-muted-foreground/70">* Discount for students, seniors &amp; PWDs</p>
                 )}
               </div>
 
@@ -219,7 +224,11 @@ export default function FindRoutePage() {
                 return (
                   <div key={index} className="rounded-lg border border-border p-3 space-y-2">
                     <div className="flex items-center gap-2 font-semibold text-primary">
-                      <Bus className="h-4 w-4 shrink-0" />
+                      {seg.routeName === 'JUST WALK' ? (
+                        <Footprints className="h-4 w-4 shrink-0" />
+                      ) : (
+                        <Bus className="h-4 w-4 shrink-0" />
+                      )}
                       <span>Segment {index + 1}: {seg.routeName}</span>
                       {(() => {
                         const lineColor = graphData.routes.find((r: any) => r.name === seg.routeName)?.color;
@@ -233,7 +242,7 @@ export default function FindRoutePage() {
                       })()}
                     </div>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                      <span className="text-muted-foreground">Jeepney Line</span>
+                      <span className="text-muted-foreground">{seg.routeName === 'JUST WALK' ? 'Travel Mode' : 'Jeepney Line'}</span>
                       <span className="font-medium flex items-center gap-1.5">
                         {(() => {
                           const lineColor = graphData.routes.find((r: any) => r.name === seg.routeName)?.color;
@@ -247,7 +256,21 @@ export default function FindRoutePage() {
                         {seg.routeName}
                       </span>
                       <span className="text-muted-foreground">Distance</span>
-                      <span className="font-medium">{Number(seg.distance).toFixed(2)} km</span>
+                      <span className="font-medium">
+                        {seg.pathCoordinates?.ridingDist 
+                           ? `${Number(seg.pathCoordinates.ridingDist).toFixed(2)} km` 
+                           : `${Number(seg.distance).toFixed(2)} km`}
+                      </span>
+                      {seg.pathCoordinates?.walkingDist ? (
+                        <>
+                          <span className="text-muted-foreground flex items-center gap-1">
+                            <Footprints className="h-3 w-3" /> Walk
+                          </span>
+                          <span className="font-medium text-slate-500">
+                            {Number(seg.pathCoordinates.walkingDist).toFixed(2)} km
+                          </span>
+                        </>
+                      ) : null}
                       {seg.stopAndTransfer && (
                         <>
                           <span className="text-muted-foreground">Stop & Transfer</span>
@@ -265,7 +288,7 @@ export default function FindRoutePage() {
                           <span className="font-medium text-green-700 text-right">₱{Number(seg.regularFare).toFixed(2)}</span>
                           <div className="col-span-2 flex flex-col pt-1">
                             <span className="text-muted-foreground">Discounted Fare</span>
-                            <span className="font-medium text-blue-700 text-sm">₱{Number(seg.discountedFare).toFixed(2)}</span>
+                            <span className="font-medium text-blue-700 text-sm">₱{Math.ceil(Number(seg.discountedFare)).toFixed(2)}</span>
                           </div>
                         </>
                       )}
@@ -292,6 +315,7 @@ export default function FindRoutePage() {
           nodes={graphData.nodes}
           routes={graphData.routes}
           path={state.result ? state.result.path : undefined}
+          alternatives={state.result ? state.result.alternatives : undefined}
           className="h-full"
         />
       </div>

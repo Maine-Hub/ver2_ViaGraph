@@ -4,6 +4,8 @@ import { z } from 'zod';
 import { query } from '@/lib/mysql';
 import type { ShortestPathResult, PathSegment } from '@/lib/types';
 import { calculateFare, calculateDiscountedFare } from './fare';
+import { findShortestPath } from './routing';
+
 
 const FindRouteSchema = z.object({
   startLocation: z.string().min(1, 'Please select a starting location.'),
@@ -40,87 +42,72 @@ export async function findRouteAction(
   }
 
   try {
-    // 1. Look for direct edges between the two nodes
-    const [rawNodes, rawEdges] = await Promise.all([
-      query<any[]>('SELECT id, name FROM nodes WHERE id IN (?, ?)', [startLocation, endLocation]),
-      query<any[]>(
-        `SELECT source, target, distance, route_name AS routeName,
-                stop_and_transfer AS stopAndTransfer, note,
-                regular_fare AS regularFare, discounted_fare AS discountedFare,
-                path_coordinates AS pathCoordinatesJson
-         FROM edges
-         WHERE (source = ? AND target = ?) OR (source = ? AND target = ?)`,
-        [startLocation, endLocation, endLocation, startLocation]
-      ),
-    ]);
+    // --- Phase 2: Dijkstra Implementation ---
+    console.log(`Searching for path via Dijkstra: ${startLocation} -> ${endLocation}`);
+    const dijkstraResult = await findShortestPath(startLocation, endLocation);
 
-    const nodeMap = Object.fromEntries(rawNodes.map((n: any) => [n.id, n.name]));
-    const fromName = nodeMap[startLocation] || startLocation;
-    const toName = nodeMap[endLocation] || endLocation;
+    if (dijkstraResult) {
+      console.log('Dijkstra path found! Path length:', dijkstraResult.path.length, ' | Edges:', dijkstraResult.path.map(b => `${b.source_id}->${b.target_id}`));
+      
+      // Fetch node names for display
+      const allNodeIds = new Set<string>();
+      dijkstraResult.path.forEach(b => {
+        allNodeIds.add(b.source_id);
+        allNodeIds.add(b.target_id);
+      });
+      
+      const allNodeIdsArray = Array.from(allNodeIds);
+      let nodeNameMap: Record<string, string> = {};
+      if (allNodeIdsArray.length > 0) {
+        const placeholders = allNodeIdsArray.map(() => '?').join(',');
+        const nodes = await query<any[]>(`SELECT id, name FROM nodes WHERE id IN (${placeholders})`, allNodeIdsArray);
+        nodes.forEach(n => nodeNameMap[n.id] = n.name);
+      }
 
-    if (rawEdges.length > 0) {
-      // Direct route found
-      const path: PathSegment[] = rawEdges.map((e: any) => ({
-        from: fromName,
-        to: toName,
-        routeName: e.routeName,
-        distance: e.distance,
-        stopAndTransfer: e.stopAndTransfer || '',
-        note: e.note || '',
-        regularFare: e.regularFare !== null ? Number(e.regularFare) : calculateFare(e.distance),
-        discountedFare: e.discountedFare !== null ? Number(e.discountedFare) : calculateDiscountedFare(e.distance),
-        pathCoordinates: e.pathCoordinatesJson ? JSON.parse(e.pathCoordinatesJson) : null,
+      const processPath = (blocks: any[]) => {
+        return blocks.map(b => {
+          let coords: [number, number][] | null = null;
+          try {
+            if (b.path_coordinates) {
+              coords = JSON.parse(b.path_coordinates);
+            }
+          } catch (e) {}
+
+          return {
+            from: nodeNameMap[b.source_id] || b.source_id,
+            to: nodeNameMap[b.target_id] || b.target_id,
+            routeName: b.route_name,
+            distance: b.distance,
+            regularFare: Number(b.regular_fare),
+            discountedFare: Number(b.regular_fare) * 0.8,
+            pathCoordinates: coords,
+          };
+        });
+      };
+
+      const path = processPath(dijkstraResult.path);
+      const alternatives = (dijkstraResult.alternatives || []).map((alt: any) => ({
+        path: processPath(alt.path),
+        totalDistance: alt.totalDistance,
+        totalFare: alt.totalFare,
+        discountedFare: alt.totalFare * 0.8,
       }));
 
-      const totalDistance = path.reduce((s, p) => s + p.distance, 0);
-      const totalFare = path.reduce((s, p) => s + (p.regularFare ?? 0), 0);
-      const discountedFare = path.reduce((s, p) => s + (p.discountedFare ?? 0), 0);
-
-      return { message: 'Route found.', result: { path, totalDistance, totalFare, discountedFare } };
+      return {
+        message: 'Route found via Dijkstra.',
+        result: {
+          path,
+          totalDistance: dijkstraResult.totalDistance,
+          totalFare: dijkstraResult.totalFare,
+          discountedFare: path.reduce((sum, p: any) => sum + (p.discountedFare || 0), 0),
+          alternatives
+        }
+      };
     }
 
-    // 2. No direct edge — check for transfer routes
-    const [transferRows] = await Promise.all([
-      query<any[]>(
-        `SELECT t.id, t.name FROM transfers t
-         WHERE (t.from_node_id = ? AND t.to_node_id = ?)
-            OR (t.from_node_id = ? AND t.to_node_id = ?)
-         LIMIT 1`,
-        [startLocation, endLocation, endLocation, startLocation]
-      ),
-    ]);
+    console.log('No Dijkstra path found. No route available.');
+    return { message: 'No route found between the selected locations.', error: true };
 
-    if (transferRows.length === 0) {
-      return { message: 'No route found between the selected locations.', error: true };
-    }
-
-    const transfer = transferRows[0];
-    const rawLegs = await query<any[]>(
-      `SELECT * FROM transfer_legs WHERE transfer_id = ? ORDER BY leg_order`,
-      [transfer.id]
-    );
-
-    if (rawLegs.length === 0) {
-      return { message: 'No route found between the selected locations.', error: true };
-    }
-
-    const path: PathSegment[] = rawLegs.map((leg: any, i: number) => ({
-      from: i === 0 ? fromName : `Leg ${i}`,
-      to: i === rawLegs.length - 1 ? toName : `Transfer ${i + 1}`,
-      routeName: leg.route_name,
-      distance: leg.distance,
-      stopAndTransfer: leg.stop_and_transfer || '',
-      note: leg.note || '',
-      regularFare: leg.regular_fare !== null ? Number(leg.regular_fare) : calculateFare(leg.distance),
-      discountedFare: leg.discounted_fare !== null ? Number(leg.discounted_fare) : calculateDiscountedFare(leg.distance),
-      pathCoordinates: leg.path_coordinates ? JSON.parse(leg.path_coordinates) : null,
-    }));
-
-    const totalDistance = path.reduce((s, p) => s + p.distance, 0);
-    const totalFare = path.reduce((s, p) => s + (p.regularFare ?? 0), 0);
-    const discountedFare = path.reduce((s, p) => s + (p.discountedFare ?? 0), 0);
-
-    return { message: 'Route found.', result: { path, totalDistance, totalFare, discountedFare } };
   } catch (error) {
     console.error('findRouteAction error:', error);
     return { message: 'An error occurred while searching for a route.', error: true };

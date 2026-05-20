@@ -3,8 +3,8 @@
 import { MapContainer, TileLayer, Marker, Popup, Polyline, Tooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { JeepneyRoute, Location, PathSegment } from '@/lib/types';
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { JeepneyRoute, Location, PathSegment, ShortestPathResult } from '@/lib/types';
+import { useEffect, useRef, useState, useMemo, Fragment } from 'react';
 
 // Fix Leaflet marker icons
 const defaultIcon = new L.Icon({
@@ -41,6 +41,7 @@ interface RouteMapViewProps {
     nodes: Location[];
     routes?: JeepneyRoute[];
     path?: PathSegment[];
+    alternatives?: ShortestPathResult[];
     className?: string;
 }
 
@@ -87,7 +88,57 @@ const FALLBACK_COLORS = [
     '#ec4899', '#14b8a6', '#f97316', '#06b6d4', '#84cc16',
 ];
 
-function MovingJeepneyMarker({ segments, speed = 350 }: { segments: { coords: [number, number][], color?: string, routeName?: string }[], speed?: number }) {
+const ALT_COLORS = [
+    '#f97316', // orange-500
+    '#8b5cf6', // violet-500
+    '#ec4899', // pink-500
+    '#06b6d4', // cyan-500
+    '#eab308', // yellow-500
+];
+
+function PathDirectionArrows({ coords, color }: { coords: [number, number][], color: string }) {
+    if (coords.length < 2) return null;
+    
+    // Determine how many arrows based on distance or point count
+    // For now, let's put arrows at 1/4, 1/2, and 3/4 if the segment is long enough
+    const step = Math.max(1, Math.floor(coords.length / 4));
+    const indices = coords.length > 5 
+        ? [step, step * 2, step * 3]
+        : [Math.floor(coords.length / 2)];
+    
+    return (
+        <>
+            {indices.map((idx, i) => {
+                if (idx >= coords.length - 1) return null;
+                const p1 = coords[idx];
+                const p2 = coords[idx + 1];
+                
+                // Calculate angle: rotate(0) points East (Right). 
+                // Leaflet coords are [lat, lng]. standard atan2 is (y, x) -> (lat, lng)
+                const angle = -(Math.atan2(p2[0] - p1[0], p2[1] - p1[1]) * 180 / Math.PI);
+                
+                const icon = L.divIcon({
+                    html: `<div style="transform: rotate(${angle}deg); color: ${color}; font-size: 14px; text-shadow: 0 0 3px white, 0 0 1px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-weight: bold;">➤</div>`,
+                    className: 'bg-transparent border-0',
+                    iconSize: [20, 20],
+                    iconAnchor: [10, 10]
+                });
+                
+                return (
+                    <Marker 
+                        key={`${idx}-${i}`} 
+                        position={p1} 
+                        icon={icon} 
+                        interactive={false} 
+                        zIndexOffset={500}
+                    />
+                );
+            })}
+        </>
+    );
+}
+
+function MovingJeepneyMarker({ segments, speed = 100 }: { segments: { coords: [number, number][], color?: string, routeName?: string, isWalking?: boolean }[], speed?: number }) {
     const markerRef = useRef<L.Marker | null>(null);
     const map = useMap();
     const frameRef = useRef<number>(0);
@@ -96,17 +147,9 @@ function MovingJeepneyMarker({ segments, speed = 350 }: { segments: { coords: [n
 
     const [pausedPos, setPausedPos] = useState<[number, number] | null>(null);
     const [showTransferStop, setShowTransferStop] = useState(false);
+    const [isWalkingSegment, setIsWalkingSegment] = useState(false);
 
     useEffect(() => {
-        console.log(
-            "MovingJeepneyMarker received segments:",
-            segments.map((s, i) => ({
-                index: i,
-                routeName: s.routeName,
-                coordCount: s.coords?.length || 0,
-            }))
-        );
-
         if (!segments || segments.length === 0 || !segments[0].coords || segments[0].coords.length < 2) {
             return;
         }
@@ -115,10 +158,10 @@ function MovingJeepneyMarker({ segments, speed = 350 }: { segments: { coords: [n
         stateRef.current = { segIdx: 0, ptIdx: 0, progress: 0, lastTime: performance.now(), isPaused: false };
         setPausedPos(null);
         setShowTransferStop(false);
+        setIsWalkingSegment(segments[0].isWalking || segments[0].routeName === 'JUST WALK' || false);
         
         // Initial set position
         if (markerRef.current) {
-            console.log("MovingJeepneyMarker: Initialized at segment 0");
             markerRef.current.setLatLng(segments[0].coords[0]);
         }
 
@@ -126,11 +169,9 @@ function MovingJeepneyMarker({ segments, speed = 350 }: { segments: { coords: [n
             const state = stateRef.current;
             
             if (state.isPaused) {
-                // If paused, just wait
                 return;
             }
 
-            // clamp delta to avoid big jumps if tab was inactive
             const delta = Math.min(time - state.lastTime, 100);
             state.lastTime = time;
 
@@ -143,24 +184,19 @@ function MovingJeepneyMarker({ segments, speed = 350 }: { segments: { coords: [n
                     return; // Reached final destination
                 }
 
-                console.log(`Reached transfer point at segment ${state.segIdx}.`);
-                console.log("Showing STOP HERE");
-
                 // Pause for transfer
                 state.isPaused = true;
                 
-                // Update React state to show tooltip safely without teleporting
                 setPausedPos(currentSegment.coords[state.ptIdx]);
                 setShowTransferStop(true);
 
-                // Stop requestAnimationFrame loop temporarily
                 timeoutRef.current = setTimeout(() => {
-                    console.log(`Continuing to segment ${state.segIdx + 1}`);
                     setShowTransferStop(false);
                     
                     const nextSeg = segments[state.segIdx + 1];
                     if (nextSeg && nextSeg.coords.length > 0) {
                         setPausedPos(nextSeg.coords[0]);
+                        setIsWalkingSegment(nextSeg.isWalking || nextSeg.routeName === 'JUST WALK' || false);
                         if (markerRef.current) {
                             markerRef.current.setLatLng(nextSeg.coords[0]);
                         }
@@ -181,20 +217,25 @@ function MovingJeepneyMarker({ segments, speed = 350 }: { segments: { coords: [n
             const p1 = currentSegment.coords[state.ptIdx];
             const p2 = currentSegment.coords[state.ptIdx + 1];
 
-            const dist = map.distance(p1, p2);
+            // Calculate distance in PIXELS so the visual speed is constant regardless of zoom level
+            const zoom = map.getZoom();
+            const p1Px = map.project(p1 as L.LatLngExpression, zoom);
+            const p2Px = map.project(p2 as L.LatLngExpression, zoom);
+            const distPx = p1Px.distanceTo(p2Px);
             
-            if (dist === 0) {
+            if (distPx === 0) {
                 state.ptIdx++;
                 state.progress = 0;
                 frameRef.current = requestAnimationFrame(animate);
                 return;
             }
 
-            const requiredTimeMs = (dist / speed) * 1000;
+            // Speed: Jeepneys go at 'speed' (pixels per sec), walking goes at 40% of the speed
+            const currentSpeed = currentSegment.isWalking || currentSegment.routeName === 'JUST WALK' ? speed * 0.4 : speed;
+            const requiredTimeMs = (distPx / currentSpeed) * 1000;
             
             state.progress += delta / requiredTimeMs;
             
-            // Clamp progress between 0 and 1
             const clampedProgress = Math.min(state.progress, 1);
 
             const newLat = p1[0] + (p2[0] - p1[0]) * clampedProgress;
@@ -222,19 +263,23 @@ function MovingJeepneyMarker({ segments, speed = 350 }: { segments: { coords: [n
 
     if (!segments || segments.length === 0 || !segments[0].coords) return null;
 
-    const jeepneyIcon = L.divIcon({
-        html: '<div style="font-size: 28px; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.5)); transform: translate(-50%, -50%);">🚐</div>',
+    const createIcon = (isWalk: boolean) => L.divIcon({
+        html: `<div style="font-size: 28px; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.5)); transform: translate(-50%, -50%);">${isWalk ? '🚶' : '🚐'}</div>`,
         className: 'jeepney-anim-icon bg-transparent border-0',
         iconSize: [0, 0]
     });
 
     return (
-        <Marker ref={markerRef} position={pausedPos || segments[0].coords[0]} icon={jeepneyIcon} zIndexOffset={1000}>
+        <Marker ref={markerRef} position={pausedPos || segments[0].coords[0]} icon={createIcon(isWalkingSegment)} zIndexOffset={1000}>
             {showTransferStop && (
                 <Tooltip permanent direction="top" opacity={1} offset={[0, -20]} className="bg-transparent border-0 shadow-none p-0 m-0">
                     <div style={{ textAlign: 'center', background: 'white', padding: '6px 10px', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.15)', border: '2px solid #fca5a5' }}>
                         <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b', marginBottom: '2px' }}>STOP HERE</div>
-                        <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#dc2626', margin: 0 }}>Transfer to another jeepney</div>
+                        <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#dc2626', margin: 0 }}>
+                            {(segments[stateRef.current.segIdx + 1]?.routeName === 'JUST WALK' || segments[stateRef.current.segIdx + 1]?.isWalking)
+                                ? 'Walk to Destination' 
+                                : 'Transfer to another jeepney'}
+                        </div>
                     </div>
                 </Tooltip>
             )}
@@ -242,12 +287,20 @@ function MovingJeepneyMarker({ segments, speed = 350 }: { segments: { coords: [n
     );
 }
 
-export default function RouteMapView({ nodes, routes, path, className }: RouteMapViewProps) {
+export default function RouteMapView({ nodes, routes, path, alternatives, className }: RouteMapViewProps) {
     const [tileMode, setTileMode] = useState<TileMode>('standard');
+    const [showAlternatives, setShowAlternatives] = useState(false);
     const mapRef = useRef<L.Map | null>(null);
 
+    const recommendedStats = useMemo(() => {
+        if (!path) return { distance: 0, fare: 0 };
+        const distance = path.reduce((acc, seg) => acc + Number(seg.distance || 0), 0);
+        const fare = path.reduce((acc, seg) => acc + Number(seg.regularFare || 0), 0);
+        return { distance, fare };
+    }, [path]);
+
     const segmentPolylines = useMemo(() => {
-        const polylines: { coords: [number, number][]; color: string; routeName: string }[] = [];
+        const polylines: { coords: [number, number][]; color: string; routeName: string; isWalking?: boolean }[] = [];
         if (!path) return polylines;
 
         const routeColorMap: Record<string, string> = {};
@@ -259,10 +312,35 @@ export default function RouteMapView({ nodes, routes, path, className }: RouteMa
 
         path.forEach((segment, index) => {
             const anySegment = segment as any;
-            const color = routeColorMap[segment.routeName]
-                || FALLBACK_COLORS[index % FALLBACK_COLORS.length];
+            
+            // IF showAlternatives is ON: Use GREEN for the recommended path
+            // IF showAlternatives is OFF: Use original line colors
+            const color = showAlternatives 
+                ? '#16a34a' 
+                : (routeColorMap[segment.routeName] || FALLBACK_COLORS[index % FALLBACK_COLORS.length]);
 
-            if (anySegment.pathCoordinates && anySegment.pathCoordinates.length > 1) {
+            // Check if pathCoordinates is the new Object format (contains ridingCoords/walkingCoords)
+            if (anySegment.pathCoordinates && anySegment.pathCoordinates.ridingCoords) {
+                if (anySegment.pathCoordinates.ridingCoords.length > 1) {
+                    polylines.push({
+                        coords: anySegment.pathCoordinates.ridingCoords,
+                        color,
+                        routeName: segment.routeName,
+                    });
+                }
+                // Only render walking path as dashed if this is the LAST segment AND it truly has walking
+                const isLastSegment = index === path.length - 1;
+                const hasWalking = anySegment.pathCoordinates.walkingDist > 0;
+                if (isLastSegment && hasWalking && anySegment.pathCoordinates.walkingCoords?.length > 1) {
+                    polylines.push({
+                        coords: anySegment.pathCoordinates.walkingCoords,
+                        color: '#94a3b8', // slate-400 for walking
+                        routeName: 'Walk to destination',
+                        isWalking: true
+                    });
+                }
+            } else if (anySegment.pathCoordinates && anySegment.pathCoordinates.length > 1) {
+                // Legacy flat array format
                 polylines.push({
                     coords: anySegment.pathCoordinates,
                     color,
@@ -284,62 +362,164 @@ export default function RouteMapView({ nodes, routes, path, className }: RouteMa
             }
         });
         return polylines;
-    }, [path, nodes, routes]);
+    }, [path, nodes, routes, showAlternatives]);
 
-
-
+    const alternativePolylines = useMemo(() => {
+        if (!alternatives || !showAlternatives) return [];
+        
+        return alternatives.map((alt, altIdx) => {
+            const routeColor = ALT_COLORS[altIdx % ALT_COLORS.length];
+            const lines: { coords: [number, number][]; color: string; routeName: string; altIdx: number }[] = [];
+            
+            alt.path.forEach((segment: PathSegment) => {
+                if (segment.pathCoordinates && segment.pathCoordinates.length > 1) {
+                    lines.push({ 
+                        coords: segment.pathCoordinates, 
+                        color: routeColor, 
+                        routeName: segment.routeName,
+                        altIdx
+                    });
+                } else {
+                    const fromNode = nodes.find(n => n.name === segment.from || n.id === segment.from);
+                    const toNode = nodes.find(n => n.name === segment.to || n.id === segment.to);
+                    if (fromNode?.coordinates && toNode?.coordinates) {
+                        lines.push({
+                            coords: [
+                                [fromNode.coordinates.latitude, fromNode.coordinates.longitude],
+                                [toNode.coordinates.latitude, toNode.coordinates.longitude]
+                            ],
+                            color: routeColor,
+                            routeName: segment.routeName,
+                            altIdx
+                        });
+                    }
+                }
+            });
+            return lines;
+        }).flat();
+    }, [alternatives, showAlternatives, nodes]);
 
     const center: [number, number] = [8.2415, 124.2435];
 
-    // Unique lines actually used in this path (for the legend)
-    const legendLines: { name: string; color: string }[] = [];
-    const seen = new Set<string>();
-    segmentPolylines.forEach(s => {
-        if (!seen.has(s.routeName)) {
-            seen.add(s.routeName);
-            legendLines.push({ name: s.routeName, color: s.color });
-        }
-    });
-
     return (
         <div className={`relative w-full rounded-xl overflow-hidden border border-slate-200 shadow-xl ${className || 'h-[400px] md:h-[600px]'}`}>
-            {/* Tile toggle button */}
-            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] flex rounded-lg overflow-hidden shadow-lg border border-slate-200">
-                <button
-                    onClick={() => setTileMode('standard')}
-                    className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold transition-all ${tileMode === 'standard'
-                        ? 'bg-cyan-500 text-white'
-                        : 'bg-white text-slate-600 hover:bg-slate-100'
-                        }`}
-                >
-                    🗺️ Standard
-                </button>
-                <button
-                    onClick={() => setTileMode('satellite')}
-                    className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold transition-all ${tileMode === 'satellite'
-                        ? 'bg-cyan-500 text-white'
-                        : 'bg-white text-slate-600 hover:bg-slate-100'
-                        }`}
-                >
-                    🛰️ Satellite
-                </button>
+            {/* Control Bar */}
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] flex flex-col items-center gap-3 w-full px-4 max-w-md">
+                <div className="flex rounded-lg overflow-hidden shadow-lg border border-slate-200 bg-white">
+                    <button
+                        onClick={() => setTileMode('standard')}
+                        className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold transition-all ${tileMode === 'standard'
+                            ? 'bg-cyan-500 text-white'
+                            : 'bg-white text-slate-600 hover:bg-slate-100'
+                            }`}
+                    >
+                        🗺️ Standard
+                    </button>
+                    <button
+                        onClick={() => setTileMode('satellite')}
+                        className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold transition-all ${tileMode === 'satellite'
+                            ? 'bg-cyan-500 text-white'
+                            : 'bg-white text-slate-600 hover:bg-slate-100'
+                            }`}
+                    >
+                        🛰️ Satellite
+                    </button>
+                </div>
+
+                {alternatives && alternatives.length > 0 && (
+                    <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-slate-200 px-4 py-2 flex items-center gap-3">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={showAlternatives}
+                                onChange={(e) => setShowAlternatives(e.target.checked)}
+                                className="w-4 h-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
+                            />
+                            <span className="text-xs font-bold text-slate-700 uppercase tracking-tight">Show Alternative Paths</span>
+                        </label>
+                    </div>
+                )}
             </div>
 
-            {/* Route legend */}
-            {legendLines.length > 0 && (
-                <div className="absolute bottom-3 left-3 z-[1000] bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-slate-200 px-3 py-2.5 space-y-1.5 max-w-[180px]">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Route Lines</p>
-                    {legendLines.map(line => (
-                        <div key={line.name} className="flex items-center gap-2">
-                            <span
-                                className="inline-block w-4 h-2 rounded-full flex-shrink-0"
-                                style={{ backgroundColor: line.color }}
-                            />
-                            <span className="text-xs font-medium text-slate-700 truncate">{line.name}</span>
+            {/* Map legend */}
+            <div className="absolute bottom-3 left-3 z-[1000] bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-slate-200 px-3 py-2.5 space-y-2 max-w-[240px]">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 border-b border-slate-100 pb-1">Map Legend</p>
+                
+                {showAlternatives ? (
+                    <>
+                        <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                                <span className="inline-block w-4 h-2 rounded-full bg-[#16a34a] shadow-[0_0_5px_rgba(22,163,74,0.5)] flex-shrink-0" />
+                                <div className="flex flex-col">
+                                    <span className="text-[11px] font-bold text-slate-700 leading-tight">Recommended Route</span>
+                                    <span className="text-[9px] text-green-700 font-medium">
+                                        {recommendedStats.distance.toFixed(2)}km • ₱{recommendedStats.fare.toFixed(2)}
+                                    </span>
+                                </div>
+                            </div>
+                            {(() => {
+                                const uniqueLines = Array.from(new Set(path?.map(p => p.routeName))).filter(l => l !== 'JUST WALK');
+                                return uniqueLines.length > 0 && (
+                                    <p className="text-[8px] text-green-600 pl-6 leading-tight truncate">
+                                        Ride: {uniqueLines.join(' ➜ ')}
+                                    </p>
+                                );
+                            })()}
                         </div>
-                    ))}
-                </div>
-            )}
+
+                        {alternatives && alternatives.length > 0 && (
+                            <div className="pt-2 mt-1 border-t border-slate-100 space-y-2">
+                                <p className="text-[9px] font-bold uppercase tracking-tighter text-slate-400">Alternative Options</p>
+                                {alternatives.map((alt, idx) => {
+                                    const color = ALT_COLORS[idx % ALT_COLORS.length];
+                                    const uniqueLines = Array.from(new Set(alt.path.map(p => p.routeName))).filter(l => l !== 'JUST WALK');
+                                    return (
+                                        <div key={idx} className="flex flex-col gap-0.5">
+                                            <div className="flex items-center gap-2">
+                                                <span 
+                                                    className="inline-block w-4 h-1.5 rounded-full flex-shrink-0" 
+                                                    style={{ backgroundColor: color }}
+                                                />
+                                                <div className="flex flex-col">
+                                                    <span className="text-[10px] font-bold text-slate-700 leading-tight">Option {idx + 1}</span>
+                                                    <span className="text-[8px] text-slate-500">
+                                                        {Number(alt.totalDistance || 0).toFixed(2)}km • ₱{Number(alt.totalFare || 0).toFixed(2)}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            {uniqueLines.length > 0 && (
+                                                <p className="text-[8px] text-slate-400 pl-6 leading-tight truncate" title={uniqueLines.join(', ')}>
+                                                    Ride: {uniqueLines.join(' ➜ ')}
+                                                </p>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </>
+                ) : (
+                    <div className="space-y-1.5">
+                        {/* Show actual line colors if alternatives are off */}
+                        {(() => {
+                            const uniqueRoutes = Array.from(new Set(path?.map(p => p.routeName)));
+                            return uniqueRoutes.map(routeName => {
+                                const route = routes?.find(r => r.name === routeName);
+                                const color = route?.color || FALLBACK_COLORS[uniqueRoutes.indexOf(routeName) % FALLBACK_COLORS.length];
+                                return (
+                                    <div key={routeName} className="flex items-center gap-2">
+                                        <span 
+                                            className="inline-block w-4 h-2 rounded-full flex-shrink-0" 
+                                            style={{ backgroundColor: color }}
+                                        />
+                                        <span className="text-[11px] font-bold text-slate-700 truncate">{routeName}</span>
+                                    </div>
+                                );
+                            });
+                        })()}
+                    </div>
+                )}
+            </div>
 
             <MapContainer
                 center={center}
@@ -353,7 +533,7 @@ export default function RouteMapView({ nodes, routes, path, className }: RouteMa
                 <TileLayerSwitcher mode={tileMode} />
                 <InvalidateSize />
 
-                {/* Only visible location nodes that are part of the path */}
+                {/* Markers */}
                 {path && path.length > 0 && nodes.filter(node =>
                     path.some(segment =>
                         segment.from === node.name ||
@@ -374,39 +554,71 @@ export default function RouteMapView({ nodes, routes, path, className }: RouteMa
                     )
                 ))}
 
-                {/* Highlight Path — one polyline per segment with its line color */}
+                {/* Alternative Paths (Lighter/Transparent) */}
+                {alternativePolylines.map((seg, i) => (
+                    <Fragment key={`alt-group-${i}`}>
+                        <Polyline
+                            positions={seg.coords}
+                            color={seg.color}
+                            weight={5}
+                            opacity={0.6}
+                            dashArray="5, 8"
+                            lineCap="round"
+                        >
+                            <Tooltip sticky>
+                                <div className="text-[11px]">
+                                    <span className="font-bold text-slate-700">Option {seg.altIdx + 1}</span>
+                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: seg.color }} />
+                                        <span className="font-semibold">{seg.routeName}</span>
+                                    </div>
+                                </div>
+                            </Tooltip>
+                        </Polyline>
+                        <PathDirectionArrows coords={seg.coords} color={seg.color} />
+                    </Fragment>
+                ))}
+
+                {/* Recommended Path (Shortest) */}
                 {segmentPolylines.map((seg, i) => (
-                    <Polyline
-                        key={`${seg.routeName}-${i}`}
-                        positions={seg.coords}
-                        color={seg.color}
-                        weight={6}
-                        opacity={0.85}
-                    />
+                    <Fragment key={`rec-group-${i}`}>
+                        {/* Glow/Outline for better contrast */}
+                        <Polyline
+                            positions={seg.coords}
+                            color="white"
+                            weight={11}
+                            opacity={0.4}
+                            lineCap="round"
+                        />
+                        <Polyline
+                            positions={seg.coords}
+                            color={seg.color}
+                            weight={7}
+                            opacity={1}
+                            lineCap="round"
+                            dashArray={seg.isWalking ? "10, 10" : undefined}
+                        >
+                            <Tooltip sticky>
+                                <div className="text-[11px]">
+                                    <span className="font-bold text-green-700">Recommended Route</span>
+                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: seg.color }} />
+                                        <span className="font-semibold">{seg.routeName}</span>
+                                    </div>
+                                </div>
+                            </Tooltip>
+                        </Polyline>
+                        <PathDirectionArrows coords={seg.coords} color={seg.color} />
+                    </Fragment>
                 ))}
 
                 {/* Animated Jeepney */}
-                {(() => {
-                    if (segmentPolylines.length > 0) {
-                        console.log(
-                            "segmentPolylines passed to jeepney:",
-                            segmentPolylines.map((s, i) => ({
-                                index: i,
-                                routeName: s.routeName,
-                                coordCount: s.coords.length,
-                                first: s.coords[0],
-                                last: s.coords[s.coords.length - 1],
-                            }))
-                        );
-                        return (
-                            <MovingJeepneyMarker 
-                                segments={segmentPolylines} 
-                                speed={350} 
-                            />
-                        );
-                    }
-                    return null;
-                })()}
+                {segmentPolylines.length > 0 && (
+                    <MovingJeepneyMarker 
+                        segments={segmentPolylines} 
+                        speed={350} 
+                    />
+                )}
             </MapContainer>
         </div>
     );

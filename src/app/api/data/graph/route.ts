@@ -3,10 +3,9 @@ import { query } from '@/lib/mysql';
 
 export async function GET() {
     try {
-        const [nodes, routes, edges] = await Promise.all([
+        const [nodes, routeBlocks] = await Promise.all([
             query<any[]>('SELECT id, name, latitude as lat, longitude as lng FROM nodes'),
-            query<any[]>('SELECT name, description, IFNULL(color, \'#6366f1\') as color FROM routes'),
-            query<any[]>('SELECT id, source, target, distance, route_name as routeName, stop_and_transfer as stopAndTransfer, note, regular_fare as regularFare, discounted_fare as discountedFare, path_coordinates as pathCoordinatesJson FROM edges'),
+            query<any[]>('SELECT id, source_id as source, target_id as target, distance, route_name as routeName, vehicle_type, regular_fare as regularFare, discounted_fare as discountedFare, path_coordinates as pathCoordinatesJson FROM route_blocks'),
         ]);
 
         // Reshape nodes to match Location type
@@ -16,18 +15,28 @@ export async function GET() {
             coordinates: { latitude: n.lat, longitude: n.lng },
         }));
 
-        // Parse stored path_coordinates JSON for each edge
-        const reshapedEdges = edges.map((e: any) => ({
+        // Parse stored path_coordinates JSON for each block
+        const reshapedEdges = routeBlocks.map((e: any) => ({
             id: e.id,
             source: e.source,
             target: e.target,
             distance: e.distance,
             routeName: e.routeName,
-            stopAndTransfer: e.stopAndTransfer,
-            note: e.note,
+            stopAndTransfer: e.vehicle_type, // Using vehicle_type temporarily for display
+            note: '',
             regularFare: e.regularFare,
             discountedFare: e.discountedFare,
-            pathCoordinates: e.pathCoordinatesJson ? JSON.parse(e.pathCoordinatesJson) : null,
+            pathCoordinates: e.pathCoordinatesJson 
+                ? JSON.parse(e.pathCoordinatesJson) 
+                : null,
+        }));
+
+        // Generate distinct routes for legend
+        const uniqueRouteNames = Array.from(new Set(routeBlocks.map((e: any) => e.routeName)));
+        const routes = uniqueRouteNames.map(name => ({
+            name: name,
+            description: name,
+            color: '#6366f1' // Default color, can be updated later
         }));
 
         return NextResponse.json({ nodes: locationNodes, routes, edges: reshapedEdges });

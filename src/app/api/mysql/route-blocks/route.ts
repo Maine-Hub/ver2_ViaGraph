@@ -14,7 +14,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { sourceId, targetId, routeName, vehicleType, distance, pathCoordinates } = body;
+    const { sourceId, targetId, routeName, vehicleType, distance, pathCoordinates, note } = body;
 
     if (!sourceId || !targetId || !routeName || distance === undefined) {
       return NextResponse.json({ success: false, message: 'Missing required fields.' }, { status: 400 });
@@ -43,9 +43,9 @@ export async function POST(req: Request) {
     
     await query(
       `INSERT INTO route_blocks 
-       (source_id, target_id, route_name, vehicle_type, distance, regular_fare, discounted_fare, path_coordinates) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [sourceId, targetId, routeName, vehicleType || 'jeepney', distance, regularFare, discountedFare, pathJson]
+       (source_id, target_id, route_name, vehicle_type, distance, regular_fare, discounted_fare, path_coordinates, note) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [sourceId, targetId, routeName, vehicleType || 'jeepney', distance, regularFare, discountedFare, pathJson, note || null]
     );
 
     // 3. Auto-insert route name into routes table if it doesn't exist

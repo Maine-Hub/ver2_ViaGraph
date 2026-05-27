@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/mysql';
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     if (!id) {
       return NextResponse.json({ success: false, message: 'Route Block ID is required.' }, { status: 400 });
     }
@@ -16,15 +16,15 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
   }
 }
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     if (!id) {
       return NextResponse.json({ success: false, message: 'Route Block ID is required.' }, { status: 400 });
     }
 
     const body = await req.json();
-    const { sourceId, targetId, routeName, vehicleType, distance, pathCoordinates } = body;
+    const { sourceId, targetId, routeName, vehicleType, distance, pathCoordinates, note } = body;
 
     if (!sourceId || !targetId || !routeName || distance === undefined) {
       return NextResponse.json({ success: false, message: 'Missing required fields.' }, { status: 400 });
@@ -53,9 +53,9 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     
     await query(
       `UPDATE route_blocks 
-       SET source_id = ?, target_id = ?, route_name = ?, vehicle_type = ?, distance = ?, regular_fare = ?, discounted_fare = ?, path_coordinates = ?
+       SET source_id = ?, target_id = ?, route_name = ?, vehicle_type = ?, distance = ?, regular_fare = ?, discounted_fare = ?, path_coordinates = ?, note = ?
        WHERE id = ?`,
-      [sourceId, targetId, routeName, vehicleType || 'jeepney', distance, regularFare, discountedFare, pathJson, id]
+      [sourceId, targetId, routeName, vehicleType || 'jeepney', distance, regularFare, discountedFare, pathJson, note || null, id]
     );
 
     // 3. Auto-insert route name into routes table if it doesn't exist

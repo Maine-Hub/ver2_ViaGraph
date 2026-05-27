@@ -19,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -36,7 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { PlusCircle, Trash2, Edit, Database, Map, ChevronUp, ChevronDown, ChevronsUpDown, RefreshCcw } from 'lucide-react';
+import { PlusCircle, Trash2, Edit, Database, Map, ChevronUp, ChevronDown, ChevronsUpDown, RefreshCcw, AlertTriangle, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/app-context';
 import { useEffect, useState, useMemo } from 'react';
@@ -81,6 +82,7 @@ export default function AdminDashboard() {
   const [blockVehicleType, setBlockVehicleType] = useState('jeepney');
   const [blockDistance, setBlockDistance] = useState('');
   const [blockPathCoords, setBlockPathCoords] = useState<[number, number][]>([]);
+  const [blockNote, setBlockNote] = useState('');
   const [routeInputMode, setRouteInputMode] = useState<'manual' | 'json'>('manual');
   const [jsonImportError, setJsonImportError] = useState('');
 
@@ -93,6 +95,16 @@ export default function AdminDashboard() {
 
   // Confirm Delete State
   const [confirmDelete, setConfirmDelete] = useState<{ type: string; id: string; label: string } | null>(null);
+
+  // View Route Details State
+  const [viewRouteDetails, setViewRouteDetails] = useState<string | null>(null);
+
+  // Preview Route Block State
+  const [previewBlock, setPreviewBlock] = useState<any | null>(null);
+
+  // Preview Node State
+  const [previewNode, setPreviewNode] = useState<any | null>(null);
+  const [isEditingNode, setIsEditingNode] = useState(false);
 
   const loadData = async () => {
     setIsDataLoading(true);
@@ -176,7 +188,8 @@ export default function AdminDashboard() {
           routeName: blockRouteName,
           vehicleType: blockVehicleType,
           distance: parseFloat(blockDistance),
-          pathCoordinates: blockPathCoords.length > 0 ? blockPathCoords.map(c => [c[1], c[0]]) : null
+          pathCoordinates: blockPathCoords.length > 0 ? blockPathCoords : null,
+          note: blockNote || null
         })
       });
       const data = await res.json();
@@ -191,6 +204,7 @@ export default function AdminDashboard() {
       setBlockRouteName('');
       setBlockDistance('');
       setBlockPathCoords([]);
+      setBlockNote('');
       
       loadData();
     } catch (error: any) {
@@ -219,6 +233,7 @@ export default function AdminDashboard() {
       if (!data.success) throw new Error(data.message);
       toast({ title: 'Success', description: 'Node saved successfully.' });
       setIsAddingNode(false);
+      setIsEditingNode(false);
       setNodeId('');
       setNodeName('');
       setNodeLat('');
@@ -274,6 +289,7 @@ export default function AdminDashboard() {
                     setBlockRouteName('');
                     setBlockDistance('');
                     setBlockPathCoords([]);
+                    setBlockNote('');
                   }
                 }}>
                   <DialogTrigger asChild>
@@ -328,7 +344,8 @@ export default function AdminDashboard() {
                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="jeepney">Jeepney</SelectItem>
-                                  <SelectItem value="minibus">Minibus</SelectItem>
+                                  <SelectItem value="minibus">Mini Bus</SelectItem>
+                                  <SelectItem value="bus">Bus</SelectItem>
                                   <SelectItem value="walking">Walking</SelectItem>
                                 </SelectContent>
                               </Select>
@@ -337,6 +354,16 @@ export default function AdminDashboard() {
                               <Label>Distance (km)</Label>
                               <Input type="number" step="0.01" value={blockDistance} onChange={e => setBlockDistance(e.target.value)} />
                             </div>
+                          </div>
+
+                          <div className="grid gap-1">
+                            <Label>Note (Tip/Instructions)</Label>
+                            <Textarea 
+                              value={blockNote} 
+                              onChange={e => setBlockNote(e.target.value)} 
+                              placeholder="e.g. Tip: Wait at the terminal or walk towards highway."
+                              className="min-h-[60px]"
+                            />
                           </div>
 
                           <div className="mt-4 pt-4 border-t border-slate-100">
@@ -419,6 +446,9 @@ export default function AdminDashboard() {
                         <TableCell className="text-emerald-600">₱{Number(b.discountedFare || 0).toFixed(2)}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="icon" title="Preview Path on Map" onClick={() => setPreviewBlock(b)}>
+                              <Eye className="h-4 w-4 text-slate-500 hover:text-cyan-600" />
+                            </Button>
                             <Button variant="ghost" size="icon" onClick={() => {
                               setEditBlockId(b.id);
                               setBlockSource(b.source);
@@ -426,7 +456,12 @@ export default function AdminDashboard() {
                               setBlockRouteName(b.routeName);
                               setBlockVehicleType(b.stopAndTransfer || 'jeepney');
                               setBlockDistance(b.distance.toString());
-                              setBlockPathCoords(b.pathCoordinates || []);
+                              setBlockPathCoords(
+                                Array.isArray(b.pathCoordinates) 
+                                  ? b.pathCoordinates 
+                                  : (b.pathCoordinates?.ridingCoords || [])
+                              );
+                              setBlockNote(b.note || '');
                               setIsAddingBlock(true);
                             }}>
                               <Edit className="h-4 w-4 text-slate-500 hover:text-cyan-600" />
@@ -451,40 +486,78 @@ export default function AdminDashboard() {
              <CardHeader className="border-b border-slate-100 bg-slate-50/50 rounded-t-2xl">
               <div className="flex items-center justify-between">
                 <CardTitle>Locations (Nodes)</CardTitle>
-                <Dialog open={isAddingNode} onOpenChange={setIsAddingNode}>
+                <Dialog open={isAddingNode} onOpenChange={(open) => {
+                  setIsAddingNode(open);
+                  if (!open) {
+                    setNodeId('');
+                    setNodeName('');
+                    setNodeLat('');
+                    setNodeLng('');
+                    setIsEditingNode(false);
+                  }
+                }}>
                   <DialogTrigger asChild>
-                    <Button className="bg-cyan-500 hover:bg-cyan-600 shadow-md">
+                    <Button className="bg-cyan-500 hover:bg-cyan-600 shadow-md" onClick={() => {
+                      setNodeId('');
+                      setNodeName('');
+                      setNodeLat('');
+                      setNodeLng('');
+                      setIsEditingNode(false);
+                    }}>
                       <PlusCircle className="mr-2 h-4 w-4" /> Add Node
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Add / Edit Node</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                      <div className="grid gap-2">
-                        <Label>Node ID (e.g., centennial-park)</Label>
-                        <Input value={nodeId} onChange={e => setNodeId(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))} placeholder="Lower-case, no spaces" />
+                  <DialogContent className="max-w-5xl p-0 overflow-hidden border-none shadow-2xl">
+                    <div className="flex flex-col md:flex-row h-full max-h-[90vh]">
+                      {/* Left: Map */}
+                      <div className="hidden md:block md:w-3/5 bg-slate-50 relative border-r border-slate-100 min-h-[500px]">
+                        <LocationPickerMap
+                          selectedLat={nodeLat ? parseFloat(nodeLat) : undefined}
+                          selectedLng={nodeLng ? parseFloat(nodeLng) : undefined}
+                          onLocationSelect={(lat, lng) => {
+                            setNodeLat(lat.toFixed(6));
+                            setNodeLng(lng.toFixed(6));
+                          }}
+                          className="h-full w-full border-none shadow-none rounded-none"
+                        />
                       </div>
-                      <div className="grid gap-2">
-                        <Label>Display Name</Label>
-                        <Input value={nodeName} onChange={e => setNodeName(e.target.value)} placeholder="e.g., Dalipuga Centennial Park" />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="grid gap-2">
-                          <Label>Latitude</Label>
-                          <Input type="number" value={nodeLat} onChange={e => setNodeLat(e.target.value)} placeholder="e.g., 8.3198" />
+                      {/* Right: Form */}
+                      <div className="w-full md:w-2/5 p-8 flex flex-col bg-white overflow-y-auto">
+                        <DialogHeader className="mb-4">
+                          <DialogTitle className="text-2xl font-bold">{isEditingNode ? 'Edit Node' : 'Add Node'}</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4 flex-1">
+                          <div className="grid gap-2">
+                            <Label>Node ID (e.g., centennial-park)</Label>
+                            <Input 
+                              value={nodeId} 
+                              onChange={e => setNodeId(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))} 
+                              placeholder="Lower-case, no spaces" 
+                              disabled={isEditingNode}
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label>Display Name</Label>
+                            <Input value={nodeName} onChange={e => setNodeName(e.target.value)} placeholder="e.g., Dalipuga Centennial Park" />
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                              <Label>Latitude</Label>
+                              <Input type="number" step="any" value={nodeLat} onChange={e => setNodeLat(e.target.value)} placeholder="e.g., 8.3198" />
+                            </div>
+                            <div className="grid gap-2">
+                              <Label>Longitude</Label>
+                              <Input type="number" step="any" value={nodeLng} onChange={e => setNodeLng(e.target.value)} placeholder="e.g., 124.2482" />
+                            </div>
+                          </div>
+                          <p className="text-xs text-slate-400 italic mt-2">💡 Tip: You can click anywhere on the map to automatically fill in the coordinates.</p>
                         </div>
-                        <div className="grid gap-2">
-                          <Label>Longitude</Label>
-                          <Input type="number" value={nodeLng} onChange={e => setNodeLng(e.target.value)} placeholder="e.g., 124.2482" />
-                        </div>
+                        <DialogFooter className="mt-8">
+                          <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                          <Button onClick={handleSaveNode} className="bg-cyan-500 hover:bg-cyan-600 text-white">Save Node</Button>
+                        </DialogFooter>
                       </div>
                     </div>
-                    <DialogFooter>
-                      <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                      <Button onClick={handleSaveNode} className="bg-cyan-500 hover:bg-cyan-600 text-white">Save Node</Button>
-                    </DialogFooter>
                   </DialogContent>
                 </Dialog>
               </div>
@@ -509,11 +582,15 @@ export default function AdminDashboard() {
                       <TableCell>{n.coordinates?.longitude}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" title="Preview Node on Map" onClick={() => setPreviewNode(n)}>
+                            <Eye className="h-4 w-4 text-slate-500 hover:text-cyan-600" />
+                          </Button>
                           <Button variant="ghost" size="icon" onClick={() => {
                             setNodeId(n.id);
                             setNodeName(n.name);
                             setNodeLat(String(n.coordinates?.latitude ?? ''));
                             setNodeLng(String(n.coordinates?.longitude ?? ''));
+                            setIsEditingNode(true);
                             setIsAddingNode(true);
                           }}>
                             <Edit className="h-4 w-4 text-slate-500 hover:text-cyan-600" />
@@ -545,27 +622,51 @@ export default function AdminDashboard() {
                     <TableHead>Route Name</TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead>Color</TableHead>
+                    <TableHead>Usage Stats</TableHead>
                     <TableHead className="w-[100px]"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {routes.map(r => (
-                    <TableRow key={r.name}>
-                      <TableCell className="font-bold text-slate-800">{r.name}</TableCell>
-                      <TableCell>{r.description}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                           <div className="w-4 h-4 rounded-full" style={{ backgroundColor: r.color }}></div>
-                           <span className="font-mono text-xs text-slate-500">{r.color}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="icon" onClick={() => requestDelete('route', r.name, `jeepney line: ${r.name}`)  }>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {routes.map(r => {
+                    const lineBlocks = routeBlocks.filter(b => b.routeName === r.name);
+                    const blockCount = lineBlocks.length;
+                    
+                    const nodeIds = new Set<string>();
+                    lineBlocks.forEach(b => {
+                      nodeIds.add(b.source);
+                      nodeIds.add(b.target);
+                    });
+                    const nodeCount = nodeIds.size;
+
+                    return (
+                      <TableRow key={r.name}>
+                        <TableCell className="font-bold text-slate-800">{r.name}</TableCell>
+                        <TableCell>{r.description}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                             <div className="w-4 h-4 rounded-full" style={{ backgroundColor: r.color }}></div>
+                             <span className="font-mono text-xs text-slate-500">{r.color}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col text-xs text-slate-500">
+                            <span className="font-medium text-slate-700">{blockCount} block{blockCount !== 1 && 's'}</span>
+                            <span>{nodeCount} node{nodeCount !== 1 && 's'}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="icon" onClick={() => setViewRouteDetails(r.name)}>
+                              <Eye className="h-4 w-4 text-cyan-600" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => requestDelete('route', r.name, `jeepney line: ${r.name}`)  }>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </CardContent>
@@ -666,6 +767,30 @@ export default function AdminDashboard() {
               <span className="font-semibold text-slate-800">{confirmDelete?.label}</span>?
               <br />
               <span className="text-destructive font-medium">This action cannot be undone.</span>
+
+              {confirmDelete?.type === 'node' && (
+                <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-900 text-sm">
+                  <p className="font-semibold mb-1 flex items-center gap-1.5 text-amber-700">
+                    <AlertTriangle className="h-4 w-4" /> Affected Route Blocks:
+                  </p>
+                  {(() => {
+                    const affected = routeBlocks.filter(b => b.source === confirmDelete.id || b.target === confirmDelete.id);
+                    if (affected.length === 0) {
+                      return <p className="italic text-amber-700 mt-1">✓ No route blocks use this node. Safe to delete.</p>;
+                    }
+                    return (
+                      <ul className="list-disc pl-5 mt-2 space-y-1 max-h-32 overflow-y-auto">
+                        {affected.map(b => (
+                          <li key={b.id}>
+                            <span className="font-medium">{nodes.find(n => n.id === b.source)?.name || b.source}</span> → <span className="font-medium">{nodes.find(n => n.id === b.target)?.name || b.target}</span>
+                            <span className="text-amber-600 ml-1 text-xs">({b.routeName})</span>
+                          </li>
+                        ))}
+                      </ul>
+                    );
+                  })()}
+                </div>
+              )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-4">
@@ -675,6 +800,143 @@ export default function AdminDashboard() {
             <Button variant="destructive" onClick={handleDelete}>
               Yes, Delete
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* --- VIEW ROUTE DETAILS DIALOG --- */}
+      <Dialog open={!!viewRouteDetails} onOpenChange={(open) => { if (!open) setViewRouteDetails(null); }}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Map className="h-5 w-5 text-cyan-600" /> 
+              {viewRouteDetails} Details
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-2 space-y-6">
+            {(() => {
+              const lineBlocks = routeBlocks.filter(b => b.routeName === viewRouteDetails);
+              
+              const nodeIds = new Set<string>();
+              lineBlocks.forEach(b => {
+                nodeIds.add(b.source);
+                nodeIds.add(b.target);
+              });
+              
+              const usedNodes = nodes.filter(n => nodeIds.has(n.id));
+
+              return (
+                <>
+                  <div>
+                    <h4 className="text-sm font-semibold text-slate-800 mb-2 border-b pb-1">Nodes / Stops ({usedNodes.length})</h4>
+                    <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-2 bg-slate-50 rounded border border-slate-100">
+                      {usedNodes.map(n => (
+                        <span key={n.id} className="text-xs bg-white border border-slate-200 px-2 py-1 rounded shadow-sm text-slate-700">
+                          {n.name}
+                        </span>
+                      ))}
+                      {usedNodes.length === 0 && <span className="text-xs text-slate-400 italic">No nodes assigned.</span>}
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-slate-800 mb-2 border-b pb-1">Route Blocks ({lineBlocks.length})</h4>
+                    <div className="max-h-64 overflow-y-auto border border-slate-100 rounded bg-slate-50">
+                      <Table>
+                        <TableHeader className="bg-white">
+                          <TableRow>
+                            <TableHead className="text-xs">Source</TableHead>
+                            <TableHead className="text-xs">Target</TableHead>
+                            <TableHead className="text-xs">Dist</TableHead>
+                            <TableHead className="text-xs">Fare</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {lineBlocks.map(b => (
+                            <TableRow key={b.id}>
+                              <TableCell className="text-xs font-medium text-slate-700">{nodes.find(n => n.id === b.source)?.name || b.source}</TableCell>
+                              <TableCell className="text-xs font-medium text-slate-700">{nodes.find(n => n.id === b.target)?.name || b.target}</TableCell>
+                              <TableCell className="text-xs text-slate-500">{b.distance} km</TableCell>
+                              <TableCell className="text-xs text-emerald-600 font-semibold">₱{Number(b.regularFare || 0).toFixed(2)}</TableCell>
+                            </TableRow>
+                          ))}
+                          {lineBlocks.length === 0 && (
+                            <TableRow>
+                              <TableCell colSpan={4} className="text-center text-xs text-slate-400 italic py-4">No route blocks assigned.</TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* --- PREVIEW ROUTE BLOCK PATH DIALOG --- */}
+      <Dialog open={!!previewBlock} onOpenChange={(open) => { if (!open) setPreviewBlock(null); }}>
+        <DialogContent className="max-w-4xl border-none shadow-2xl p-6 bg-white rounded-2xl">
+          <DialogHeader className="mb-4">
+            <DialogTitle className="text-xl font-bold flex items-center gap-2 text-slate-800">
+              <Map className="h-5 w-5 text-cyan-500" />
+              Route Block Preview
+            </DialogTitle>
+            <DialogDescription className="text-sm text-slate-500 mt-1">
+              Showing path for <span className="font-semibold text-slate-700">{nodes.find(n => n.id === previewBlock?.source)?.name || previewBlock?.source}</span> to <span className="font-semibold text-slate-700">{nodes.find(n => n.id === previewBlock?.target)?.name || previewBlock?.target}</span> ({previewBlock?.distance} km) via <span className="font-semibold text-slate-700">{previewBlock?.routeName}</span>.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="h-[450px] w-full rounded-xl overflow-hidden border border-slate-200 shadow-inner relative">
+            {previewBlock && (
+              <RouteMap
+                nodes={nodes.filter(n => n.id === previewBlock.source || n.id === previewBlock.target)}
+                edges={[]}
+                initialPath={
+                  Array.isArray(previewBlock.pathCoordinates) 
+                    ? previewBlock.pathCoordinates 
+                    : (previewBlock.pathCoordinates?.ridingCoords || [])
+                }
+                className="h-full w-full border-none shadow-none rounded-none"
+                selectedSource={previewBlock.source}
+                selectedTarget={previewBlock.target}
+              />
+            )}
+          </div>
+          <DialogFooter className="mt-4">
+            <DialogClose asChild>
+              <Button className="bg-slate-800 hover:bg-slate-900 text-white font-medium shadow-sm transition-all px-6">Close Preview</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* --- PREVIEW NODE DIALOG --- */}
+      <Dialog open={!!previewNode} onOpenChange={(open) => { if (!open) setPreviewNode(null); }}>
+        <DialogContent className="max-w-4xl border-none shadow-2xl p-6 bg-white rounded-2xl">
+          <DialogHeader className="mb-4">
+            <DialogTitle className="text-xl font-bold flex items-center gap-2 text-slate-800">
+              <Map className="h-5 w-5 text-cyan-500" />
+              Node Location Review
+            </DialogTitle>
+            <DialogDescription className="text-sm text-slate-500 mt-1">
+              Reviewing accuracy of node: <span className="font-semibold text-slate-700">{previewNode?.name}</span> ({previewNode?.id})
+            </DialogDescription>
+          </DialogHeader>
+          <div className="h-[450px] w-full rounded-xl overflow-hidden border border-slate-200 shadow-inner relative">
+            {previewNode && (
+              <LocationPickerMap
+                selectedLat={previewNode.coordinates?.latitude}
+                selectedLng={previewNode.coordinates?.longitude}
+                onLocationSelect={() => {}}
+                className="h-full w-full border-none shadow-none rounded-none"
+              />
+            )}
+          </div>
+          <DialogFooter className="mt-4">
+            <DialogClose asChild>
+              <Button className="bg-slate-800 hover:bg-slate-900 text-white font-medium shadow-sm transition-all px-6">Close Preview</Button>
+            </DialogClose>
           </DialogFooter>
         </DialogContent>
       </Dialog>

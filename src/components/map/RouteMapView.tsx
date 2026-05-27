@@ -37,11 +37,14 @@ const endIcon = new L.Icon({
 
 L.Marker.prototype.options.icon = defaultIcon;
 
+type AltRoute = ShortestPathResult & { isRecommended?: boolean };
+
 interface RouteMapViewProps {
     nodes: Location[];
     routes?: JeepneyRoute[];
     path?: PathSegment[];
-    alternatives?: ShortestPathResult[];
+    alternatives?: AltRoute[];
+    isRecommended?: boolean;
     className?: string;
 }
 
@@ -98,38 +101,38 @@ const ALT_COLORS = [
 
 function PathDirectionArrows({ coords, color }: { coords: [number, number][], color: string }) {
     if (coords.length < 2) return null;
-    
+
     // Determine how many arrows based on distance or point count
     // For now, let's put arrows at 1/4, 1/2, and 3/4 if the segment is long enough
     const step = Math.max(1, Math.floor(coords.length / 4));
-    const indices = coords.length > 5 
+    const indices = coords.length > 5
         ? [step, step * 2, step * 3]
         : [Math.floor(coords.length / 2)];
-    
+
     return (
         <>
             {indices.map((idx, i) => {
                 if (idx >= coords.length - 1) return null;
                 const p1 = coords[idx];
                 const p2 = coords[idx + 1];
-                
+
                 // Calculate angle: rotate(0) points East (Right). 
                 // Leaflet coords are [lat, lng]. standard atan2 is (y, x) -> (lat, lng)
                 const angle = -(Math.atan2(p2[0] - p1[0], p2[1] - p1[1]) * 180 / Math.PI);
-                
+
                 const icon = L.divIcon({
                     html: `<div style="transform: rotate(${angle}deg); color: ${color}; font-size: 14px; text-shadow: 0 0 3px white, 0 0 1px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-weight: bold;">➤</div>`,
                     className: 'bg-transparent border-0',
                     iconSize: [20, 20],
                     iconAnchor: [10, 10]
                 });
-                
+
                 return (
-                    <Marker 
-                        key={`${idx}-${i}`} 
-                        position={p1} 
-                        icon={icon} 
-                        interactive={false} 
+                    <Marker
+                        key={`${idx}-${i}`}
+                        position={p1}
+                        icon={icon}
+                        interactive={false}
                         zIndexOffset={500}
                     />
                 );
@@ -159,7 +162,7 @@ function MovingJeepneyMarker({ segments, speed = 100 }: { segments: { coords: [n
         setPausedPos(null);
         setShowTransferStop(false);
         setIsWalkingSegment(segments[0].isWalking || segments[0].routeName === 'JUST WALK' || false);
-        
+
         // Initial set position
         if (markerRef.current) {
             markerRef.current.setLatLng(segments[0].coords[0]);
@@ -167,7 +170,7 @@ function MovingJeepneyMarker({ segments, speed = 100 }: { segments: { coords: [n
 
         const animate = (time: number) => {
             const state = stateRef.current;
-            
+
             if (state.isPaused) {
                 return;
             }
@@ -186,13 +189,13 @@ function MovingJeepneyMarker({ segments, speed = 100 }: { segments: { coords: [n
 
                 // Pause for transfer
                 state.isPaused = true;
-                
+
                 setPausedPos(currentSegment.coords[state.ptIdx]);
                 setShowTransferStop(true);
 
                 timeoutRef.current = setTimeout(() => {
                     setShowTransferStop(false);
-                    
+
                     const nextSeg = segments[state.segIdx + 1];
                     if (nextSeg && nextSeg.coords.length > 0) {
                         setPausedPos(nextSeg.coords[0]);
@@ -222,7 +225,7 @@ function MovingJeepneyMarker({ segments, speed = 100 }: { segments: { coords: [n
             const p1Px = map.project(p1 as L.LatLngExpression, zoom);
             const p2Px = map.project(p2 as L.LatLngExpression, zoom);
             const distPx = p1Px.distanceTo(p2Px);
-            
+
             if (distPx === 0) {
                 state.ptIdx++;
                 state.progress = 0;
@@ -233,14 +236,14 @@ function MovingJeepneyMarker({ segments, speed = 100 }: { segments: { coords: [n
             // Speed: Jeepneys go at 'speed' (pixels per sec), walking goes at 40% of the speed
             const currentSpeed = currentSegment.isWalking || currentSegment.routeName === 'JUST WALK' ? speed * 0.4 : speed;
             const requiredTimeMs = (distPx / currentSpeed) * 1000;
-            
+
             state.progress += delta / requiredTimeMs;
-            
+
             const clampedProgress = Math.min(state.progress, 1);
 
-            const newLat = p1[0] + (p2[0] - p1[0]) * clampedProgress;
-            const newLng = p1[1] + (p2[1] - p1[1]) * clampedProgress;
-            
+            const newLat = Number(p1[0]) + (Number(p2[0]) - Number(p1[0])) * clampedProgress;
+            const newLng = Number(p1[1]) + (Number(p2[1]) - Number(p1[1])) * clampedProgress;
+
             if (markerRef.current) {
                 markerRef.current.setLatLng([newLat, newLng]);
             }
@@ -277,7 +280,7 @@ function MovingJeepneyMarker({ segments, speed = 100 }: { segments: { coords: [n
                         <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b', marginBottom: '2px' }}>STOP HERE</div>
                         <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#dc2626', margin: 0 }}>
                             {(segments[stateRef.current.segIdx + 1]?.routeName === 'JUST WALK' || segments[stateRef.current.segIdx + 1]?.isWalking)
-                                ? 'Walk to Destination' 
+                                ? 'Walk to Destination'
                                 : 'Transfer to another jeepney'}
                         </div>
                     </div>
@@ -287,7 +290,7 @@ function MovingJeepneyMarker({ segments, speed = 100 }: { segments: { coords: [n
     );
 }
 
-export default function RouteMapView({ nodes, routes, path, alternatives, className }: RouteMapViewProps) {
+export default function RouteMapView({ nodes, routes, path, alternatives = [], isRecommended = true, className }: RouteMapViewProps) {
     const [tileMode, setTileMode] = useState<TileMode>('standard');
     const [showAlternatives, setShowAlternatives] = useState(false);
     const mapRef = useRef<L.Map | null>(null);
@@ -312,11 +315,11 @@ export default function RouteMapView({ nodes, routes, path, alternatives, classN
 
         path.forEach((segment, index) => {
             const anySegment = segment as any;
-            
+
             // IF showAlternatives is ON: Use GREEN for the recommended path
             // IF showAlternatives is OFF: Use original line colors
-            const color = showAlternatives 
-                ? '#16a34a' 
+            const color = showAlternatives
+                ? '#16a34a'
                 : (routeColorMap[segment.routeName] || FALLBACK_COLORS[index % FALLBACK_COLORS.length]);
 
             // Check if pathCoordinates is the new Object format (contains ridingCoords/walkingCoords)
@@ -326,16 +329,16 @@ export default function RouteMapView({ nodes, routes, path, alternatives, classN
                         coords: anySegment.pathCoordinates.ridingCoords,
                         color,
                         routeName: segment.routeName,
+                        isWalking: false,
                     });
                 }
-                // Only render walking path as dashed if this is the LAST segment AND it truly has walking
-                const isLastSegment = index === path.length - 1;
+                // Render walking path as dashed if it truly has walking
                 const hasWalking = anySegment.pathCoordinates.walkingDist > 0;
-                if (isLastSegment && hasWalking && anySegment.pathCoordinates.walkingCoords?.length > 1) {
+                if (hasWalking && anySegment.pathCoordinates.walkingCoords?.length > 1) {
                     polylines.push({
                         coords: anySegment.pathCoordinates.walkingCoords,
                         color: '#94a3b8', // slate-400 for walking
-                        routeName: 'Walk to destination',
+                        routeName: 'Walk',
                         isWalking: true
                     });
                 }
@@ -345,6 +348,7 @@ export default function RouteMapView({ nodes, routes, path, alternatives, classN
                     coords: anySegment.pathCoordinates,
                     color,
                     routeName: segment.routeName,
+                    isWalking: false,
                 });
             } else {
                 const fromNode = nodes.find(n => n.name === segment.from || n.id === segment.from);
@@ -357,6 +361,7 @@ export default function RouteMapView({ nodes, routes, path, alternatives, classN
                         ],
                         color,
                         routeName: segment.routeName,
+                        isWalking: false,
                     });
                 }
             }
@@ -366,20 +371,47 @@ export default function RouteMapView({ nodes, routes, path, alternatives, classN
 
     const alternativePolylines = useMemo(() => {
         if (!alternatives || !showAlternatives) return [];
-        
+
         return alternatives.map((alt, altIdx) => {
-            const routeColor = ALT_COLORS[altIdx % ALT_COLORS.length];
-            const lines: { coords: [number, number][]; color: string; routeName: string; altIdx: number }[] = [];
-            
-            alt.path.forEach((segment: PathSegment) => {
-                if (segment.pathCoordinates && segment.pathCoordinates.length > 1) {
-                    lines.push({ 
-                        coords: segment.pathCoordinates, 
-                        color: routeColor, 
+            const altRoute = alt as AltRoute;
+            const routeColor = altRoute.isRecommended ? '#16a34a' : ALT_COLORS[altIdx % ALT_COLORS.length];
+            const lines: { coords: [number, number][]; color: string; routeName: string; altIdx: number; isWalking?: boolean }[] = [];
+
+            alt.path.forEach((segment: PathSegment, index: number) => {
+                const anySegment = segment as any;
+                const pc = anySegment.pathCoordinates;
+
+                if (pc && pc.ridingCoords) {
+                    // Structured format: { ridingCoords, walkingCoords, ridingDist, walkingDist }
+                    if (pc.ridingCoords.length > 1) {
+                        lines.push({
+                            coords: pc.ridingCoords,
+                            color: routeColor,
+                            routeName: segment.routeName,
+                            altIdx,
+                            isWalking: false
+                        });
+                    }
+                    if (pc.walkingDist > 0 && pc.walkingCoords?.length > 1) {
+                        lines.push({
+                            coords: pc.walkingCoords,
+                            color: '#94a3b8',
+                            routeName: 'Walk',
+                            altIdx,
+                            isWalking: true
+                        });
+                    }
+                } else if (Array.isArray(pc) && pc.length > 1) {
+                    // Legacy flat array format
+                    lines.push({
+                        coords: pc,
+                        color: routeColor,
                         routeName: segment.routeName,
-                        altIdx
+                        altIdx,
+                        isWalking: false
                     });
                 } else {
+                    // Fallback: straight line between nodes
                     const fromNode = nodes.find(n => n.name === segment.from || n.id === segment.from);
                     const toNode = nodes.find(n => n.name === segment.to || n.id === segment.to);
                     if (fromNode?.coordinates && toNode?.coordinates) {
@@ -390,7 +422,8 @@ export default function RouteMapView({ nodes, routes, path, alternatives, classN
                             ],
                             color: routeColor,
                             routeName: segment.routeName,
-                            altIdx
+                            altIdx,
+                            isWalking: false
                         });
                     }
                 }
@@ -444,7 +477,7 @@ export default function RouteMapView({ nodes, routes, path, alternatives, classN
             {/* Map legend */}
             <div className="absolute bottom-3 left-3 z-[1000] bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-slate-200 px-3 py-2.5 space-y-2 max-w-[240px]">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 border-b border-slate-100 pb-1">Map Legend</p>
-                
+
                 {showAlternatives ? (
                     <>
                         <div className="flex flex-col gap-1">
@@ -465,19 +498,29 @@ export default function RouteMapView({ nodes, routes, path, alternatives, classN
                                     </p>
                                 );
                             })()}
+                            {/* Node chain for debugging */}
+                            {path && path.length > 0 && (
+                                <p className="text-[8px] text-slate-400 pl-6 leading-tight" title={[path[0].from, ...path.map(p => p.to)].join(' → ')}>
+                                    🗺 {[path[0].from, ...path.map(p => p.to)].join(' → ')}
+                                </p>
+                            )}
                         </div>
 
                         {alternatives && alternatives.length > 0 && (
                             <div className="pt-2 mt-1 border-t border-slate-100 space-y-2">
                                 <p className="text-[9px] font-bold uppercase tracking-tighter text-slate-400">Alternative Options</p>
                                 {alternatives.map((alt, idx) => {
-                                    const color = ALT_COLORS[idx % ALT_COLORS.length];
-                                    const uniqueLines = Array.from(new Set(alt.path.map(p => p.routeName))).filter(l => l !== 'JUST WALK');
+                                    const altRoute = alt as AltRoute;
+                                    const color = altRoute.isRecommended ? '#16a34a' : ALT_COLORS[idx % ALT_COLORS.length];
+                                    const uniqueLines = Array.from(new Set(alt.path.map((p: any) => p.routeName))).filter(l => l !== 'JUST WALK');
+                                    const nodeChain = alt.path.length > 0
+                                        ? [alt.path[0].from, ...alt.path.map((p: any) => p.to)]
+                                        : [];
                                     return (
                                         <div key={idx} className="flex flex-col gap-0.5">
                                             <div className="flex items-center gap-2">
-                                                <span 
-                                                    className="inline-block w-4 h-1.5 rounded-full flex-shrink-0" 
+                                                <span
+                                                    className="inline-block w-4 h-1.5 rounded-full flex-shrink-0"
                                                     style={{ backgroundColor: color }}
                                                 />
                                                 <div className="flex flex-col">
@@ -488,8 +531,14 @@ export default function RouteMapView({ nodes, routes, path, alternatives, classN
                                                 </div>
                                             </div>
                                             {uniqueLines.length > 0 && (
-                                                <p className="text-[8px] text-slate-400 pl-6 leading-tight truncate" title={uniqueLines.join(', ')}>
+                                                <p className="text-[8px] text-slate-400 pl-6 leading-tight truncate" title={uniqueLines.join(' ➜ ')}>
                                                     Ride: {uniqueLines.join(' ➜ ')}
+                                                </p>
+                                            )}
+                                            {/* Node chain for debugging */}
+                                            {nodeChain.length > 0 && (
+                                                <p className="text-[8px] text-slate-400 pl-6 leading-tight" title={nodeChain.join(' → ')}>
+                                                    🗺 {nodeChain.join(' → ')}
                                                 </p>
                                             )}
                                         </div>
@@ -508,8 +557,8 @@ export default function RouteMapView({ nodes, routes, path, alternatives, classN
                                 const color = route?.color || FALLBACK_COLORS[uniqueRoutes.indexOf(routeName) % FALLBACK_COLORS.length];
                                 return (
                                     <div key={routeName} className="flex items-center gap-2">
-                                        <span 
-                                            className="inline-block w-4 h-2 rounded-full flex-shrink-0" 
+                                        <span
+                                            className="inline-block w-4 h-2 rounded-full flex-shrink-0"
                                             style={{ backgroundColor: color }}
                                         />
                                         <span className="text-[11px] font-bold text-slate-700 truncate">{routeName}</span>
@@ -589,6 +638,7 @@ export default function RouteMapView({ nodes, routes, path, alternatives, classN
                             weight={11}
                             opacity={0.4}
                             lineCap="round"
+                            dashArray=""
                         />
                         <Polyline
                             positions={seg.coords}
@@ -596,7 +646,7 @@ export default function RouteMapView({ nodes, routes, path, alternatives, classN
                             weight={7}
                             opacity={1}
                             lineCap="round"
-                            dashArray={seg.isWalking ? "10, 10" : undefined}
+                            dashArray={seg.isWalking ? "10, 10" : ""}
                         >
                             <Tooltip sticky>
                                 <div className="text-[11px]">
@@ -614,9 +664,9 @@ export default function RouteMapView({ nodes, routes, path, alternatives, classN
 
                 {/* Animated Jeepney */}
                 {segmentPolylines.length > 0 && (
-                    <MovingJeepneyMarker 
-                        segments={segmentPolylines} 
-                        speed={350} 
+                    <MovingJeepneyMarker
+                        segments={segmentPolylines}
+                        speed={350}
                     />
                 )}
             </MapContainer>

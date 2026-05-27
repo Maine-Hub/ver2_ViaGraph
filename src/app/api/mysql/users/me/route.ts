@@ -8,6 +8,9 @@ export async function GET() {
         const cookieStore = await cookies();
         const sessionToken = cookieStore.get('viagraph_session')?.value;
         const session = getSessionFromCookie(sessionToken ? `viagraph_session=${sessionToken}` : null);
+        if (!session) {
+            return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+        }
 
         // Ensure columns exist for persistent tracking and security
         const columns = await query<any[]>('SHOW COLUMNS FROM users');

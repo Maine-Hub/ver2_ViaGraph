@@ -63,6 +63,32 @@ interface RouteMapProps {
 }
 
 
+// Helper component to auto-fit map bounds to nodes or initial path
+function MapCentering({ initialPath, nodes }: { initialPath?: [number, number][]; nodes: Location[] }) {
+    const map = useMap();
+    useEffect(() => {
+        const boundsPoints: L.LatLngExpression[] = [];
+        if (initialPath && initialPath.length > 0) {
+            initialPath.forEach(pt => boundsPoints.push(pt));
+        } else {
+            nodes.forEach(n => {
+                if (n.coordinates) {
+                    boundsPoints.push([n.coordinates.latitude, n.coordinates.longitude]);
+                }
+            });
+        }
+        if (boundsPoints.length > 0) {
+            try {
+                const bounds = L.latLngBounds(boundsPoints);
+                map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
+            } catch (err) {
+                console.error('Error fitting bounds', err);
+            }
+        }
+    }, [map, initialPath, nodes]);
+    return null;
+}
+
 export default function RouteMap({ nodes, edges, selectedSource, selectedTarget, className, onNodeClick, onPathDrawn, initialPath, extraPaths }: RouteMapProps) {
     const [isMounted, setIsMounted] = useState(false);
     const featureGroupRef = useRef<L.FeatureGroup>(null);
@@ -122,6 +148,7 @@ export default function RouteMap({ nodes, edges, selectedSource, selectedTarget,
                 />
 
                 <InvalidateSize />
+                <MapCentering initialPath={initialPath} nodes={nodes} />
 
                 {/* Draw Controls */}
                 <FeatureGroup ref={featureGroupRef}>

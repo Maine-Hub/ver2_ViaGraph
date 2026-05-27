@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { UploadCloud, AlertCircle, Save } from 'lucide-react';
+import { UploadCloud, AlertCircle, Save, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { Textarea } from '@/components/ui/textarea';
 
 export interface MeasureResult {
   fileName: string;
@@ -22,6 +23,7 @@ export interface MeasureResult {
   pathCoords: [number, number][];
   walkingCoords: [number, number][];
   error?: string;
+  rawFeatures?: [number, number][][];
 }
 
 // Module-level cache to persist state across tab switches without modifying parent
@@ -46,6 +48,7 @@ export default function RouteMeasurer({ onDataChange }: RouteMeasurerProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [nodes, setNodes] = useState<any[]>([]);
   const [routes, setRoutes] = useState<any[]>([]);
+  const [routeBlocks, setRouteBlocks] = useState<any[]>([]);
 
   // Dialog State
   const [isSavingBlock, setIsSavingBlock] = useState<MeasureResult | null>(null);
@@ -53,6 +56,7 @@ export default function RouteMeasurer({ onDataChange }: RouteMeasurerProps) {
   const [targetName, setTargetName] = useState('');
   const [routeName, setRouteName] = useState('');
   const [vehicleType, setVehicleType] = useState('jeepney');
+  const [note, setNote] = useState('');
 
   useEffect(() => {
     fetch('/api/data/graph')
@@ -60,6 +64,7 @@ export default function RouteMeasurer({ onDataChange }: RouteMeasurerProps) {
       .then(data => {
         setNodes(data.nodes || []);
         setRoutes(data.routes || []);
+        setRouteBlocks(data.edges || []);
       })
       .catch(err => console.error('Failed to load nodes for measurer', err));
   }, []);
@@ -83,6 +88,14 @@ export default function RouteMeasurer({ onDataChange }: RouteMeasurerProps) {
     let dist = 0;
     for (let i = 0; i < coordsArr.length - 1; i++) {
       dist += haversine(coordsArr[i][0], coordsArr[i][1], coordsArr[i + 1][0], coordsArr[i + 1][1]);
+    }
+    return dist;
+  };
+
+  const calcLatLonDistance = (coordsArr: [number, number][]) => {
+    let dist = 0;
+    for (let i = 0; i < coordsArr.length - 1; i++) {
+      dist += haversine(coordsArr[i][1], coordsArr[i][0], coordsArr[i + 1][1], coordsArr[i + 1][0]);
     }
     return dist;
   };
@@ -117,6 +130,7 @@ export default function RouteMeasurer({ onDataChange }: RouteMeasurerProps) {
           let walkingDist = 0;
           let pathCoords: [number, number][] = [];
           let walkingCoords: [number, number][] = [];
+          const rawFeatures: [number, number][][] = [];
 
           const extractCoords = (geometry: any) => {
             if (geometry.type === 'LineString') return geometry.coordinates;
@@ -129,6 +143,13 @@ export default function RouteMeasurer({ onDataChange }: RouteMeasurerProps) {
 
           if (data.type === 'FeatureCollection') {
             const features = data.features.filter((f: any) => f.geometry && (f.geometry.type === 'LineString' || f.geometry.type === 'MultiLineString'));
+
+            features.forEach((f: any) => {
+              const coords = extractCoords(f.geometry);
+              if (coords.length > 0) {
+                rawFeatures.push(coords.map((c: number[]) => [c[1], c[0]] as [number, number]));
+              }
+            });
 
             if (features.length >= 1) {
               const coords = extractCoords(features[0].geometry);
@@ -149,12 +170,14 @@ export default function RouteMeasurer({ onDataChange }: RouteMeasurerProps) {
             if (coords.length > 0) {
                 ridingDist = calcFeatureDistance(coords);
                 pathCoords = coords.map((c: number[]) => [c[1], c[0]] as [number, number]);
+                rawFeatures.push(pathCoords);
             }
           } else if (data.type === 'LineString' || data.type === 'MultiLineString') {
             const coords = data.type === 'LineString' ? data.coordinates : data.coordinates.reduce((acc: any[], val: any[]) => acc.concat(val), []);
             if (coords.length > 0) {
                 ridingDist = calcFeatureDistance(coords);
                 pathCoords = coords.map((c: number[]) => [c[1], c[0]] as [number, number]);
+                rawFeatures.push(pathCoords);
             }
           }
 
@@ -174,7 +197,8 @@ export default function RouteMeasurer({ onDataChange }: RouteMeasurerProps) {
             regularFare,
             discountedFare,
             pathCoords,
-            walkingCoords
+            walkingCoords,
+            rawFeatures
           });
         } catch (error: any) {
           console.error('Error parsing file', file.name, error);
@@ -232,6 +256,7 @@ export default function RouteMeasurer({ onDataChange }: RouteMeasurerProps) {
 
   const openSaveDialog = (r: MeasureResult) => {
     setIsSavingBlock(r);
+    setNote('');
     
     // Auto-fill origin and destination from filename (e.g., "Origin-Destination.geojson")
     let defaultSource = '';
@@ -247,8 +272,15 @@ export default function RouteMeasurer({ onDataChange }: RouteMeasurerProps) {
 
     setSourceName(defaultSource);
     setTargetName(defaultTarget);
-    // Retain previous routeName (Jeepney Line) to speed up entering multiple blocks for the same line
-    setVehicleType('jeepney');
+    
+    // If the file is parsed as pure walking, default type to walking and line to JUST WALK
+    if (r.walkingDist > 0 && r.ridingDist === 0) {
+      setVehicleType('walking');
+      setRouteName('JUST WALK');
+    } else {
+      setVehicleType('jeepney');
+      setRouteName('');
+    }
   };
 
   const handleSaveToDB = async () => {
@@ -266,7 +298,7 @@ export default function RouteMeasurer({ onDataChange }: RouteMeasurerProps) {
         finalSourceId = existingSource.id;
       } else {
         finalSourceId = sourceName.toLowerCase().replace(/[^a-z0-9-]/g, '-');
-        const startCoord = isSavingBlock.pathCoords[0];
+        const startCoord = isSavingBlock.pathCoords[0] || isSavingBlock.walkingCoords[0];
         if (!startCoord) throw new Error('Cannot create source node: missing path coordinates.');
         await fetch('/api/mysql/nodes', {
            method: 'POST',
@@ -316,6 +348,7 @@ export default function RouteMeasurer({ onDataChange }: RouteMeasurerProps) {
               ridingDist: isSavingBlock.ridingDist,
               walkingDist: isSavingBlock.walkingDist
           } : null,
+          note: note || null,
         }),
       });
       const data = await res.json();
@@ -435,7 +468,12 @@ export default function RouteMeasurer({ onDataChange }: RouteMeasurerProps) {
         )}
       </CardContent>
 
-      <Dialog open={!!isSavingBlock} onOpenChange={(open) => !open && setIsSavingBlock(null)}>
+      <Dialog open={!!isSavingBlock} onOpenChange={(open) => {
+        if (!open) {
+          setIsSavingBlock(null);
+          setNote('');
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Insert Route Block to DB</DialogTitle>
@@ -447,11 +485,39 @@ export default function RouteMeasurer({ onDataChange }: RouteMeasurerProps) {
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label>Source Node</Label>
-                <Input list="nodes-list" value={sourceName} onChange={e => setSourceName(e.target.value)} placeholder="Type name..." />
+                <div className="relative">
+                  <Input list="nodes-list" value={sourceName} onChange={e => setSourceName(e.target.value)} placeholder="Type name..." />
+                  {sourceName && (
+                    <div className="absolute right-2 top-2.5">
+                      {nodes.some(n => n.name.toLowerCase() === sourceName.toLowerCase()) ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <AlertTriangle className="h-4 w-4 text-amber-500" />
+                      )}
+                    </div>
+                  )}
+                </div>
+                {sourceName && !nodes.some(n => n.name.toLowerCase() === sourceName.toLowerCase()) && (
+                  <span className="text-[10px] text-amber-600 font-medium leading-tight">⚠️ This name doesn't match existing nodes. A new one will be created.</span>
+                )}
               </div>
               <div className="grid gap-2">
                 <Label>Target Node</Label>
-                <Input list="nodes-list" value={targetName} onChange={e => setTargetName(e.target.value)} placeholder="Type name..." />
+                <div className="relative">
+                  <Input list="nodes-list" value={targetName} onChange={e => setTargetName(e.target.value)} placeholder="Type name..." />
+                  {targetName && (
+                    <div className="absolute right-2 top-2.5">
+                      {nodes.some(n => n.name.toLowerCase() === targetName.toLowerCase()) ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <AlertTriangle className="h-4 w-4 text-amber-500" />
+                      )}
+                    </div>
+                  )}
+                </div>
+                {targetName && !nodes.some(n => n.name.toLowerCase() === targetName.toLowerCase()) && (
+                  <span className="text-[10px] text-amber-600 font-medium leading-tight">⚠️ This name doesn't match existing nodes. A new one will be created.</span>
+                )}
               </div>
             </div>
             <datalist id="nodes-list">
@@ -470,13 +536,49 @@ export default function RouteMeasurer({ onDataChange }: RouteMeasurerProps) {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="jeepney">Jeepney</SelectItem>
-                  <SelectItem value="minibus">Minibus</SelectItem>
+                  <SelectItem value="minibus">Mini Bus</SelectItem>
+                  <SelectItem value="bus">Bus</SelectItem>
                   <SelectItem value="walking">Walking</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            <div className="grid gap-2">
+              <Label>Note (Tip/Instructions)</Label>
+              <Textarea
+                value={note}
+                onChange={e => setNote(e.target.value)}
+                placeholder="e.g. Tip: Wait at the terminal or walk towards highway."
+                className="min-h-[60px]"
+              />
+            </div>
           </div>
-          <DialogFooter>
+          {(() => {
+            if (sourceName && targetName && routeName) {
+              const sourceMatch = nodes.find(n => n.name.toLowerCase() === sourceName.toLowerCase());
+              const targetMatch = nodes.find(n => n.name.toLowerCase() === targetName.toLowerCase());
+              
+              if (sourceMatch && targetMatch) {
+                const isDuplicate = routeBlocks.some(b => 
+                  b.source === sourceMatch.id && 
+                  b.target === targetMatch.id && 
+                  b.routeName.toLowerCase() === routeName.toLowerCase()
+                );
+
+                if (isDuplicate) {
+                  return (
+                    <div className="mt-2 mx-6 p-3 bg-red-50 border border-red-200 rounded-md text-sm">
+                      <p className="font-semibold mb-1 flex items-center gap-1.5 text-red-700">
+                        <AlertTriangle className="h-4 w-4" /> Duplicate Warning
+                      </p>
+                      <p className="text-red-700">A route block for <strong>{routeName}</strong> between these exact two nodes already exists. Inserting this will duplicate it.</p>
+                    </div>
+                  );
+                }
+              }
+            }
+            return null;
+          })()}
+          <DialogFooter className="px-6 pb-6">
             <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
             <Button onClick={handleSaveToDB} className="bg-cyan-500 hover:bg-cyan-600 text-white">Insert Block</Button>
           </DialogFooter>

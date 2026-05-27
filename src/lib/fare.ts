@@ -1,5 +1,5 @@
 // Rules derived from LTFRB fare matrices, now can be managed via DB
-export type VehicleType = 'jeepney' | 'minibus' | 'walking';
+export type VehicleType = 'jeepney' | 'minibus' | 'bus' | 'walking';
 
 export interface FareRule {
   vehicle_type: string;
@@ -19,6 +19,13 @@ export const defaultFareRules: Record<Exclude<VehicleType, 'walking'>, FareRule>
   },
   minibus: {
     vehicle_type: 'minibus',
+    base_fare: 15.0,
+    first_km: 4,
+    succeeding_km_fare: 2.2,
+    discount_percentage: 0.20,
+  },
+  bus: {
+    vehicle_type: 'bus',
     base_fare: 15.0,
     first_km: 4,
     succeeding_km_fare: 2.2,

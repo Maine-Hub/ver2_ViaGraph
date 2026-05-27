@@ -5,7 +5,7 @@ export async function GET() {
     try {
         const [nodes, routeBlocks] = await Promise.all([
             query<any[]>('SELECT id, name, latitude as lat, longitude as lng FROM nodes'),
-            query<any[]>('SELECT id, source_id as source, target_id as target, distance, route_name as routeName, vehicle_type, regular_fare as regularFare, discounted_fare as discountedFare, path_coordinates as pathCoordinatesJson FROM route_blocks'),
+            query<any[]>('SELECT id, source_id as source, target_id as target, distance, route_name as routeName, vehicle_type, regular_fare as regularFare, discounted_fare as discountedFare, path_coordinates as pathCoordinatesJson, note FROM route_blocks'),
         ]);
 
         // Reshape nodes to match Location type
@@ -15,6 +15,9 @@ export async function GET() {
             coordinates: { latitude: n.lat, longitude: n.lng },
         }));
 
+        // Sort nodes alphabetically by name
+        locationNodes.sort((a: any, b: any) => a.name.localeCompare(b.name));
+
         // Parse stored path_coordinates JSON for each block
         const reshapedEdges = routeBlocks.map((e: any) => ({
             id: e.id,
@@ -23,7 +26,7 @@ export async function GET() {
             distance: e.distance,
             routeName: e.routeName,
             stopAndTransfer: e.vehicle_type, // Using vehicle_type temporarily for display
-            note: '',
+            note: e.note || '',
             regularFare: e.regularFare,
             discountedFare: e.discountedFare,
             pathCoordinates: e.pathCoordinatesJson 
@@ -33,6 +36,8 @@ export async function GET() {
 
         // Generate distinct routes for legend
         const uniqueRouteNames = Array.from(new Set(routeBlocks.map((e: any) => e.routeName)));
+        uniqueRouteNames.sort((a: any, b: any) => a.localeCompare(b));
+
         const routes = uniqueRouteNames.map(name => ({
             name: name,
             description: name,

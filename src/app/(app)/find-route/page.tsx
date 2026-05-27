@@ -77,7 +77,24 @@ export default function FindRoutePage() {
       try {
         const res = await fetch('/api/data/graph');
         const data = await res.json();
-        setGraphData(data);
+        
+        // Filter nodes to only include those present in edges (route blocks)
+        const usedNodeIds = new Set<string>();
+        if (data.edges) {
+          data.edges.forEach((e: any) => {
+            usedNodeIds.add(e.source);
+            usedNodeIds.add(e.target);
+          });
+        }
+        const filteredNodes = data.nodes 
+          ? data.nodes.filter((n: any) => usedNodeIds.has(n.id)) 
+          : [];
+        filteredNodes.sort((a: any, b: any) => a.name.localeCompare(b.name));
+
+        setGraphData({
+          ...data,
+          nodes: filteredNodes
+        });
       } catch { }
       setIsLoading(false);
     };
@@ -242,7 +259,7 @@ export default function FindRoutePage() {
                       })()}
                     </div>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                      <span className="text-muted-foreground">{seg.routeName === 'JUST WALK' ? 'Travel Mode' : 'Jeepney Line'}</span>
+                      <span className="text-muted-foreground">{seg.routeName === 'JUST WALK' ? 'Arrive at' : 'Get off at'}</span>
                       <span className="font-medium flex items-center gap-1.5">
                         {(() => {
                           const lineColor = graphData.routes.find((r: any) => r.name === seg.routeName)?.color;
@@ -253,13 +270,13 @@ export default function FindRoutePage() {
                             />
                           ) : null;
                         })()}
-                        {seg.routeName}
+                        {seg.to}
                       </span>
                       <span className="text-muted-foreground">Distance</span>
                       <span className="font-medium">
-                        {seg.pathCoordinates?.ridingDist 
-                           ? `${Number(seg.pathCoordinates.ridingDist).toFixed(2)} km` 
-                           : `${Number(seg.distance).toFixed(2)} km`}
+                        {seg.pathCoordinates?.ridingDist
+                          ? `${Number(seg.pathCoordinates.ridingDist).toFixed(2)} km`
+                          : `${Number(seg.distance).toFixed(2)} km`}
                       </span>
                       {seg.pathCoordinates?.walkingDist ? (
                         <>

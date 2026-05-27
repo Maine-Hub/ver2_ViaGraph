@@ -34,6 +34,7 @@ export interface PathSegment {
   to: string;
   routeName: string;
   distance: number;
+  vehicleType?: string;
   regularFare?: number;
   discountedFare?: number;
   pathCoordinates?: [number, number][] | null;

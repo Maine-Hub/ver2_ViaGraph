@@ -37,7 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { PlusCircle, Trash2, Archive, RotateCcw, Edit, Database, Map, ChevronUp, ChevronDown, ChevronsUpDown, RefreshCcw, AlertTriangle, Eye } from 'lucide-react';
+import { PlusCircle, Trash2, Archive, RotateCcw, Search, Edit, Database, Map, ChevronUp, ChevronDown, ChevronsUpDown, RefreshCcw, AlertTriangle, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/app-context';
 import { useEffect, useState, useMemo } from 'react';
@@ -108,6 +108,41 @@ export default function AdminDashboard() {
   // Preview Node State
   const [previewNode, setPreviewNode] = useState<any | null>(null);
   const [isEditingNode, setIsEditingNode] = useState(false);
+
+  const filteredBlocks = useMemo(() => {
+    return routeBlocks.filter((b: any) => {
+      const term = blocksSearch.toLowerCase();
+      const sourceName = nodes.find(n => n.id === b.source)?.name || b.source;
+      const targetName = nodes.find(n => n.id === b.target)?.name || b.target;
+      return (
+        sourceName.toLowerCase().includes(term) ||
+        targetName.toLowerCase().includes(term) ||
+        (b.routeName || '').toLowerCase().includes(term) ||
+        (b.stopAndTransfer || '').toLowerCase().includes(term) ||
+        (b.note || '').toLowerCase().includes(term)
+      );
+    });
+  }, [routeBlocks, blocksSearch, nodes]);
+
+  const filteredNodes = useMemo(() => {
+    return nodes.filter((n: any) => {
+      const term = nodesSearch.toLowerCase();
+      return (
+        (n.name || '').toLowerCase().includes(term) ||
+        (n.id || '').toLowerCase().includes(term)
+      );
+    });
+  }, [nodes, nodesSearch]);
+
+  const filteredRoutes = useMemo(() => {
+    return routes.filter((r: any) => {
+      const term = routesSearch.toLowerCase();
+      return (
+        (r.name || '').toLowerCase().includes(term) ||
+        (r.description || '').toLowerCase().includes(term)
+      );
+    });
+  }, [routes, routesSearch]);
 
   const loadData = async () => {
     setIsDataLoading(true);
@@ -446,6 +481,27 @@ export default function AdminDashboard() {
               </div>
             </CardHeader>
             <CardContent className="p-0">
+              <div className="p-4 border-b border-slate-100 flex items-center gap-2 bg-slate-50/20">
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+                  <Input
+                    placeholder="Search route blocks..."
+                    value={blocksSearch}
+                    onChange={(e) => setBlocksSearch(e.target.value)}
+                    className="pl-8 bg-white border-slate-200"
+                  />
+                </div>
+                {blocksSearch && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => setBlocksSearch('')}
+                    className="text-xs h-9 px-3 text-slate-500 hover:text-slate-800"
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
+
                <Table>
                 <TableHeader>
                   <TableRow className="bg-slate-50">
@@ -460,7 +516,7 @@ export default function AdminDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {routeBlocks.map(b => {
+                  {filteredBlocks.map(b => {
                     const sourceName = nodes.find(n => n.id === b.source)?.name || b.source;
                     const targetName = nodes.find(n => n.id === b.target)?.name || b.target;
                     return (
@@ -502,6 +558,13 @@ export default function AdminDashboard() {
                       </TableRow>
                     );
                   })}
+                  {filteredBlocks.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center text-muted-foreground py-6 text-sm">
+                        {blocksSearch ? 'No matching route blocks found.' : 'No route blocks found.'}
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -591,6 +654,27 @@ export default function AdminDashboard() {
               </div>
             </CardHeader>
             <CardContent>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+                  <Input
+                    placeholder="Search locations..."
+                    value={nodesSearch}
+                    onChange={(e) => setNodesSearch(e.target.value)}
+                    className="pl-8 bg-white border-slate-200"
+                  />
+                </div>
+                {nodesSearch && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => setNodesSearch('')}
+                    className="text-xs h-9 px-3 text-slate-500 hover:text-slate-800"
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
+
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -602,7 +686,7 @@ export default function AdminDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {nodes.map(n => (
+                  {filteredNodes.map(n => (
                     <TableRow key={n.id}>
                       <TableCell className="font-mono text-xs">{n.id}</TableCell>
                       <TableCell className="font-medium text-slate-700">{n.name}</TableCell>
@@ -630,6 +714,13 @@ export default function AdminDashboard() {
                       </TableCell>
                     </TableRow>
                   ))}
+                  {filteredNodes.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center text-muted-foreground py-6 text-sm">
+                        {nodesSearch ? 'No matching locations found.' : 'No locations found.'}
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -644,6 +735,27 @@ export default function AdminDashboard() {
               <CardDescription>Manage descriptions and map colors for route lines.</CardDescription>
             </CardHeader>
             <CardContent>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+                  <Input
+                    placeholder="Search jeepney lines..."
+                    value={routesSearch}
+                    onChange={(e) => setRoutesSearch(e.target.value)}
+                    className="pl-8 bg-white border-slate-200"
+                  />
+                </div>
+                {routesSearch && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => setRoutesSearch('')}
+                    className="text-xs h-9 px-3 text-slate-500 hover:text-slate-800"
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
+
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -655,7 +767,7 @@ export default function AdminDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {routes.map(r => {
+                  {filteredRoutes.map(r => {
                     const lineBlocks = routeBlocks.filter(b => b.routeName === r.name);
                     const blockCount = lineBlocks.length;
                     

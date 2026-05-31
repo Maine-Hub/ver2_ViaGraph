@@ -8,10 +8,10 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
       return NextResponse.json({ success: false, message: 'Route Block ID is required.' }, { status: 400 });
     }
 
-    await query('DELETE FROM route_blocks WHERE id = ?', [id]);
-    return NextResponse.json({ success: true, message: 'Route block deleted successfully.' });
+    await query('UPDATE route_blocks SET is_archived = 1 WHERE id = ?', [id]);
+    return NextResponse.json({ success: true, message: 'Route block archived successfully.' });
   } catch (error: any) {
-    console.error('Failed to delete route block:', error);
+    console.error('Failed to archive route block:', error);
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }

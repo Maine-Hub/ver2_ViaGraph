@@ -37,7 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { PlusCircle, Trash2, Edit, Database, Map, ChevronUp, ChevronDown, ChevronsUpDown, RefreshCcw, AlertTriangle, Eye } from 'lucide-react';
+import { PlusCircle, Trash2, Archive, Edit, Database, Map, ChevronUp, ChevronDown, ChevronsUpDown, RefreshCcw, AlertTriangle, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/app-context';
 import { useEffect, useState, useMemo } from 'react';
@@ -161,7 +161,7 @@ export default function AdminDashboard() {
       const res = await fetch(endpoint, { method: 'DELETE' });
       const data = await res.json();
       if (!data.success) throw new Error(data.message);
-      toast({ title: 'Deleted', description: `${type} removed successfully.` });
+      toast({ title: 'Archived', description: `${type} archived successfully.` });
       loadData();
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
@@ -466,8 +466,8 @@ export default function AdminDashboard() {
                             }}>
                               <Edit className="h-4 w-4 text-slate-500 hover:text-cyan-600" />
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => requestDelete('route-block', b.id, `route block: ${sourceName} → ${targetName}`)}>
-                              <Trash2 className="h-4 w-4 text-destructive" />
+                            <Button variant="ghost" size="icon" title="Archive Route Block" onClick={() => requestDelete('route-block', b.id, `route block: ${sourceName} → ${targetName}`)}>
+                              <Archive className="h-4 w-4 text-slate-500 hover:text-amber-600" />
                             </Button>
                           </div>
                         </TableCell>
@@ -595,8 +595,8 @@ export default function AdminDashboard() {
                           }}>
                             <Edit className="h-4 w-4 text-slate-500 hover:text-cyan-600" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => requestDelete('node', n.id, `location: ${n.name}`)  }>
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                          <Button variant="ghost" size="icon" title="Archive Location" onClick={() => requestDelete('node', n.id, `location: ${n.name}`)  }>
+                            <Archive className="h-4 w-4 text-slate-500 hover:text-amber-600" />
                           </Button>
                         </div>
                       </TableCell>
@@ -659,8 +659,8 @@ export default function AdminDashboard() {
                             <Button variant="ghost" size="icon" onClick={() => setViewRouteDetails(r.name)}>
                               <Eye className="h-4 w-4 text-cyan-600" />
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => requestDelete('route', r.name, `jeepney line: ${r.name}`)  }>
-                              <Trash2 className="h-4 w-4 text-destructive" />
+                            <Button variant="ghost" size="icon" title="Archive Jeepney Line" onClick={() => requestDelete('route', r.name, `jeepney line: ${r.name}`)  }>
+                              <Archive className="h-4 w-4 text-slate-500 hover:text-amber-600" />
                             </Button>
                           </div>
                         </TableCell>
@@ -755,18 +755,18 @@ export default function AdminDashboard() {
         </TabsContent>
       </Tabs>
 
-      {/* --- CONFIRM DELETE DIALOG --- */}
+      {/* --- CONFIRM ARCHIVE DIALOG --- */}
       <Dialog open={!!confirmDelete} onOpenChange={(open) => { if (!open) setConfirmDelete(null); }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-destructive">
-              <Trash2 className="h-5 w-5" /> Confirm Deletion
+            <DialogTitle className="flex items-center gap-2 text-amber-600">
+              <Archive className="h-5 w-5" /> Confirm Archive
             </DialogTitle>
             <DialogDescription className="pt-2">
-              Are you sure you want to permanently delete the{' '}
+              Are you sure you want to archive the{' '}
               <span className="font-semibold text-slate-800">{confirmDelete?.label}</span>?
               <br />
-              <span className="text-destructive font-medium">This action cannot be undone.</span>
+              <span className="text-amber-600 font-medium">Archiving will hide this item from commuter paths and search lists, but keep it in the database.</span>
 
               {confirmDelete?.type === 'node' && (
                 <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-900 text-sm">
@@ -776,7 +776,7 @@ export default function AdminDashboard() {
                   {(() => {
                     const affected = routeBlocks.filter(b => b.source === confirmDelete.id || b.target === confirmDelete.id);
                     if (affected.length === 0) {
-                      return <p className="italic text-amber-700 mt-1">✓ No route blocks use this node. Safe to delete.</p>;
+                      return <p className="italic text-amber-700 mt-1">✓ No active route blocks use this node. Safe to archive.</p>;
                     }
                     return (
                       <ul className="list-disc pl-5 mt-2 space-y-1 max-h-32 overflow-y-auto">
@@ -797,8 +797,8 @@ export default function AdminDashboard() {
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>
             </DialogClose>
-            <Button variant="destructive" onClick={handleDelete}>
-              Yes, Delete
+            <Button className="bg-amber-600 hover:bg-amber-700 text-white shadow-sm font-medium" onClick={handleDelete}>
+              Yes, Archive
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -37,7 +37,7 @@ interface DijkstraState {
  * State is (nodeId, rideCount, lastRouteName).
  */
 export async function findShortestPath(startNodeId: string, endNodeId: string) {
-  const blocks = await query<RouteBlock[]>('SELECT * FROM route_blocks');
+  const blocks = await query<RouteBlock[]>('SELECT * FROM route_blocks WHERE is_archived = 0');
   if (blocks.length === 0) return null;
 
   // Normalize numeric fields (MySQL may return decimals as strings)

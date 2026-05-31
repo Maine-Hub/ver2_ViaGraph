@@ -4,8 +4,8 @@ import { query } from '@/lib/mysql';
 export async function GET() {
     try {
         const [nodes, routeBlocks] = await Promise.all([
-            query<any[]>('SELECT id, name, latitude as lat, longitude as lng FROM nodes'),
-            query<any[]>('SELECT id, source_id as source, target_id as target, distance, route_name as routeName, vehicle_type, regular_fare as regularFare, discounted_fare as discountedFare, path_coordinates as pathCoordinatesJson, note FROM route_blocks'),
+            query<any[]>('SELECT id, name, latitude as lat, longitude as lng FROM nodes WHERE is_archived = 0'),
+            query<any[]>('SELECT id, source_id as source, target_id as target, distance, route_name as routeName, vehicle_type, regular_fare as regularFare, discounted_fare as discountedFare, path_coordinates as pathCoordinatesJson, note FROM route_blocks WHERE is_archived = 0'),
         ]);
 
         // Reshape nodes to match Location type
@@ -34,14 +34,21 @@ export async function GET() {
                 : null,
         }));
 
+        // Load routes from routes table to get actual descriptions and colors
+        const dbRoutes = await query<any[]>('SELECT name, description, color FROM routes WHERE is_archived = 0');
+        const dbRoutesMap: Record<string, { description: string, color: string }> = {};
+        dbRoutes.forEach(r => {
+            dbRoutesMap[r.name] = { description: r.description, color: r.color };
+        });
+
         // Generate distinct routes for legend
         const uniqueRouteNames = Array.from(new Set(routeBlocks.map((e: any) => e.routeName)));
         uniqueRouteNames.sort((a: any, b: any) => a.localeCompare(b));
 
         const routes = uniqueRouteNames.map(name => ({
             name: name,
-            description: name,
-            color: '#6366f1' // Default color, can be updated later
+            description: dbRoutesMap[name]?.description || name,
+            color: dbRoutesMap[name]?.color || '#6366f1'
         }));
 
         return NextResponse.json({ nodes: locationNodes, routes, edges: reshapedEdges });

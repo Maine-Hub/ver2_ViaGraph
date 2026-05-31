@@ -25,8 +25,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ name
 export async function DELETE(_: Request, { params }: { params: Promise<{ name: string }> }) {
     try {
         const { name } = await params;
-        await query(`DELETE FROM routes WHERE name = ?`, [name]);
-        return NextResponse.json({ success: true });
+        // Archive any route blocks associated with this route name
+        await query(`UPDATE route_blocks SET is_archived = 1 WHERE route_name = ?`, [name]);
+        await query(`UPDATE routes SET is_archived = 1 WHERE name = ?`, [name]);
+        return NextResponse.json({ success: true, message: 'Jeepney line archived successfully.' });
     } catch (error: any) {
         return NextResponse.json({ success: false, message: error.message }, { status: 500 });
     }

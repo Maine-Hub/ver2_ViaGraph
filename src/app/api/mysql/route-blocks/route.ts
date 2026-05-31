@@ -3,7 +3,7 @@ import { query } from '@/lib/mysql';
 
 export async function GET() {
   try {
-    const blocks = await query<any[]>('SELECT * FROM route_blocks ORDER BY created_at DESC');
+    const blocks = await query<any[]>('SELECT * FROM route_blocks WHERE is_archived = 0 ORDER BY created_at DESC');
     return NextResponse.json({ success: true, data: blocks });
   } catch (error: any) {
     console.error('Failed to fetch route blocks:', error);

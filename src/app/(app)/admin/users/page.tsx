@@ -16,7 +16,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/app-context';
 import { useEffect, useState } from 'react';
@@ -26,6 +27,7 @@ export default function AdminUsersPage() {
   const { user } = useAppContext();
   const [users, setUsers] = useState<any[]>([]);
   const [isUsersLoading, setIsUsersLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const loadUsers = async () => {
     setIsUsersLoading(true);
@@ -57,6 +59,15 @@ export default function AdminUsersPage() {
     loadUsers();
   }, []);
 
+  const filteredUsers = users.filter((u: any) => {
+    const term = searchQuery.toLowerCase();
+    return (
+      (u.username || '').toLowerCase().includes(term) ||
+      (u.email || '').toLowerCase().includes(term) ||
+      (u.role || '').toLowerCase().includes(term)
+    );
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-1">
@@ -76,6 +87,27 @@ export default function AdminUsersPage() {
           </Button>
         </CardHeader>
         <CardContent>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name, email, or role..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+            {searchQuery && (
+              <Button
+                variant="ghost"
+                onClick={() => setSearchQuery('')}
+                className="text-xs h-9 px-3"
+              >
+                Clear
+              </Button>
+            )}
+          </div>
+
           {isUsersLoading ? (
             <div className="flex items-center justify-center py-12 text-muted-foreground">
               <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading users...
@@ -91,7 +123,7 @@ export default function AdminUsersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((u: any) => (
+                {filteredUsers.map((u: any) => (
                   <TableRow key={u.uid}>
                     <TableCell className="font-medium">{u.username}</TableCell>
                     <TableCell>{u.email}</TableCell>
@@ -128,10 +160,10 @@ export default function AdminUsersPage() {
                     </TableCell>
                   </TableRow>
                 ))}
-                {users.length === 0 && (
+                {filteredUsers.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={4} className="text-center text-muted-foreground py-6">
-                      No users found. Click Refresh to load.
+                      {searchQuery ? 'No matching users found.' : 'No users found. Click Refresh to load.'}
                     </TableCell>
                   </TableRow>
                 )}
@@ -143,3 +175,4 @@ export default function AdminUsersPage() {
     </div>
   );
 }
+

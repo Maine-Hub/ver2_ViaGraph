@@ -3,7 +3,7 @@
 import { z } from 'zod';
 import { query } from '@/lib/mysql';
 import type { ShortestPathResult, PathSegment } from '@/lib/types';
-import { calculateFare, calculateDiscountedFare, type VehicleType } from './fare';
+import { calculateFare, calculateDiscountedFare, type VehicleType, type FareRule } from './fare';
 import { findShortestPath } from './routing';
 
 
@@ -85,6 +85,19 @@ export async function findRouteAction(
     if (dijkstraResult) {
       console.log('Dijkstra path found! Path length:', dijkstraResult.path.length, ' | Edges:', dijkstraResult.path.map(b => `${b.source_id}->${b.target_id}`));
       
+      // Load fare rules from database
+      const dbRules = await query<any[]>('SELECT * FROM fare_matrix');
+      const fareRulesMap: Record<string, FareRule> = {};
+      dbRules.forEach(r => {
+        fareRulesMap[r.vehicle_type] = {
+          vehicle_type: r.vehicle_type,
+          base_fare: Number(r.base_fare),
+          first_km: Number(r.base_km),
+          succeeding_km_fare: Number(r.succeeding_km_rate),
+          discount_percentage: Number(r.discount_rate),
+        };
+      });
+
       // Fetch node names for display
       const allNodeIds = new Set<string>();
       dijkstraResult.path.forEach(b => {
@@ -118,9 +131,10 @@ export async function findRouteAction(
             last.to = nodeNameMap[b.target_id] || b.target_id;
             last.distance += Number(b.distance);
             
-            // Recalculate fares based on the merged distance
-            last.regularFare = calculateFare(last.distance, (last.vehicleType || 'jeepney') as VehicleType);
-            last.discountedFare = calculateDiscountedFare(last.distance, (last.vehicleType || 'jeepney') as VehicleType);
+            // Recalculate fares based on the merged distance using dynamic fare rules
+            const specificRule = fareRulesMap[last.vehicleType || 'jeepney'];
+            last.regularFare = calculateFare(last.distance, (last.vehicleType || 'jeepney') as VehicleType, specificRule);
+            last.discountedFare = calculateDiscountedFare(last.distance, (last.vehicleType || 'jeepney') as VehicleType, specificRule);
 
             // Merge path coordinates safely
             if (last.pathCoordinates || coords) {
@@ -141,8 +155,9 @@ export async function findRouteAction(
             let discFare = 0;
             const currentVehicleType = (b.vehicle_type || 'jeepney') as VehicleType;
             if (isVehicle) {
-              regFare = calculateFare(Number(b.distance), currentVehicleType);
-              discFare = calculateDiscountedFare(Number(b.distance), currentVehicleType);
+              const specificRule = fareRulesMap[currentVehicleType];
+              regFare = calculateFare(Number(b.distance), currentVehicleType, specificRule);
+              discFare = calculateDiscountedFare(Number(b.distance), currentVehicleType, specificRule);
             }
 
             segments.push({

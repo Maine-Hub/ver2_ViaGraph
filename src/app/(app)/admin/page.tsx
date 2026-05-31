@@ -37,7 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { PlusCircle, Trash2, Archive, Edit, Database, Map, ChevronUp, ChevronDown, ChevronsUpDown, RefreshCcw, AlertTriangle, Eye } from 'lucide-react';
+import { PlusCircle, Trash2, Archive, RotateCcw, Edit, Database, Map, ChevronUp, ChevronDown, ChevronsUpDown, RefreshCcw, AlertTriangle, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/app-context';
 import { useEffect, useState, useMemo } from 'react';
@@ -68,7 +68,10 @@ export default function AdminDashboard() {
   const [routes, setRoutes] = useState<any[]>([]);
   const [fareMatrix, setFareMatrix] = useState<any[]>([]);
 
-  // Search States
+  // Archived Data States
+  const [archivedBlocks, setArchivedBlocks] = useState<any[]>([]);
+  const [archivedNodes, setArchivedNodes] = useState<any[]>([]);
+  const [archivedRoutes, setArchivedRoutes] = useState<any[]>([]);
   const [nodesSearch, setNodesSearch] = useState('');
   const [blocksSearch, setBlocksSearch] = useState('');
   const [routesSearch, setRoutesSearch] = useState('');
@@ -109,12 +112,14 @@ export default function AdminDashboard() {
   const loadData = async () => {
     setIsDataLoading(true);
     try {
-      const [graphRes, fareRes] = await Promise.all([
+      const [graphRes, fareRes, archiveRes] = await Promise.all([
         fetch('/api/data/graph'),
         fetch('/api/mysql/fare-matrix'),
+        fetch('/api/mysql/archive'),
       ]);
       const graphData = await graphRes.json();
       const fareData = await fareRes.json();
+      const archiveData = await archiveRes.json();
       
       setNodes(graphData.nodes || []);
       setRouteBlocks(graphData.edges || []);
@@ -123,10 +128,32 @@ export default function AdminDashboard() {
       if (fareData.success) {
         setFareMatrix(fareData.data || []);
       }
+
+      if (archiveData.success) {
+        setArchivedBlocks(archiveData.data.routeBlocks || []);
+        setArchivedNodes(archiveData.data.nodes || []);
+        setArchivedRoutes(archiveData.data.routes || []);
+      }
     } catch (err) {
       console.error('Failed to load data:', err);
     }
     setIsDataLoading(false);
+  };
+
+  const handleRestore = async (type: string, id: string) => {
+    try {
+      const res = await fetch('/api/mysql/archive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, id })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message);
+      toast({ title: 'Restored', description: data.message || `${type} restored successfully.` });
+      loadData();
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    }
   };
 
   useEffect(() => {
@@ -269,6 +296,7 @@ export default function AdminDashboard() {
           <TabsTrigger value="routes" className="rounded-lg data-[state=active]:bg-white">Jeepney Lines (Colors)</TabsTrigger>
           <TabsTrigger value="fares" className="rounded-lg data-[state=active]:bg-white">Fare Matrix</TabsTrigger>
           <TabsTrigger value="measure" className="rounded-lg data-[state=active]:bg-white">Measure Route</TabsTrigger>
+          <TabsTrigger value="archive-manager" className="rounded-lg data-[state=active]:bg-white flex items-center gap-1.5"><Archive className="h-3.5 w-3.5" /> Archive Manager</TabsTrigger>
         </TabsList>
 
         {/* --- ROUTE BLOCKS TAB --- */}
@@ -752,6 +780,156 @@ export default function AdminDashboard() {
         {/* --- MEASURE ROUTE TAB --- */}
         <TabsContent value="measure">
           <RouteMeasurer onDataChange={loadData} />
+        </TabsContent>
+
+        {/* --- ARCHIVE MANAGER TAB --- */}
+        <TabsContent value="archive-manager">
+          <Card className="border-none shadow-sm bg-white rounded-2xl">
+            <CardHeader className="border-b border-slate-100 bg-slate-50/50 rounded-t-2xl">
+              <CardTitle className="text-xl font-bold text-slate-800">Archive Manager</CardTitle>
+              <CardDescription>View and restore archived locations, route segments, and jeepney lines.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-8 p-6">
+              
+              {/* Archived Locations */}
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-slate-800 border-b pb-1">Archived Locations (Nodes)</h3>
+                <div className="border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Location ID</TableHead>
+                        <TableHead>Location Name</TableHead>
+                        <TableHead>Coordinates (Lat, Lng)</TableHead>
+                        <TableHead className="w-[120px] text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {archivedNodes.map(n => (
+                        <TableRow key={n.id}>
+                          <TableCell className="font-mono text-xs">{n.id}</TableCell>
+                          <TableCell className="font-medium text-slate-700">{n.name}</TableCell>
+                          <TableCell className="text-xs text-slate-500">{n.latitude}, {n.longitude}</TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 h-8 gap-1"
+                              onClick={() => handleRestore('node', n.id)}
+                              title="Restore Location"
+                            >
+                              <RotateCcw className="h-3.5 w-3.5" /> Restore
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {archivedNodes.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center text-muted-foreground py-4 text-xs italic">
+                            No archived locations.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+
+              {/* Archived Route Blocks */}
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-slate-800 border-b pb-1">Archived Route Blocks (Segments)</h3>
+                <div className="border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Jeepney Line</TableHead>
+                        <TableHead>Segment</TableHead>
+                        <TableHead>Distance</TableHead>
+                        <TableHead className="w-[120px] text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {archivedBlocks.map(b => (
+                        <TableRow key={b.id}>
+                          <TableCell className="font-semibold text-xs text-slate-500">{b.route_name}</TableCell>
+                          <TableCell className="font-medium text-slate-700">{b.source_name} → {b.target_name}</TableCell>
+                          <TableCell className="text-xs text-slate-500">{Number(b.distance).toFixed(3)} km</TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 h-8 gap-1"
+                              onClick={() => handleRestore('route-block', b.id)}
+                              title="Restore Route Block"
+                            >
+                              <RotateCcw className="h-3.5 w-3.5" /> Restore
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {archivedBlocks.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center text-muted-foreground py-4 text-xs italic">
+                            No archived route blocks.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+
+              {/* Archived Jeepney Lines */}
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-slate-800 border-b pb-1">Archived Jeepney Lines (Routes)</h3>
+                <div className="border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Line Name</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Color</TableHead>
+                        <TableHead className="w-[120px] text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {archivedRoutes.map(r => (
+                        <TableRow key={r.name}>
+                          <TableCell className="font-bold text-slate-800">{r.name}</TableCell>
+                          <TableCell className="text-xs text-slate-600">{r.description}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: r.color }}></div>
+                              <span className="font-mono text-xs text-slate-500">{r.color}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 h-8 gap-1"
+                              onClick={() => handleRestore('route', r.name)}
+                              title="Restore Jeepney Line"
+                            >
+                              <RotateCcw className="h-3.5 w-3.5" /> Restore
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {archivedRoutes.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center text-muted-foreground py-4 text-xs italic">
+                            No archived jeepney lines.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 

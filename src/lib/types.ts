@@ -45,5 +45,14 @@ export interface ShortestPathResult {
   totalDistance: number;
   totalFare?: number;
   discountedFare?: number;
+  rideCount?: number;
   alternatives?: ShortestPathResult[];
+  rawDijkstraPath?: {
+    path: PathSegment[];
+    totalDistance: number;
+    totalFare: number;
+    discountedFare: number;
+    rideCount: number;
+    alternatives?: ShortestPathResult[] | null;
+  } | null;
 }

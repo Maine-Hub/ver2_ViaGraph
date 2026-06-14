@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { query } from '@/lib/mysql';
 import type { ShortestPathResult, PathSegment } from '@/lib/types';
 import { calculateFare, calculateDiscountedFare, type VehicleType, type FareRule } from './fare';
-import { findShortestPath } from './routing';
+import { findShortestPath, findRawDijkstraPath, areRoutesCompatible } from './routing';
 
 
 const FindRouteSchema = z.object({
@@ -125,11 +125,18 @@ export async function findRouteAction(
 
           const isVehicle = b.route_name.toLowerCase() !== 'just walk' && !b.route_name.toLowerCase().includes('walk');
 
-          if (segments.length > 0 && isVehicle && segments[segments.length - 1].routeName === b.route_name) {
+          if (segments.length > 0 && isVehicle && areRoutesCompatible(segments[segments.length - 1].routeName, b.route_name)) {
             // Merge with previous segment
             const last = segments[segments.length - 1];
             last.to = nodeNameMap[b.target_id] || b.target_id;
             last.distance += Number(b.distance);
+            
+            // Prefer the more specific route name in the merged segment
+            const prevLower = last.routeName.toLowerCase();
+            const nextLower = b.route_name.toLowerCase();
+            if (prevLower.includes('any city proper') && !nextLower.includes('any city proper')) {
+              last.routeName = b.route_name;
+            }
             
             // Recalculate fares based on the merged distance using dynamic fare rules
             const specificRule = fareRulesMap[last.vehicleType || 'jeepney'];
@@ -187,6 +194,35 @@ export async function findRouteAction(
         };
       });
 
+      // Calculate raw Dijkstra path for comparison
+      let rawDijkstraPath = null;
+      try {
+        const rawDijkstraRes = await findRawDijkstraPath(startLocation, endLocation);
+        if (rawDijkstraRes) {
+          const rawPath = processPath(rawDijkstraRes.path);
+          const rawAlts = (rawDijkstraRes.alternatives || []).map((alt: any) => {
+            const altPath = processPath(alt.path);
+            return {
+              path: altPath,
+              totalDistance: alt.totalDistance,
+              totalFare: altPath.reduce((sum: number, p: any) => sum + (p.regularFare || 0), 0),
+              discountedFare: altPath.reduce((sum: number, p: any) => sum + (p.discountedFare || 0), 0),
+              rideCount: altPath.filter((p: any) => p.routeName.toLowerCase() !== 'just walk' && !p.routeName.toLowerCase().includes('walk')).length,
+            };
+          });
+          rawDijkstraPath = {
+            path: rawPath,
+            totalDistance: rawDijkstraRes.totalDistance,
+            totalFare: rawPath.reduce((sum: number, p: any) => sum + (p.regularFare || 0), 0),
+            discountedFare: rawPath.reduce((sum: number, p: any) => sum + (p.discountedFare || 0), 0),
+            rideCount: rawPath.filter((p: any) => p.routeName.toLowerCase() !== 'just walk' && !p.routeName.toLowerCase().includes('walk')).length,
+            alternatives: rawAlts,
+          };
+        }
+      } catch (err) {
+        console.error('Failed to compute raw Dijkstra comparison path:', err);
+      }
+
       return {
         message: 'Route found via Dijkstra.',
         result: {
@@ -194,7 +230,8 @@ export async function findRouteAction(
           totalDistance: dijkstraResult.totalDistance,
           totalFare: path.reduce((sum: number, p: any) => sum + (p.regularFare || 0), 0),
           discountedFare: path.reduce((sum: number, p: any) => sum + (p.discountedFare || 0), 0),
-          alternatives
+          alternatives,
+          rawDijkstraPath
         }
       };
     }

@@ -41,6 +41,8 @@ const RouteMapView = dynamic(() => import('@/components/map/RouteMapView'), {
 import { Bus, Footprints, Hourglass, Route, Wallet } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 
 const formSchema = z.object({
   startLocation: z.string().min(1, 'Please select a starting location.'),
@@ -68,6 +70,7 @@ function SubmitButton() {
 
 export default function FindRoutePage() {
   const [state, formAction] = useActionState(findRouteAction, { message: '' });
+  const [activeRouteTab, setActiveRouteTab] = React.useState<'custom' | 'dijkstra'>('custom');
   const [graphData, setGraphData] = React.useState<Graph>({ nodes: [], routes: [], edges: [] });
   const [isLoading, setIsLoading] = React.useState(true);
 
@@ -126,6 +129,7 @@ export default function FindRoutePage() {
               const customFormData = new FormData();
               customFormData.append('startLocation', data.startLocation);
               customFormData.append('endLocation', data.endLocation);
+              setActiveRouteTab('custom');
               formAction(customFormData);
             }}>
               <CardContent className="space-y-4">
@@ -202,126 +206,178 @@ export default function FindRoutePage() {
         )}
 
         {state.result && (
-          <Card className="mt-4">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Your Route</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              {/* Totals */}
-              <div className="rounded-lg bg-muted/50 p-3 space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Total Distance</span>
-                  <span className="font-bold">{Number(state.result.totalDistance).toFixed(2)} km</span>
-                </div>
-                {state.result.totalFare != null && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Regular Fare</span>
-                    <span className="font-bold text-green-700">₱{Number(state.result.totalFare).toFixed(2)}</span>
-                  </div>
-                )}
-                {state.result.discountedFare != null && (() => {
-                  // Total must be sum of per-segment ceiled fares, not Math.ceil of the raw total
-                  const totalCeiled = state.result.path.reduce((sum, seg: any) => sum + Math.ceil(Number(seg.discountedFare || 0)), 0);
-                  return (
-                    <div className="flex flex-col pt-1">
-                      <span className="text-muted-foreground text-sm">Discounted Fare</span>
-                      <span className="font-bold text-blue-700 text-lg">₱{totalCeiled.toFixed(2)}</span>
-                      <span className="text-xs text-muted-foreground/60 italic mt-0.5">† Always rounded up to nearest peso per segment</span>
-                    </div>
-                  );
-                })()}
-                {state.result.discountedFare !== undefined && (
-                  <p className="text-xs text-muted-foreground/70">* Discount for students, seniors &amp; PWDs</p>
-                )}
+          <Card className="mt-4 overflow-hidden border-slate-200 shadow-md">
+            <CardHeader className="pb-2 bg-slate-50/50 border-b border-slate-100">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base font-bold text-slate-800">Your Route Details</CardTitle>
               </div>
+            </CardHeader>
+            <CardContent className="p-4 space-y-4">
+              {state.result.rawDijkstraPath && (
+                <Tabs value={activeRouteTab} onValueChange={(val: any) => setActiveRouteTab(val)} className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 bg-slate-100 p-1 rounded-xl mb-4">
+                    <TabsTrigger value="custom" className="rounded-lg text-xs font-semibold data-[state=active]:bg-white data-[state=active]:text-slate-800 transition-all py-2">
+                      Recommended Route
+                    </TabsTrigger>
+                    <TabsTrigger value="dijkstra" className="rounded-lg text-xs font-semibold data-[state=active]:bg-white data-[state=active]:text-slate-800 transition-all py-2 text-rose-600 data-[state=active]:text-rose-700">
+                      Standard Dijkstra's Path
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              )}
 
-              {/* Per-segment details */}
-              {state.result.path.map((segment, index) => {
-                const seg = segment as any;
+              {/* Render route content based on activeRouteTab */}
+              {(() => {
+                const activePathObj = activeRouteTab === 'dijkstra' && state.result.rawDijkstraPath 
+                  ? state.result.rawDijkstraPath 
+                  : state.result;
+
+                const pathSegments = activePathObj.path;
+
                 return (
-                  <div key={index} className="rounded-lg border border-border p-3 space-y-2">
-                    <div className="flex items-center gap-2 font-semibold text-primary">
-                      {seg.routeName === 'JUST WALK' ? (
-                        <Footprints className="h-4 w-4 shrink-0" />
+                  <div className="space-y-4 text-sm">
+                    {/* Totals */}
+                    <div className="rounded-2xl p-4 space-y-2.5 border shadow-sm relative overflow-hidden bg-white">
+                      {activeRouteTab === 'dijkstra' ? (
+                        <div className="absolute top-0 left-0 w-full h-1 bg-rose-500"></div>
                       ) : (
-                        <Bus className="h-4 w-4 shrink-0" />
+                        <div className="absolute top-0 left-0 w-full h-1 bg-cyan-500"></div>
                       )}
-                      <span>Segment {index + 1}: {seg.routeName}</span>
-                      {(() => {
-                        const lineColor = graphData.routes.find((r: any) => r.name === seg.routeName)?.color;
-                        return lineColor ? (
-                          <span
-                            className="inline-block w-3 h-3 rounded-full flex-shrink-0 ring-1 ring-black/10"
-                            style={{ backgroundColor: lineColor }}
-                            title={`Line color: ${lineColor}`}
-                          />
-                        ) : null;
+                      
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-500 font-medium">Total Distance</span>
+                        <span className="font-bold text-slate-800">{Number(activePathObj.totalDistance).toFixed(2)} km</span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center border-t border-slate-50 pt-2">
+                        <span className="text-slate-500 font-medium">Regular Fare</span>
+                        <span className="font-bold text-green-700">₱{Number(activePathObj.totalFare).toFixed(2)}</span>
+                      </div>
+                      
+                      {activePathObj.discountedFare != null && (() => {
+                        const totalCeiled = pathSegments.reduce((sum: number, seg: any) => sum + Math.ceil(Number(seg.discountedFare || 0)), 0);
+                        return (
+                          <div className="flex flex-col border-t border-slate-50 pt-2">
+                            <div className="flex justify-between items-center">
+                              <span className="text-slate-500 font-medium">Discounted Fare</span>
+                              <span className="font-bold text-blue-700 text-base">₱{totalCeiled.toFixed(2)}</span>
+                            </div>
+                            <span className="text-[10px] text-slate-400 mt-1 italic">
+                              † Always rounded up to nearest peso per segment
+                            </span>
+                          </div>
+                        );
                       })()}
-                    </div>
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                      <span className="text-muted-foreground">{seg.routeName === 'JUST WALK' ? 'Arrive at' : 'Get off at'}</span>
-                      <span className="font-medium flex items-center gap-1.5">
-                        {(() => {
-                          const lineColor = graphData.routes.find((r: any) => r.name === seg.routeName)?.color;
-                          return lineColor ? (
-                            <span
-                              className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0"
-                              style={{ backgroundColor: lineColor }}
-                            />
-                          ) : null;
-                        })()}
-                        {seg.to}
-                      </span>
-                      <span className="text-muted-foreground">Distance</span>
-                      <span className="font-medium">
-                        {seg.pathCoordinates?.ridingDist
-                          ? `${Number(seg.pathCoordinates.ridingDist).toFixed(2)} km`
-                          : `${Number(seg.distance).toFixed(2)} km`}
-                      </span>
-                      {seg.pathCoordinates?.walkingDist ? (
-                        <>
-                          <span className="text-muted-foreground flex items-center gap-1">
-                            <Footprints className="h-3 w-3" /> Walk
-                          </span>
-                          <span className="font-medium text-slate-500">
-                            {Number(seg.pathCoordinates.walkingDist).toFixed(2)} km
-                          </span>
-                        </>
-                      ) : null}
-                      {seg.stopAndTransfer && (
-                        <>
-                          <span className="text-muted-foreground">Stop & Transfer</span>
-                          <span className="font-medium">{seg.stopAndTransfer}</span>
-                        </>
-                      )}
-                      {seg.note && (
-                        <div className="col-span-2 mt-1 p-2 bg-yellow-50 border border-yellow-200 rounded text-yellow-800 italic">
-                          Tip: {seg.note}
+                      
+                      {activeRouteTab === 'dijkstra' && (
+                        <div className="mt-2.5 p-3 rounded-xl bg-rose-50 border border-rose-100 text-rose-800 text-[11px] leading-relaxed space-y-1.5 shadow-inner">
+                          <p className="font-bold flex items-center gap-1.5">
+                            ⚠️ Panelist Analysis: Dijkstra Limitations
+                          </p>
+                          <p>
+                            Dijkstra strictly minimizes physical distance. It requires <strong className="font-semibold">{activePathObj.rideCount} transfers</strong>, creating a high-fare, disjointed commute (₱{Number(activePathObj.totalFare).toFixed(2)} total) because it ignores network transfer penalties and fare resets.
+                          </p>
                         </div>
                       )}
-                      {seg.regularFare !== undefined && (
-                        <>
-                          <span className="text-muted-foreground">Regular Fare</span>
-                          <span className="font-medium text-green-700 text-right">₱{Number(seg.regularFare).toFixed(2)}</span>
-                          <div className="col-span-2 flex flex-col pt-1">
-                            <span className="text-muted-foreground">Discounted Fare</span>
-                            <span className="font-medium text-blue-700 text-sm">₱{Math.ceil(Number(seg.discountedFare)).toFixed(2)}</span>
+                    </div>
+
+                    {/* Per-segment details */}
+                    <div className="space-y-3">
+                      {pathSegments.map((segment: any, index: number) => {
+                        return (
+                          <div key={index} className="rounded-xl border border-slate-100 p-3.5 space-y-3 bg-slate-50/40 relative">
+                            <div className="flex items-center gap-2 font-bold text-slate-700 text-xs">
+                              {segment.routeName === 'JUST WALK' ? (
+                                <div className="bg-slate-100 p-1.5 rounded-lg text-slate-600">
+                                  <Footprints className="h-4 w-4 shrink-0" />
+                                </div>
+                              ) : (
+                                <div className="bg-cyan-50 p-1.5 rounded-lg text-cyan-600">
+                                  <Bus className="h-4 w-4 shrink-0" />
+                                </div>
+                              )}
+                              <div className="flex-1">
+                                <p className="text-[10px] uppercase text-slate-400 font-bold tracking-wider">Segment {index + 1}</p>
+                                <p className="text-slate-700 font-bold">{segment.routeName}</p>
+                              </div>
+                              {(() => {
+                                const lineColor = graphData.routes.find((r: any) => r.name === segment.routeName)?.color;
+                                return lineColor ? (
+                                  <span
+                                    className="inline-block w-3 h-3 rounded-full flex-shrink-0 ring-2 ring-white shadow-sm"
+                                    style={{ backgroundColor: lineColor }}
+                                  />
+                                ) : null;
+                              })()}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-slate-600 border-t border-slate-100/60 pt-2.5">
+                              <span className="text-slate-400 font-medium">{segment.routeName === 'JUST WALK' ? 'Arrive at' : 'Get off at'}</span>
+                              <span className="font-bold text-slate-700 truncate">{segment.to}</span>
+                              
+                              <span className="text-slate-400 font-medium">Distance</span>
+                              <span className="font-bold text-slate-700">
+                                {segment.pathCoordinates?.ridingDist
+                                  ? `${Number(segment.pathCoordinates.ridingDist).toFixed(2)} km`
+                                  : `${Number(segment.distance).toFixed(2)} km`}
+                              </span>
+                              
+                              {segment.pathCoordinates?.walkingDist ? (
+                                <>
+                                  <span className="text-slate-400 font-medium flex items-center gap-1">
+                                    Walk Distance
+                                  </span>
+                                  <span className="font-bold text-slate-500">
+                                    {Number(segment.pathCoordinates.walkingDist).toFixed(2)} km
+                                  </span>
+                                </>
+                              ) : null}
+
+                              {segment.stopAndTransfer && (
+                                <>
+                                  <span className="text-slate-400 font-medium">Transfer Stop</span>
+                                  <span className="font-bold text-slate-700 truncate">{segment.stopAndTransfer}</span>
+                                </>
+                              )}
+
+                              {segment.note && (
+                                <div className="col-span-2 mt-1.5 p-2.5 bg-amber-50/50 border border-amber-100 rounded-lg text-[11px] text-amber-800 italic leading-relaxed">
+                                  <strong>Tip:</strong> {segment.note}
+                                </div>
+                              )}
+
+                              {segment.regularFare !== undefined && segment.regularFare > 0 && (
+                                <>
+                                  <span className="text-slate-400 font-medium border-t border-slate-100/60 pt-2">Regular Fare</span>
+                                  <span className="font-bold text-green-700 text-right border-t border-slate-100/60 pt-2">
+                                    ₱{Number(segment.regularFare).toFixed(2)}
+                                  </span>
+                                  
+                                  <span className="text-slate-400 font-medium">Discounted Fare</span>
+                                  <span className="font-bold text-blue-700 text-right">
+                                    ₱{Math.ceil(Number(segment.discountedFare)).toFixed(2)}
+                                  </span>
+                                </>
+                              )}
+                            </div>
                           </div>
-                        </>
-                      )}
+                        );
+                      })}
+                    </div>
+
+                    {/* Destination */}
+                    <div className="flex items-center gap-3 pt-2 border-t border-slate-100">
+                      <div className="bg-cyan-500/10 p-2 rounded-xl text-cyan-600">
+                        <Footprints className="h-5 w-5 shrink-0" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase text-slate-400 font-bold tracking-wider">Destination</p>
+                        <p className="font-bold text-slate-800 text-xs">{pathSegments[pathSegments.length - 1].to}</p>
+                      </div>
                     </div>
                   </div>
                 );
-              })}
-
-              {/* Destination */}
-              <div className="flex items-center gap-2 pt-1">
-                <Footprints className="h-4 w-4 text-primary shrink-0" />
-                <div>
-                  <p className="font-semibold text-xs">Arrive at Destination</p>
-                  <p className="text-xs text-muted-foreground">{state.result.path[state.result.path.length - 1].to}</p>
-                </div>
-              </div>
+              })()}
             </CardContent>
           </Card>
         )}
@@ -331,8 +387,20 @@ export default function FindRoutePage() {
         <RouteMapView
           nodes={graphData.nodes}
           routes={graphData.routes}
-          path={state.result ? state.result.path : undefined}
-          alternatives={state.result ? state.result.alternatives : undefined}
+          path={
+            state.result 
+              ? (activeRouteTab === 'dijkstra' && state.result.rawDijkstraPath
+                  ? state.result.rawDijkstraPath.path 
+                  : state.result.path) 
+              : undefined
+          }
+          alternatives={
+            state.result 
+              ? (activeRouteTab === 'dijkstra' && state.result.rawDijkstraPath
+                  ? (state.result.rawDijkstraPath.alternatives ?? undefined)
+                  : state.result.alternatives)
+              : undefined
+          }
           className="h-full"
         />
       </div>

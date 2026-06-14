@@ -291,20 +291,37 @@ async function findAllPaths(startNodeId: string, endNodeId: string, blocks: Rout
  * Implements standard, unconstrained Dijkstra's algorithm.
  * Minimizes strictly physical distance without transfer or ride limit constraints.
  */
-export async function findRawDijkstraPath(startNodeId: string, endNodeId: string) {
-  const blocks = await query<RouteBlock[]>('SELECT * FROM route_blocks WHERE is_archived = 0 AND is_history = 0');
-  if (blocks.length === 0) return null;
+function getLegsKey(path: RouteBlock[]): string {
+  const legs: { from: string; to: string; routeName: string }[] = [];
+  for (const block of path) {
+    const isVehicle = isVehicleRide(block.route_name);
+    if (legs.length > 0 && isVehicle && areRoutesCompatible(legs[legs.length - 1].routeName, block.route_name)) {
+      legs[legs.length - 1].to = block.target_id;
+    } else {
+      legs.push({
+        from: block.source_id,
+        to: block.target_id,
+        routeName: block.route_name,
+      });
+    }
+  }
+  return legs.map(l => `${l.from}->${l.to}:${l.routeName}`).join('|');
+}
 
-  const normalizedBlocks = blocks.map(b => ({
-    ...b,
-    distance: Number(b.distance),
-    regular_fare: Number(b.regular_fare),
-  }));
-
+function runPhysicalDijkstra(
+  startNodeId: string,
+  endNodeId: string,
+  normalizedBlocks: RouteBlock[],
+  disabledPhysicalEdges: Set<string>, // u->v
+  disabledRouteNames: Set<string>
+) {
   const adjacencyList: Record<string, RouteBlock[]> = {};
   const nodes = new Set<string>();
 
   normalizedBlocks.forEach(block => {
+    if (disabledRouteNames.has(block.route_name)) {
+      return;
+    }
     if (!adjacencyList[block.source_id]) adjacencyList[block.source_id] = [];
     adjacencyList[block.source_id].push(block);
     nodes.add(block.source_id);
@@ -313,7 +330,6 @@ export async function findRawDijkstraPath(startNodeId: string, endNodeId: string
 
   if (!nodes.has(startNodeId) || !nodes.has(endNodeId)) return null;
 
-  // 1. Run Dijkstra on physical node-to-node graph (weight = min distance between u and v)
   const weights: Record<string, number> = {};
   const previousNode: Record<string, string | null> = {};
   const pq: { nodeId: string; weight: number }[] = [];
@@ -330,10 +346,12 @@ export async function findRawDijkstraPath(startNodeId: string, endNodeId: string
     if (u === endNodeId) continue;
 
     const neighbors = adjacencyList[u] || [];
-    // Group edges by target_id to find the minimum distance edge to each neighbor
     const neighborsMap: Record<string, number> = {};
     neighbors.forEach(block => {
       const v = block.target_id;
+      if (disabledPhysicalEdges.has(`${u}->${v}`)) {
+        return;
+      }
       const dist = block.distance;
       if (neighborsMap[v] === undefined || dist < neighborsMap[v]) {
         neighborsMap[v] = dist;
@@ -353,7 +371,6 @@ export async function findRawDijkstraPath(startNodeId: string, endNodeId: string
 
   if (weights[endNodeId] === undefined || weights[endNodeId] === Infinity) return null;
 
-  // 2. Reconstruct node path
   const nodePath: string[] = [];
   let currNode: string | null = endNodeId;
   while (currNode !== null) {
@@ -361,7 +378,6 @@ export async function findRawDijkstraPath(startNodeId: string, endNodeId: string
     currNode = previousNode[currNode] !== undefined ? previousNode[currNode]! : null;
   }
 
-  // 3. Select sequence of blocks along the node path to minimize transfers
   const stepsCandidates: RouteBlock[][] = [];
   for (let i = 0; i < nodePath.length - 1; i++) {
     const u = nodePath[i];
@@ -371,18 +387,15 @@ export async function findRawDijkstraPath(startNodeId: string, endNodeId: string
     stepsCandidates.push(candidates);
   }
 
-  // dp[stepIndex][candidateIndex] = { minTransfers: number, prevCandidateIndex: number }
   const dp: { minTransfers: number; prevCandidateIndex: number }[][] = [];
   for (let i = 0; i < stepsCandidates.length; i++) {
     dp.push([]);
   }
 
-  // Step 0: first step N_1 -> N_2
   for (let j = 0; j < stepsCandidates[0].length; j++) {
     dp[0].push({ minTransfers: 0, prevCandidateIndex: -1 });
   }
 
-  // Steps i > 0
   for (let i = 1; i < stepsCandidates.length; i++) {
     const prevCandidates = stepsCandidates[i - 1];
     const currCandidates = stepsCandidates[i];
@@ -417,7 +430,6 @@ export async function findRawDijkstraPath(startNodeId: string, endNodeId: string
     }
   }
 
-  // Find best candidate for the last step
   const lastStepIndex = stepsCandidates.length - 1;
   let minLastTransfers = Infinity;
   let bestLastCandidateIndex = -1;
@@ -431,7 +443,6 @@ export async function findRawDijkstraPath(startNodeId: string, endNodeId: string
 
   if (bestLastCandidateIndex === -1) return null;
 
-  // Backtrack to build block sequence
   const path: RouteBlock[] = [];
   let currCandidateIndex = bestLastCandidateIndex;
   for (let i = lastStepIndex; i >= 0; i--) {
@@ -443,5 +454,87 @@ export async function findRawDijkstraPath(startNodeId: string, endNodeId: string
     path,
     totalDistance: weights[endNodeId],
     totalFare: path.reduce((sum, b) => sum + Number(b.regular_fare), 0),
+  };
+}
+
+/**
+ * Implements standard, unconstrained Dijkstra's algorithm.
+ * Minimizes strictly physical distance without transfer or ride limit constraints.
+ */
+export async function findRawDijkstraPath(startNodeId: string, endNodeId: string) {
+  const blocks = await query<RouteBlock[]>('SELECT * FROM route_blocks WHERE is_archived = 0 AND is_history = 0');
+  if (blocks.length === 0) return null;
+
+  const normalizedBlocks = blocks.map(b => ({
+    ...b,
+    distance: Number(b.distance),
+    regular_fare: Number(b.regular_fare),
+  }));
+
+  // 1. Primary Route (Dijkstra on all edges)
+  const primaryResult = runPhysicalDijkstra(startNodeId, endNodeId, normalizedBlocks, new Set<string>(), new Set<string>());
+  if (!primaryResult) return null;
+
+  const primaryLegsKey = getLegsKey(primaryResult.path);
+  const uniquePaths = new Map<string, typeof primaryResult>();
+
+  function getTransitLines(p: RouteBlock[]): string[] {
+    return p
+      .map(b => b.route_name)
+      .filter(name => isVehicleRide(name));
+  }
+
+  // Strategy A (Detours): Temporarily disable each physical edge in the primary path one-by-one
+  for (let i = 0; i < primaryResult.path.length; i++) {
+    const block = primaryResult.path[i];
+    const disabledEdges = new Set<string>([`${block.source_id}->${block.target_id}`]);
+    const altResult = runPhysicalDijkstra(startNodeId, endNodeId, normalizedBlocks, disabledEdges, new Set<string>());
+    if (altResult) {
+      const key = getLegsKey(altResult.path);
+      if (key !== primaryLegsKey && !uniquePaths.has(key)) {
+        uniquePaths.set(key, altResult);
+      }
+    }
+  }
+
+  // Strategy B (Alternative Lines): Disable entire transit lines used in the primary path
+  const primaryTransitLines = new Set(getTransitLines(primaryResult.path));
+  if (primaryTransitLines.size > 0) {
+    const altResult = runPhysicalDijkstra(startNodeId, endNodeId, normalizedBlocks, new Set<string>(), primaryTransitLines);
+    if (altResult) {
+      const key = getLegsKey(altResult.path);
+      if (key !== primaryLegsKey && !uniquePaths.has(key)) {
+        uniquePaths.set(key, altResult);
+      }
+    }
+  }
+
+  // Strategy C (Combined Disabling): Disable primary route lines + first alternative lines
+  if (uniquePaths.size < 3) {
+    const sortedAltsSoFar = Array.from(uniquePaths.values()).sort((a, b) => a.totalDistance - b.totalDistance);
+    if (sortedAltsSoFar.length > 0) {
+      const alt1 = sortedAltsSoFar[0];
+      const combinedDisabledLines = new Set<string>([
+        ...primaryTransitLines,
+        ...getTransitLines(alt1.path)
+      ]);
+      const altResult = runPhysicalDijkstra(startNodeId, endNodeId, normalizedBlocks, new Set<string>(), combinedDisabledLines);
+      if (altResult) {
+        const key = getLegsKey(altResult.path);
+        if (key !== primaryLegsKey && !uniquePaths.has(key)) {
+          uniquePaths.set(key, altResult);
+        }
+      }
+    }
+  }
+
+  // Deduplicate and Sort unique candidates by total distance, returning top 3
+  const sortedAlternatives = Array.from(uniquePaths.values())
+    .sort((a, b) => a.totalDistance - b.totalDistance)
+    .slice(0, 3);
+
+  return {
+    ...primaryResult,
+    alternatives: sortedAlternatives,
   };
 }

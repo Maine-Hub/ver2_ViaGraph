@@ -1,0 +1,188 @@
+ViaGraph: System Development Framework
+
+Iterative Evolution, Algorithmic Discoveries, and Functional Specifications
+
+
+
+1. Executive Summary
+
+ViaGraph was developed to address transit routing and fare calculation in Iligan City, Philippines. The core research finding proved that standard shortest-path algorithms (like Dijkstra's) are mathematically unsuitable for real-world municipal transit systems unless constrained by transfer penalties and fare reset logic. By evolving through three iterations of design, database integration, and algorithmic refinement, the system successfully demonstrates the benefits of a Route-Block-based model over raw node-to-node physical calculations.
+
+
+
+2. Iterative Development Timeline
+
+Iteration 1: Initial Interface & Static Design
+
+• System Status: Static web interface without database persistence or dynamic calculation.• Access Control: No administrative roles; single login-looking mock screen.• Home Interface Features: Contains a manual Route Finder tool, informational panels, and a logout button.• Route Finder: Map visualization using manually-coded routes (coordinates and directions were hardcoded in the frontend).• About Panels: Guides explaining local tourist spots in Iligan City and the narrative overview describing the project's objectives.• Feedback: The initial system lacked real-world transit data, and panelists mandated the inclusion of a dynamic database.
+
+Iteration 2: Database Integration & Role Separation
+
+• System Status: Integrated with a MySQL database. Implemented separate User and Admin roles.• Access Control: Custom Sign-Up and Sign-In pages with permission-based routing.• User Role Features: 'Plan Your Trip' route finder inputs starting location and destination to retrieve mapped routes, recommended route, alternative options, standard Dijkstra's path, and toggleable standard/satellite map layers. Profile settings allow updating username, changing passwords, and recovery questions.• Admin Role Features: Admin dashboard containing tabs for Route Blocks, Locations (Nodes), Jeepney Lines (Colors), Fare Matrix, Measure Route, and Archive Manager, as well as User Management and Activity Logs.• Alpha Testing & Discoveries: Developers discovered that raw Dijkstra calculations generated highly inaccurate paths ('mag buot buot') because it strictly minimized physical distance, instructing commuters to walk down side streets or change vehicles frequently, which deviated from official LTFRB routes.• Feedback: Sir Jofel instructed researchers to define the network using Route Blocks (fixed segments representing active jeepney paths) instead of abstract node networks. Panelists suggested retaining the raw Dijkstra output alongside the recommended path in a tabbed view to physically illustrate the algorithm's real-world routing failures.
+
+Iteration 3: Route Blocks & Comparative Routing (Final)
+
+• System Status: Fully realized dynamic routing engine utilizing MySQL, Leaflet, and Route-Block constraints.• Constrained Route Blocks Pathfinder: Modified Dijkstra algorithm restricting trips to at most 2 vehicle rides and adding a tie-breaker vehicle penalty to prevent unnecessary transfers.• Continuous Fare Merging: Commutes on the same jeepney line are merged into a single segment, calculating the fare based on total continuous distance instead of adding multiple base fares.• Comparative Tab Interface: Displays the Recommended Route side-by-side with the Standard Dijkstra's Path to contrast real-world viability.• Batch GeoJSON Importer: Interactive tools for admins to measure and import transit segments directly.• Beta Testing & Results: Evaluated by 5 to 10 routing and transit experts, proving that standard Dijkstra is not suitable for Iligan City's public transit operations due to fare resets and routing issues.
+
+
+
+3. Core Finding: The Dijkstra Limitation
+
+The final beta test proved that standard shortest-path algorithms fail in municipal public transit contexts because:1. Fare Resets: Dijkstra does not account for the financial cost of transferring vehicles. A path that is 500 meters shorter but requires three vehicle changes costs three times the base fare.2. Commuter Discomfort: Pure distance minimization often forces unnecessary walking segments on major highways or transfer points that are unsafe or non-existent in municipal routes.3. Real-world Routes: Municipal transit operates along fixed franchise lines. Route Blocks restrict pathfinding to actual legal pathways, ensuring calculations represent legal, active jeepney runs.
+
+
+
+4. Features & Functionalities Matrix
+
+Module
+
+Feature
+
+Target User
+
+Specific Functionality / Match Criteria
+
+Authentication
+
+Sign-In & Sign-Up
+
+All
+
+Secures user sessions and delegates permissions based on database roles (user vs admin).
+
+Authentication
+
+Account Recovery
+
+All
+
+Utilizes a selected security question with case-insensitive answer verification.
+
+Routing
+
+Plan Your Trip
+
+User / Admin
+
+Allows choosing start and end locations from registered nodes. Calculates optimal routes.
+
+Routing
+
+Recommended Route
+
+User / Admin
+
+Constrained routing engine (max 2 transfers) with a 10m tie-breaker penalty favoring single vehicle lines.
+
+Routing
+
+Dijkstra Comparison
+
+User / Admin
+
+Computes standard physical-distance shortest path; warns users of transfers and fare resets.
+
+Routing
+
+Fare Calculation
+
+User / Admin
+
+Merges consecutive segments on the same jeepney line. Applies LTFRB discount rules (rounded up to nearest peso).
+
+Profile
+
+Settings Control
+
+User / Admin
+
+Update username, modify security questions, and update password credentials.
+
+Dashboard
+
+Route Blocks
+
+Admin
+
+CRUD operations for route segments. Supports custom coordinates mapping and GeoJSON import.
+
+Dashboard
+
+Route Blocks Search
+
+Admin
+
+Real-time filtering. Matches against: Source, Target, Line Name, Vehicle Type, Tips/Notes.
+
+Dashboard
+
+Node Locations
+
+Admin
+
+CRUD operations for transit stops. Coordinates auto-populated by clicking on the picker map.
+
+Dashboard
+
+Node Search
+
+Admin
+
+Real-time filtering. Matches against: Display Name, Location ID (slug).
+
+Dashboard
+
+Jeepney Lines
+
+Admin
+
+Add and edit route lines, descriptions, and map visual colors.
+
+Dashboard
+
+Jeepney Lines Search
+
+Admin
+
+Real-time filtering. Matches against: Line Name, Line Description.
+
+Dashboard
+
+Fare Matrix
+
+Admin
+
+Update base fares, base distances, succeeding rates, and discount rates. Automatically recalculates all route block fares.
+
+Dashboard
+
+Route Measurer
+
+Admin
+
+Upload multiple .geojson files, calculate riding vs. walking distance, preview fares, and auto-generate new nodes.
+
+Dashboard
+
+Archive Manager
+
+Admin
+
+Center to view and restore archived nodes, blocks, and jeepney lines.
+
+Administration
+
+User Management
+
+Admin
+
+Searchable directory. Promote/demote users (user <-> admin) to control system access.
+
+Administration
+
+Activity Log
+
+Admin
+
+Filterable, chronological view of system actions (All, User Actions, Admin Actions).
+

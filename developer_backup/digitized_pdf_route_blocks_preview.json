@@ -1,0 +1,138 @@
+[
+  {
+    "route_name": "Hinaplanon-San Roque-City Proper and VV",
+    "source_id": "hinaplanon-crossing",
+    "target_id": "fil-am-bridge",
+    "source_name": "Hinaplanon Crossing",
+    "target_name": "Fil-Am Bridge",
+    "block_order": 1,
+    "vehicle_type": "Traditional PUJ",
+    "distance": 0.5,
+    "regular_fare": 13,
+    "discounted_fare": 10.5,
+    "path_coordinates": "[[124.261,8.254],[124.261532,8.254358],[124.262064,8.254716],[124.262596,8.255073999999999],[124.263128,8.255431999999999],[124.26366,8.25579]]",
+    "metadata": {
+      "source": "manual_digitization",
+      "method": "interpolated"
+    }
+  },
+  {
+    "route_name": "Hinaplanon-San Roque-City Proper and VV",
+    "source_id": "fil-am-bridge",
+    "target_id": "san-roque",
+    "source_name": "Fil-Am Bridge",
+    "target_name": "San Roque",
+    "block_order": 2,
+    "vehicle_type": "Traditional PUJ",
+    "distance": 1.2,
+    "regular_fare": 13,
+    "discounted_fare": 10.5,
+    "path_coordinates": "[[124.26366,8.25579],[124.26461875,8.256431249999999],[124.2655775,8.2570725],[124.26653625,8.25771375],[124.267495,8.258355],[124.26845375,8.25899625],[124.2694125,8.2596375],[124.27037125000001,8.260278750000001],[124.27133,8.26092]]",
+    "metadata": {
+      "source": "manual_digitization",
+      "method": "interpolated"
+    }
+  },
+  {
+    "route_name": "Hinaplanon-San Roque-City Proper and VV",
+    "source_id": "san-roque",
+    "target_id": "tambo-terminal",
+    "source_name": "San Roque",
+    "target_name": "IBJT (Tambo)",
+    "block_order": 3,
+    "vehicle_type": "Traditional PUJ",
+    "distance": 2.5,
+    "regular_fare": 13,
+    "discounted_fare": 10.5,
+    "path_coordinates": "[[124.27133,8.26092],[124.27019700000001,8.259028],[124.269064,8.257136000000001],[124.267931,8.255244000000001],[124.26679800000001,8.253352000000001],[124.26566500000001,8.251460000000002],[124.264532,8.249568],[124.263399,8.247676],[124.26226600000001,8.245784],[124.261133,8.243892],[124.26,8.242]]",
+    "metadata": {
+      "source": "manual_digitization",
+      "method": "interpolated"
+    }
+  },
+  {
+    "route_name": "Dalipuga-City Proper and VV",
+    "source_id": "vista-village",
+    "target_id": "centennial-park",
+    "source_name": "Vista Village",
+    "target_name": "Dalipuga Centennial Park",
+    "block_order": 1,
+    "vehicle_type": "Traditional PUJ",
+    "distance": 2.1,
+    "regular_fare": 13,
+    "discounted_fare": 10.5,
+    "path_coordinates": "[[124.26994,8.30654],[124.26776600000001,8.307866],[124.265592,8.309192],[124.263418,8.310518],[124.261244,8.311844],[124.25907000000001,8.31317],[124.256896,8.314496],[124.254722,8.315822],[124.252548,8.317148000000001],[124.250374,8.318474],[124.2482,8.3198]]",
+    "metadata": {
+      "source": "manual_digitization",
+      "method": "interpolated"
+    }
+  },
+  {
+    "route_name": "Dalipuga-City Proper and VV",
+    "source_id": "centennial-park",
+    "target_id": "kiwalan",
+    "source_name": "Dalipuga Centennial Park",
+    "target_name": "Kiwalan",
+    "block_order": 2,
+    "vehicle_type": "Traditional PUJ",
+    "distance": 3.5,
+    "regular_fare": 13,
+    "discounted_fare": 10.5,
+    "path_coordinates": "[[124.2482,8.3198],[124.24825333333332,8.317480000000002],[124.24830666666666,8.31516],[124.24835999999999,8.312840000000001],[124.24841333333333,8.31052],[124.24846666666666,8.308200000000001],[124.24852,8.30588],[124.24857333333333,8.303560000000001],[124.24862666666667,8.30124],[124.24868,8.29892],[124.24873333333333,8.2966],[124.24878666666666,8.29428],[124.24884,8.29196],[124.24889333333333,8.28964],[124.24894666666667,8.28732],[124.249,8.285]]",
+    "metadata": {
+      "source": "manual_digitization",
+      "method": "interpolated"
+    }
+  },
+  {
+    "route_name": "Dalipuga-City Proper and VV",
+    "source_id": "kiwalan",
+    "target_id": "msu-iit",
+    "source_name": "Kiwalan",
+    "target_name": "MSU-IIT",
+    "block_order": 3,
+    "vehicle_type": "Traditional PUJ",
+    "distance": 5.2,
+    "regular_fare": 15.25,
+    "discounted_fare": 12.25,
+    "path_coordinates": "[[124.249,8.285],[124.248775,8.28273],[124.24855,8.28046],[124.248325,8.27819],[124.2481,8.27592],[124.247875,8.27365],[124.24765,8.27138],[124.24742499999999,8.26911],[124.24719999999999,8.26684],[124.24697499999999,8.264569999999999],[124.24674999999999,8.2623],[124.246525,8.26003],[124.2463,8.25776],[124.246075,8.25549],[124.24585,8.253219999999999],[124.245625,8.25095],[124.2454,8.24868],[124.245175,8.24641],[124.24495,8.24414],[124.244725,8.241869999999999],[124.2445,8.2396]]",
+    "metadata": {
+      "source": "manual_digitization",
+      "method": "interpolated"
+    }
+  },
+  {
+    "route_name": "Tubod-Orellana-C3-City Proper and VV",
+    "source_id": "tubod-10th-east",
+    "target_id": "orellana-violeta",
+    "source_name": "Tubod (10th East)",
+    "target_name": "Orellana (Purok Violeta)",
+    "block_order": 1,
+    "vehicle_type": "Modern PUJ",
+    "distance": 1.8,
+    "regular_fare": 15,
+    "discounted_fare": 12,
+    "path_coordinates": "[[124.24318,8.21254],[124.242662,8.213586000000001],[124.242144,8.214632],[124.241626,8.215678],[124.241108,8.216724000000001],[124.24059,8.217770000000002],[124.240072,8.218816],[124.239554,8.219862000000001],[124.239036,8.220908000000001],[124.238518,8.221954],[124.238,8.223]]",
+    "metadata": {
+      "source": "manual_digitization",
+      "method": "interpolated"
+    }
+  },
+  {
+    "route_name": "Tubod-Orellana-C3-City Proper and VV",
+    "source_id": "orellana-violeta",
+    "target_id": "c3-alcuizar",
+    "source_name": "Orellana (Purok Violeta)",
+    "target_name": "C3 Road (Alcuizar)",
+    "block_order": 2,
+    "vehicle_type": "Modern PUJ",
+    "distance": 1.5,
+    "regular_fare": 15,
+    "discounted_fare": 12,
+    "path_coordinates": "[[124.238,8.223],[124.237,8.221375],[124.236,8.219750000000001],[124.235,8.218125],[124.23400000000001,8.2165],[124.233,8.214875000000001],[124.232,8.21325],[124.23100000000001,8.211625000000002],[124.23,8.21]]",
+    "metadata": {
+      "source": "manual_digitization",
+      "method": "interpolated"
+    }
+  }
+]

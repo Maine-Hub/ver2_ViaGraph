@@ -49,14 +49,9 @@ export async function POST(req: Request) {
     for (const block of blocks) {
         const rule = fareRulesMap[block.vehicle_type] || fareRulesMap['jeepney'];
         if (rule) {
-            let rawRegular = Number(rule.base_fare);
-            if (block.distance > Number(rule.base_km)) {
-                rawRegular += (block.distance - Number(rule.base_km)) * Number(rule.succeeding_km_rate);
-            }
-            const regularFare = Math.round(rawRegular / 0.25) * 0.25;
-            
-            const rawDiscounted = rawRegular * (1 - Number(rule.discount_rate));
-            const discountedFare = Math.round(rawDiscounted / 0.25) * 0.25;
+            const regularFare = Math.round(Number(rule.base_fare));
+            const rawDiscounted = Number(rule.base_fare) * (1 - Number(rule.discount_rate));
+            const discountedFare = Math.ceil(rawDiscounted);
 
             await query(
                 'UPDATE route_blocks SET regular_fare = ?, discounted_fare = ? WHERE id = ?',

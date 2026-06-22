@@ -1,0 +1,418 @@
+{
+  "nodes": [
+    {
+      "id": "anahaw-amphitheater",
+      "name": "Anahaw Amphitheater",
+      "latitude": 8.225140607229608,
+      "longitude": 124.25159411500313,
+      "created_at": "2026-03-09T05:59:56.000Z"
+    },
+    {
+      "id": "centennial-park",
+      "name": "Dalipuga Centennial Park",
+      "latitude": 8.31986196423916,
+      "longitude": 124.24824151404042,
+      "created_at": "2026-03-10T04:58:56.000Z"
+    },
+    {
+      "id": "city-hospital",
+      "name": "Gregorio T. Lluch Memorial Hospital",
+      "latitude": 8.226239617811029,
+      "longitude": 124.25462895034289,
+      "created_at": "2026-03-06T07:42:43.000Z"
+    },
+    {
+      "id": "deped",
+      "name": "DepEd Iligan",
+      "latitude": 8.228273044811916,
+      "longitude": 124.23833339459159,
+      "created_at": "2026-03-10T02:32:45.000Z"
+    },
+    {
+      "id": "esplanade",
+      "name": "Mandulog River Esplanade",
+      "latitude": 8.251388606024836,
+      "longitude": 124.2496529155955,
+      "created_at": "2026-03-10T05:03:38.000Z"
+    },
+    {
+      "id": "gaisano-mall",
+      "name": "Gaisano Mall Iligan",
+      "latitude": 8.230959488503707,
+      "longitude": 124.24096255401527,
+      "created_at": "2026-03-06T07:41:51.000Z"
+    },
+    {
+      "id": "gaisano-sukiclub",
+      "name": "Gaisano Suki Club",
+      "latitude": 8.229403901787812,
+      "longitude": 124.23435388829714,
+      "created_at": "2026-03-10T02:35:33.000Z"
+    },
+    {
+      "id": "hall-justice",
+      "name": "Hall of Justice",
+      "latitude": 8.213741511080476,
+      "longitude": 124.2394592563797,
+      "created_at": "2026-03-10T02:40:02.000Z"
+    },
+    {
+      "id": "icc",
+      "name": "Iligan Capitol College",
+      "latitude": 8.222751443279718,
+      "longitude": 124.24095288611277,
+      "created_at": "2026-03-10T02:38:35.000Z"
+    },
+    {
+      "id": "icnhs",
+      "name": "Iligan City National High School",
+      "latitude": 8.225698076745967,
+      "longitude": 124.23972864897155,
+      "created_at": "2026-03-10T02:37:29.000Z"
+    },
+    {
+      "id": "iligan-cityhall",
+      "name": "Iligan City Hall",
+      "latitude": 8.225793642870038,
+      "longitude": 124.25187254884715,
+      "created_at": "2026-03-09T05:55:33.000Z"
+    },
+    {
+      "id": "lto",
+      "name": "Land Transportation Office",
+      "latitude": 8.214506062475792,
+      "longitude": 124.24021090301153,
+      "created_at": "2026-03-10T02:39:26.000Z"
+    },
+    {
+      "id": "msu-iit",
+      "name": "Mindanao State University - Iligan Institute of Technology",
+      "latitude": 8.2396717229889,
+      "longitude": 124.24454620385812,
+      "created_at": "2026-03-06T07:38:45.000Z"
+    },
+    {
+      "id": "night-market",
+      "name": "Iligan Night Market",
+      "latitude": 8.228713707773194,
+      "longitude": 124.2372122661992,
+      "created_at": "2026-03-10T02:34:44.000Z"
+    },
+    {
+      "id": "paseo-santaigo",
+      "name": "Paseo",
+      "latitude": 8.245049746396173,
+      "longitude": 124.24253466805504,
+      "created_at": "2026-03-10T02:21:36.000Z"
+    },
+    {
+      "id": "public-plaza",
+      "name": "Iligan Public Plaza",
+      "latitude": 8.228517267718468,
+      "longitude": 124.23716930130587,
+      "created_at": "2026-03-10T02:34:00.000Z"
+    },
+    {
+      "id": "robinsons-mall",
+      "name": "Robinsons Mall",
+      "latitude": 8.218286322728328,
+      "longitude": 124.24052237881428,
+      "created_at": "2026-03-06T07:43:32.000Z"
+    },
+    {
+      "id": "soda-beach",
+      "name": "Soda Beach",
+      "latitude": 8.270255932768878,
+      "longitude": 124.25836975533689,
+      "created_at": "2026-03-10T04:55:07.000Z"
+    },
+    {
+      "id": "south-bound",
+      "name": "Iligan City Integrated Bus & Jeepney Terminal-South Bound",
+      "latitude": 8.207147194183387,
+      "longitude": 124.21654814029965,
+      "created_at": "2026-03-10T02:43:55.000Z"
+    },
+    {
+      "id": "st.michael's-college",
+      "name": "St. Michael's College",
+      "latitude": 8.228665925066146,
+      "longitude": 124.23950783343656,
+      "created_at": "2026-03-10T02:32:11.000Z"
+    },
+    {
+      "id": "st.michael-cathedral",
+      "name": "St. Michael Cathedral",
+      "latitude": 8.229292408989952,
+      "longitude": 124.23946184604851,
+      "created_at": "2026-03-10T02:30:11.000Z"
+    },
+    {
+      "id": "tambo-market",
+      "name": "Tambo Public Market",
+      "latitude": 8.242920843604004,
+      "longitude": 124.25960868961363,
+      "created_at": "2026-03-06T07:40:19.000Z"
+    },
+    {
+      "id": "tambo-terminal",
+      "name": "Tambo Bus Terminal",
+      "latitude": 8.241593591674908,
+      "longitude": 124.2607239027187,
+      "created_at": "2026-03-06T07:39:45.000Z"
+    },
+    {
+      "id": "timoga",
+      "name": "Timoga",
+      "latitude": 8.19148127072626,
+      "longitude": 124.17968519669584,
+      "created_at": "2026-03-10T03:02:08.000Z"
+    },
+    {
+      "id": "unitop",
+      "name": "Unitop",
+      "latitude": 8.228809273170013,
+      "longitude": 124.23839330673219,
+      "created_at": "2026-03-10T02:31:04.000Z"
+    },
+    {
+      "id": "wet-market",
+      "name": "Iligan Wet Market",
+      "latitude": 8.228527886102304,
+      "longitude": 124.23373065105574,
+      "created_at": "2026-03-10T02:36:13.000Z"
+    },
+    {
+      "id": "zoey's-cafe",
+      "name": "Zoey's Cafe",
+      "latitude": 8.228039440151738,
+      "longitude": 124.23847779959516,
+      "created_at": "2026-03-10T02:33:22.000Z"
+    }
+  ],
+  "edges": [
+    {
+      "id": "anahaw-amphitheater_anahaw-amphitheater_TAMBO_BAYUG-ILIGAN PROPER",
+      "source": "anahaw-amphitheater",
+      "target": "anahaw-amphitheater",
+      "distance": 1.3,
+      "route_name": "TAMBO_BAYUG-ILIGAN PROPER"
+    },
+    {
+      "id": "msu-iit_tambo-terminal_TAMBO_GERONA-ILIGAN PROPER",
+      "source": "msu-iit",
+      "target": "tambo-terminal",
+      "distance": 1.8,
+      "route_name": "TAMBO_GERONA-ILIGAN PROPER"
+    },
+    {
+      "id": "tambo-market_msu-iit_TAMBO_GERONA-ILIGAN PROPER",
+      "source": "tambo-market",
+      "target": "msu-iit",
+      "distance": 1.9,
+      "route_name": "TAMBO_GERONA-ILIGAN PROPER"
+    },
+    {
+      "id": "tambo-terminal_gaisano-mall_TAMBO_GERONA-ILIGAN PROPER",
+      "source": "tambo-terminal",
+      "target": "gaisano-mall",
+      "distance": 3.3,
+      "route_name": "TAMBO_GERONA-ILIGAN PROPER"
+    },
+    {
+      "id": "tambo-terminal_paseo-santaigo_TAMBO_GERONA-ILIGAN PROPER",
+      "source": "tambo-terminal",
+      "target": "paseo-santaigo",
+      "distance": 1.8,
+      "route_name": "TAMBO_GERONA-ILIGAN PROPER"
+    }
+  ],
+  "routes": [
+    {
+      "name": "ABEGAIL-ILIGAN PROPER",
+      "description": "Routes through Abegail Subd-Country Hills to City Proper and Vice Versa",
+      "created_at": "2026-03-10T00:19:39.000Z",
+      "color": "#6366f1"
+    },
+    {
+      "name": "BACAYO_MERCY-ILIGAN PROPER",
+      "description": "Routes through Bacayo-Mercy-Southbound to City Proper and Vice Versa",
+      "created_at": "2026-03-10T00:21:25.000Z",
+      "color": "#6366f1"
+    },
+    {
+      "name": "BAGONG SILANG-ILIGAN PROPER",
+      "description": "Routes through Brgy. Bagong Silang to City Proper and Vice Versa",
+      "created_at": "2026-03-10T00:25:12.000Z",
+      "color": "#6366f1"
+    },
+    {
+      "name": "BARAAS-ILIGAN PROPER",
+      "description": "Routes through Baraas NFA V. Laville to City Proper and Vice Versa",
+      "created_at": "2026-03-10T00:22:24.000Z",
+      "color": "#6366f1"
+    },
+    {
+      "name": "BARINAUT-ILIGAN PROPER",
+      "description": "Routes through Barinaut to City Proper and Vice Versa",
+      "created_at": "2026-03-10T00:23:00.000Z",
+      "color": "#6366f1"
+    },
+    {
+      "name": "BAYANIHAN VILL-ILIGAN PROPER",
+      "description": "Routes through Bayanihan Village-Sta. Elena to City Proper and Vice Versa",
+      "created_at": "2026-03-10T00:31:42.000Z",
+      "color": "#6366f1"
+    },
+    {
+      "name": "BAYANIHAN_NORTH-SOUTH MINI BUS",
+      "description": "Routes through Tambo Terminal-National Highway to South Bound Terminal and Vice Versa",
+      "created_at": "2026-03-10T01:09:33.000Z",
+      "color": "#6366f1"
+    },
+    {
+      "name": "BURUUN-ILIGAN PROPER",
+      "description": "Routes through Buruun to City Proper and Vice Versa",
+      "created_at": "2026-03-10T00:27:58.000Z",
+      "color": "#6366f1"
+    },
+    {
+      "name": "CEANURI_TOMAS CABILI-ILIGAN PROPER",
+      "description": "Routes through Ceanuri-Tomas Cabili to City Proper and Vice Versa",
+      "created_at": "2026-03-10T00:30:35.000Z",
+      "color": "#6366f1"
+    },
+    {
+      "name": "DALIPUGA-ILIGAN PROPER",
+      "description": "Routes through Dalipuga to City Proper and Vice Versa",
+      "created_at": "2026-03-06T07:16:52.000Z",
+      "color": "#6366f1"
+    },
+    {
+      "name": "DALIPUGA-ILIGAN PROPER_MINI BUS",
+      "description": "Routes through Dalipuga to City Proper and Vice Versa",
+      "created_at": "2026-03-10T01:10:55.000Z",
+      "color": "#6366f1"
+    },
+    {
+      "name": "DEL CARMEN-ILIGAN PROPER",
+      "description": "Routes through Del Carmen-Erlindaville to City Proper and Vice Versa",
+      "created_at": "2026-03-10T00:35:16.000Z",
+      "color": "#6366f1"
+    },
+    {
+      "name": "DEL CARMEN_TAMBO-ILIGAN PROPER",
+      "description": "Routes through Del Carmen-IBJT to City Proper and Vice Versa",
+      "created_at": "2026-03-10T00:36:37.000Z",
+      "color": "#6366f1"
+    },
+    {
+      "name": "HINAPLANON-ILIGAN PROPER",
+      "description": "Routes through Hinaplanon Crossing to City Proper and Vice Versa",
+      "created_at": "2026-03-10T00:39:27.000Z",
+      "color": "#6366f1"
+    },
+    {
+      "name": "LUINAB-ILIGAN PROPER",
+      "description": "Routes through Luinab Bahayan-Terminal to City Proper and Vice Versa",
+      "created_at": "2026-03-06T07:46:41.000Z",
+      "color": "#6366f1"
+    },
+    {
+      "name": "PALAO-ILIGAN PROPER",
+      "description": "Routes through 542 Palao Riverside-Medic to City Proper and Vice Versa",
+      "created_at": "2026-03-09T05:51:46.000Z",
+      "color": "#6366f1"
+    },
+    {
+      "name": "PALAO_CITY HALL-ILIGAN PROPER",
+      "description": "Routes through Palao City Hall-Medical to City Proper and Vice Versa",
+      "created_at": "2026-03-10T00:33:19.000Z",
+      "color": "#6366f1"
+    },
+    {
+      "name": "SAN MIGUEL-ILIGAN PROPER",
+      "description": "Routes through Brgy. San Miguel-ST Mary to City Proper and Vice Versa",
+      "created_at": "2026-03-10T00:26:39.000Z",
+      "color": "#6366f1"
+    },
+    {
+      "name": "SAN ROQUE-ILIGAN PROPER",
+      "description": "Routes through Tambo San Roque to City Proper and Vice Versa",
+      "created_at": "2026-03-10T00:41:12.000Z",
+      "color": "#6366f1"
+    },
+    {
+      "name": "SANTA_FELOMINA-ILIGAN PROPER",
+      "description": "Routes through Santa-Acmac to City Proper and Vice Versa",
+      "created_at": "2026-03-06T07:31:41.000Z",
+      "color": "#6366f1"
+    },
+    {
+      "name": "SANTIAGO-ILIGAN PROPER",
+      "description": "Routes through Brgy. Santiago to City Proper and Vice Versa",
+      "created_at": "2026-03-10T00:27:23.000Z",
+      "color": "#6366f1"
+    },
+    {
+      "name": "STA. ELENA_STEELTOWN-ILIGAN PROPER",
+      "description": "Routes through Sta. Elena-Steeltown to City Proper and Vice Versa",
+      "created_at": "2026-03-10T00:42:28.000Z",
+      "color": "#6366f1"
+    },
+    {
+      "name": "STA. FELOMINA_ACMAC-ILIGAN PROPER",
+      "description": "Routes through Sta. Felomina-Acmac to City Proper and Vice Versa",
+      "created_at": "2026-03-10T00:43:32.000Z",
+      "color": "#6366f1"
+    },
+    {
+      "name": "TAMBO_BAYUG-ILIGAN PROPER",
+      "description": "Routes through Tambo Bayug (Terminal) to City Proper and Vice Versa",
+      "created_at": "2026-03-10T00:46:31.000Z",
+      "color": "#6366f1"
+    },
+    {
+      "name": "TAMBO_GERONA-ILIGAN PROPER",
+      "description": "Routes through Tambo Gerona-Terminal to City Proper and Vice Versa",
+      "created_at": "2026-03-06T07:45:55.000Z",
+      "color": "#6366f1"
+    },
+    {
+      "name": "TUBOD-ILIGAN PROPER",
+      "description": "Routes through Tubod-Rosario Heights to City Proper and Vice Versa",
+      "created_at": "2026-03-10T00:48:30.000Z",
+      "color": "#6366f1"
+    },
+    {
+      "name": "UBALDO_LAYA-ILIGAN PROPER",
+      "description": "Routes through Ubaldo Laya-Green Fields to City Proper and Vice Versa",
+      "created_at": "2026-03-09T06:04:59.000Z",
+      "color": "#6366f1"
+    },
+    {
+      "name": "UPPER HINAPLANON_CABARO-ILIGAN PROPER",
+      "description": "Routes through Upper Hinaplanon Cabaro to City Proper and Vice Versa",
+      "created_at": "2026-03-10T00:49:54.000Z",
+      "color": "#6366f1"
+    },
+    {
+      "name": "UPPER HINAPLANON_WAGO-ILIGAN PROPER",
+      "description": "Routes through Upper Hinaplanon Wago to City Proper and Vice Versa",
+      "created_at": "2026-03-10T00:50:40.000Z",
+      "color": "#6366f1"
+    },
+    {
+      "name": "UPPER LUINAB-ILIGAN PROPER",
+      "description": "Routes through Upper Luinab V. Manrique to City Proper and Vice Versa",
+      "created_at": "2026-03-10T00:51:37.000Z",
+      "color": "#6366f1"
+    },
+    {
+      "name": "UPPER_LUINAB-ILIGAN PROPER",
+      "description": "Routes through Upper Luinab/Terminal to City Proper and Vice Versa",
+      "created_at": "2026-03-06T07:47:10.000Z",
+      "color": "#6366f1"
+    }
+  ]
+}

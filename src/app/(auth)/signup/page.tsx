@@ -105,9 +105,9 @@ export default function SignUpPage() {
                 }
 
                 .auth-logo {
-                    width: 120px;
-                    height: 120px;
-                    border-radius: 24px;
+                    width: 180px;
+                    height: 180px;
+                    border-radius: 36px;
                     object-fit: cover;
                     box-shadow: 0 4px 20px rgba(0,0,0,0.4);
                 }
@@ -211,9 +211,9 @@ export default function SignUpPage() {
                 }
 
                 .auth-mobile-logo img {
-                    width: 40px;
-                    height: 40px;
-                    border-radius: 10px;
+                    width: 50px;
+                    height: 50px;
+                    border-radius: 12px;
                 }
 
                 .auth-mobile-logo-text {
@@ -415,7 +415,7 @@ export default function SignUpPage() {
                     <div className="auth-brand">
                         <div className="auth-brand-content">
                             <img
-                                src="/images/ViaGraph_LOGO.png"
+                                src="/images/ViaGraph_logo_final.png"
                                 alt="ViaGraph Logo"
                                 className="auth-logo"
                             />
@@ -468,7 +468,7 @@ export default function SignUpPage() {
                     <div className="auth-form-side">
                         <div className="auth-form-wrapper">
                             <div className="auth-mobile-logo">
-                                <img src="/images/ViaGraph_LOGO.png" alt="ViaGraph" />
+                                <img src="/images/ViaGraph_logo_final.png" alt="ViaGraph" />
                                 <span className="auth-mobile-logo-text">ViaGraph</span>
                             </div>
 

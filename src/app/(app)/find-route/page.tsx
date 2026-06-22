@@ -104,6 +104,12 @@ export default function FindRoutePage() {
     loadData();
   }, []);
 
+  React.useEffect(() => {
+    if (state.result && !state.result.path && state.result.rawDijkstraPath) {
+      setActiveRouteTab('dijkstra');
+    }
+  }, [state]);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -233,6 +239,22 @@ export default function FindRoutePage() {
                   : state.result;
 
                 const pathSegments = activePathObj.path;
+
+                if (!pathSegments || pathSegments.length === 0) {
+                  return (
+                    <div className="rounded-xl border border-rose-200 bg-rose-50/50 p-6 text-center space-y-3 shadow-sm">
+                      <div className="text-rose-600 font-bold text-lg flex items-center justify-center gap-1.5">
+                        <span>Error</span>
+                      </div>
+                      <p className="text-rose-700 text-sm leading-relaxed font-semibold">
+                        No route found between the selected locations.
+                      </p>
+                      <p className="text-[11px] text-rose-500 leading-normal">
+                        Please try checking the "Standard Dijkstra's Path" tab above for alternative physical options.
+                      </p>
+                    </div>
+                  );
+                }
 
                 return (
                   <div className="space-y-4 text-sm">

@@ -3,7 +3,7 @@ import { query } from '@/lib/mysql';
 
 export async function GET() {
   try {
-    const blocks = await query<any[]>('SELECT * FROM route_blocks WHERE is_archived = 0 ORDER BY created_at DESC');
+    const blocks = await query<any[]>('SELECT * FROM route_blocks WHERE is_archived = 0 AND is_history = 0 ORDER BY created_at DESC');
     return NextResponse.json({ success: true, data: blocks });
   } catch (error: any) {
     console.error('Failed to fetch route blocks:', error);
@@ -28,14 +28,11 @@ export async function POST(req: Request) {
     let discountedFare = 0;
 
     if (rule && distance > 0 && vehicleType !== 'walking') {
-      let rawRegular = Number(rule.base_fare);
-      if (distance > Number(rule.base_km)) {
-          rawRegular += (distance - Number(rule.base_km)) * Number(rule.succeeding_km_rate);
-      }
-      regularFare = Math.round(rawRegular / 0.25) * 0.25;
+      const baseFare = Number(rule.base_fare);
+      regularFare = Math.round(baseFare);
       
-      const rawDiscounted = rawRegular * (1 - Number(rule.discount_rate));
-      discountedFare = Math.round(rawDiscounted / 0.25) * 0.25;
+      const rawDiscounted = baseFare * (1 - Number(rule.discount_rate));
+      discountedFare = Math.ceil(rawDiscounted);
     }
 
     // 2. Insert into database

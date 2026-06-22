@@ -1,0 +1,346 @@
+[
+  {
+    "id": "anahaw-amphitheater",
+    "name": "Anahaw Amphitheater",
+    "coordinates": {
+      "latitude": 8.225140607229608,
+      "longitude": 124.25159411500313
+    }
+  },
+  {
+    "id": "centennial-park",
+    "name": "Dalipuga Centennial Park",
+    "coordinates": {
+      "latitude": 8.31986196423916,
+      "longitude": 124.24824151404042
+    }
+  },
+  {
+    "id": "childrens-park",
+    "name": "Children's Park",
+    "coordinates": {
+      "latitude": 8.240148,
+      "longitude": 124.245157
+    }
+  },
+  {
+    "id": "city-hospital",
+    "name": "Gregorio T. Lluch Memorial Hospital",
+    "coordinates": {
+      "latitude": 8.226239617811029,
+      "longitude": 124.25462895034289
+    }
+  },
+  {
+    "id": "dalipuga_vista_village",
+    "name": "Dalipuga Vista Village",
+    "coordinates": {
+      "latitude": 8.3065,
+      "longitude": 124.27
+    }
+  },
+  {
+    "id": "deped",
+    "name": "DepEd Iligan",
+    "coordinates": {
+      "latitude": 8.228273044811916,
+      "longitude": 124.23833339459159
+    }
+  },
+  {
+    "id": "esplanade",
+    "name": "Mandulog River Esplanade",
+    "coordinates": {
+      "latitude": 8.251388606024836,
+      "longitude": 124.2496529155955
+    }
+  },
+  {
+    "id": "gaisano-mall",
+    "name": "Gaisano Mall Iligan",
+    "coordinates": {
+      "latitude": 8.230959488503707,
+      "longitude": 124.24096255401527
+    }
+  },
+  {
+    "id": "gaisano-sukiclub",
+    "name": "Gaisano Suki Club",
+    "coordinates": {
+      "latitude": 8.229403901787812,
+      "longitude": 124.23435388829714
+    }
+  },
+  {
+    "id": "hall-justice",
+    "name": "Hall of Justice",
+    "coordinates": {
+      "latitude": 8.213741511080476,
+      "longitude": 124.2394592563797
+    }
+  },
+  {
+    "id": "hypermart-167",
+    "name": "167 HyperMart",
+    "coordinates": {
+      "latitude": 8.227786,
+      "longitude": 124.240999
+    }
+  },
+  {
+    "id": "icc",
+    "name": "Iligan Capitol College",
+    "coordinates": {
+      "latitude": 8.222751443279718,
+      "longitude": 124.24095288611277
+    }
+  },
+  {
+    "id": "icnhs",
+    "name": "Iligan City National High School",
+    "coordinates": {
+      "latitude": 8.225698076745967,
+      "longitude": 124.23972864897155
+    }
+  },
+  {
+    "id": "iligan-cityhall",
+    "name": "Iligan City Hall",
+    "coordinates": {
+      "latitude": 8.225793642870038,
+      "longitude": 124.25187254884715
+    }
+  },
+  {
+    "id": "iligan-port",
+    "name": "Port of Iligan",
+    "coordinates": {
+      "latitude": 8.23126,
+      "longitude": 124.234587
+    }
+  },
+  {
+    "id": "imch",
+    "name": "Iligan Medical Center",
+    "coordinates": {
+      "latitude": 8.227799,
+      "longitude": 124.240733
+    }
+  },
+  {
+    "id": "kiwalan_port",
+    "name": "Kiwalan Port Area",
+    "coordinates": {
+      "latitude": 8.275,
+      "longitude": 124.265
+    }
+  },
+  {
+    "id": "landbank-main",
+    "name": "Landbank Iligan Main",
+    "coordinates": {
+      "latitude": 8.228238,
+      "longitude": 124.243112
+    }
+  },
+  {
+    "id": "lto",
+    "name": "Land Transportation Office",
+    "coordinates": {
+      "latitude": 8.214506062475792,
+      "longitude": 124.24021090301153
+    }
+  },
+  {
+    "id": "msu-iit",
+    "name": "Mindanao State University - Iligan Institute of Technology",
+    "coordinates": {
+      "latitude": 8.2396717229889,
+      "longitude": 124.24454620385812
+    }
+  },
+  {
+    "id": "night-market",
+    "name": "Iligan Night Market",
+    "coordinates": {
+      "latitude": 8.228713707773194,
+      "longitude": 124.2372122661992
+    }
+  },
+  {
+    "id": "paseo-santaigo",
+    "name": "Paseo",
+    "coordinates": {
+      "latitude": 8.245049746396173,
+      "longitude": 124.24253466805504
+    }
+  },
+  {
+    "id": "philhealth-office",
+    "name": "PhilHealth Office",
+    "coordinates": {
+      "latitude": 8.218084,
+      "longitude": 124.240963
+    }
+  },
+  {
+    "id": "psa-office",
+    "name": "PSA Office",
+    "coordinates": {
+      "latitude": 8.227927,
+      "longitude": 124.239864
+    }
+  },
+  {
+    "id": "public-plaza",
+    "name": "Iligan Public Plaza",
+    "coordinates": {
+      "latitude": 8.228517267718468,
+      "longitude": 124.23716930130587
+    }
+  },
+  {
+    "id": "red-cross",
+    "name": "Philippine Red Cross",
+    "coordinates": {
+      "latitude": 8.214718,
+      "longitude": 124.240015
+    }
+  },
+  {
+    "id": "robinsons-mall",
+    "name": "Robinsons Mall",
+    "coordinates": {
+      "latitude": 8.218286322728328,
+      "longitude": 124.24052237881428
+    }
+  },
+  {
+    "id": "soda-beach",
+    "name": "Soda Beach",
+    "coordinates": {
+      "latitude": 8.270255932768878,
+      "longitude": 124.25836975533689
+    }
+  },
+  {
+    "id": "south-bound",
+    "name": "Iligan City Integrated Bus & Jeepney Terminal-South Bound",
+    "coordinates": {
+      "latitude": 8.207147194183387,
+      "longitude": 124.21654814029965
+    }
+  },
+  {
+    "id": "st.michael's-college",
+    "name": "St. Michael's College",
+    "coordinates": {
+      "latitude": 8.228665925066146,
+      "longitude": 124.23950783343656
+    }
+  },
+  {
+    "id": "st.michael-cathedral",
+    "name": "St. Michael Cathedral",
+    "coordinates": {
+      "latitude": 8.229292408989952,
+      "longitude": 124.23946184604851
+    }
+  },
+  {
+    "id": "tambo-market",
+    "name": "Tambo Public Market",
+    "coordinates": {
+      "latitude": 8.242920843604004,
+      "longitude": 124.25960868961363
+    }
+  },
+  {
+    "id": "tambo-terminal",
+    "name": "Tambo Bus Terminal",
+    "coordinates": {
+      "latitude": 8.241593591674908,
+      "longitude": 124.2607239027187
+    }
+  },
+  {
+    "id": "timoga",
+    "name": "Timoga",
+    "coordinates": {
+      "latitude": 8.19148127072626,
+      "longitude": 124.17968519669584
+    }
+  },
+  {
+    "id": "unicity",
+    "name": "Unicity",
+    "coordinates": {
+      "latitude": 8.227736,
+      "longitude": 124.241318
+    }
+  },
+  {
+    "id": "unitop",
+    "name": "Unitop",
+    "coordinates": {
+      "latitude": 8.228809273170013,
+      "longitude": 124.23839330673219
+    }
+  },
+  {
+    "id": "v-crown-paper",
+    "name": "Crown Paper Stop",
+    "coordinates": {
+      "latitude": 8.22788,
+      "longitude": 124.23992
+    }
+  },
+  {
+    "id": "v-desmark",
+    "name": "Desmark Iligan",
+    "coordinates": {
+      "latitude": 8.2281,
+      "longitude": 124.2395
+    }
+  },
+  {
+    "id": "v-highway-30",
+    "name": "Highway 30 (Junction)",
+    "coordinates": {
+      "latitude": 8.24209,
+      "longitude": 124.24838
+    }
+  },
+  {
+    "id": "v-jollibee-aguinaldo",
+    "name": "Jollibee Aguinaldo",
+    "coordinates": {
+      "latitude": 8.22772,
+      "longitude": 124.24071
+    }
+  },
+  {
+    "id": "v-mastertech",
+    "name": "MasterTech Stop",
+    "coordinates": {
+      "latitude": 8.24028,
+      "longitude": 124.24527
+    }
+  },
+  {
+    "id": "wet-market",
+    "name": "Iligan Wet Market",
+    "coordinates": {
+      "latitude": 8.228527886102304,
+      "longitude": 124.23373065105574
+    }
+  },
+  {
+    "id": "zoey's-cafe",
+    "name": "Zoey's Cafe",
+    "coordinates": {
+      "latitude": 8.228039440151738,
+      "longitude": 124.23847779959516
+    }
+  }
+]

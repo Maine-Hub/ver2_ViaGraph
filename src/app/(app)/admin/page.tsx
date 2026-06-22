@@ -37,7 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { PlusCircle, Trash2, Archive, RotateCcw, Search, Edit, Database, Map, ChevronUp, ChevronDown, ChevronsUpDown, RefreshCcw, AlertTriangle, Eye } from 'lucide-react';
+import { PlusCircle, Trash2, Archive, RotateCcw, Search, Edit, Database, Map, ChevronUp, ChevronDown, ChevronsUpDown, RefreshCcw, AlertTriangle, Eye, History, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/app-context';
 import { useEffect, useState, useMemo } from 'react';
@@ -108,6 +108,19 @@ export default function AdminDashboard() {
   // Preview Node State
   const [previewNode, setPreviewNode] = useState<any | null>(null);
   const [isEditingNode, setIsEditingNode] = useState(false);
+
+  // Version History States
+  const [historyBlockId, setHistoryBlockId] = useState<string | null>(null);
+  const [historyData, setHistoryData] = useState<{ active: any; history: any[] } | null>(null);
+  const [selectedVersion, setSelectedVersion] = useState<any | null>(null);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+
+  // Route Line Editing/Adding States
+  const [isAddingRoute, setIsAddingRoute] = useState(false);
+  const [editRouteName, setEditRouteName] = useState<string | null>(null);
+  const [routeInputName, setRouteInputName] = useState('');
+  const [routeInputDesc, setRouteInputDesc] = useState('');
+  const [routeInputColor, setRouteInputColor] = useState('#6366f1');
 
   const filteredBlocks = useMemo(() => {
     return routeBlocks.filter((b: any) => {
@@ -274,6 +287,50 @@ export default function AdminDashboard() {
     }
   };
 
+  // Version History Handlers
+  const loadHistory = async (id: string) => {
+    setIsHistoryLoading(true);
+    setHistoryBlockId(id);
+    try {
+      const res = await fetch(`/api/mysql/route-blocks/${id}/versions`);
+      const data = await res.json();
+      if (data.success) {
+        setHistoryData(data.data);
+        setSelectedVersion({
+          ...data.data.active,
+          isCurrentActive: true
+        });
+      } else {
+        toast({ variant: 'destructive', title: 'Error', description: data.message });
+      }
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    } finally {
+      setIsHistoryLoading(false);
+    }
+  };
+
+  const handleRestoreVersion = async (historyId: number) => {
+    if (!historyBlockId) return;
+    try {
+      const res = await fetch(`/api/mysql/route-blocks/${historyBlockId}/versions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ historyId })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message);
+      
+      toast({ title: 'Success', description: data.message });
+      setHistoryBlockId(null);
+      setHistoryData(null);
+      setSelectedVersion(null);
+      loadData();
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    }
+  };
+
   // Handle Saving Node
   const handleSaveNode = async () => {
     if (!nodeId || !nodeName || !nodeLat || !nodeLng) {
@@ -300,6 +357,47 @@ export default function AdminDashboard() {
       setNodeName('');
       setNodeLat('');
       setNodeLng('');
+      loadData();
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    }
+  };
+
+  // Handle Saving Route Line
+  const handleSaveRoute = async () => {
+    if (!routeInputName) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Route name is required.' });
+      return;
+    }
+    try {
+      const isEdit = !!editRouteName;
+      const url = isEdit ? `/api/mysql/routes/${encodeURIComponent(editRouteName)}` : '/api/mysql/routes';
+      const method = isEdit ? 'PUT' : 'POST';
+      
+      const body = isEdit ? {
+        newName: routeInputName,
+        description: routeInputDesc,
+        color: routeInputColor
+      } : {
+        name: routeInputName,
+        description: routeInputDesc,
+        color: routeInputColor
+      };
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message);
+
+      toast({ title: 'Success', description: data.message || `Jeepney line ${isEdit ? 'updated' : 'added'} successfully.` });
+      setIsAddingRoute(false);
+      setEditRouteName(null);
+      setRouteInputName('');
+      setRouteInputDesc('');
+      setRouteInputColor('#6366f1');
       loadData();
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
@@ -505,6 +603,7 @@ export default function AdminDashboard() {
                <Table>
                 <TableHeader>
                   <TableRow className="bg-slate-50">
+                    <TableHead className="w-[50px] text-slate-500 font-semibold">#</TableHead>
                     <TableHead>Source</TableHead>
                     <TableHead>Target</TableHead>
                     <TableHead>Jeepney Line</TableHead>
@@ -516,11 +615,12 @@ export default function AdminDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredBlocks.map(b => {
+                  {filteredBlocks.map((b, index) => {
                     const sourceName = nodes.find(n => n.id === b.source)?.name || b.source;
                     const targetName = nodes.find(n => n.id === b.target)?.name || b.target;
                     return (
                       <TableRow key={b.id}>
+                        <TableCell className="font-mono text-xs text-slate-500">{index + 1}</TableCell>
                         <TableCell className="font-medium text-slate-700">{sourceName}</TableCell>
                         <TableCell className="font-medium text-slate-700">{targetName}</TableCell>
                         <TableCell>{b.routeName}</TableCell>
@@ -532,6 +632,9 @@ export default function AdminDashboard() {
                           <div className="flex items-center gap-1">
                             <Button variant="ghost" size="icon" title="Preview Path on Map" onClick={() => setPreviewBlock(b)}>
                               <Eye className="h-4 w-4 text-slate-500 hover:text-cyan-600" />
+                            </Button>
+                            <Button variant="ghost" size="icon" title="View Version History" onClick={() => loadHistory(b.id)}>
+                              <History className="h-4 w-4 text-slate-500 hover:text-cyan-600" />
                             </Button>
                             <Button variant="ghost" size="icon" onClick={() => {
                               setEditBlockId(b.id);
@@ -560,7 +663,7 @@ export default function AdminDashboard() {
                   })}
                   {filteredBlocks.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center text-muted-foreground py-6 text-sm">
+                      <TableCell colSpan={9} className="text-center text-muted-foreground py-6 text-sm">
                         {blocksSearch ? 'No matching route blocks found.' : 'No route blocks found.'}
                       </TableCell>
                     </TableRow>
@@ -678,45 +781,84 @@ export default function AdminDashboard() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Lat</TableHead>
-                    <TableHead>Lng</TableHead>
-                    <TableHead className="w-[100px]"></TableHead>
+                    <TableHead className="w-[50px] font-semibold text-slate-700">#</TableHead>
+                    <TableHead className="font-semibold text-slate-700">ID</TableHead>
+                    <TableHead className="font-semibold text-slate-700">Name</TableHead>
+                    <TableHead className="font-semibold text-slate-700">Lat/Lng</TableHead>
+                    <TableHead className="font-semibold text-slate-700">Connected Lines & Stats</TableHead>
+                    <TableHead className="w-[120px] font-semibold text-slate-700"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredNodes.map(n => (
-                    <TableRow key={n.id}>
-                      <TableCell className="font-mono text-xs">{n.id}</TableCell>
-                      <TableCell className="font-medium text-slate-700">{n.name}</TableCell>
-                      <TableCell>{n.coordinates?.latitude}</TableCell>
-                      <TableCell>{n.coordinates?.longitude}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Button variant="ghost" size="icon" title="Preview Node on Map" onClick={() => setPreviewNode(n)}>
-                            <Eye className="h-4 w-4 text-slate-500 hover:text-cyan-600" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => {
-                            setNodeId(n.id);
-                            setNodeName(n.name);
-                            setNodeLat(String(n.coordinates?.latitude ?? ''));
-                            setNodeLng(String(n.coordinates?.longitude ?? ''));
-                            setIsEditingNode(true);
-                            setIsAddingNode(true);
-                          }}>
-                            <Edit className="h-4 w-4 text-slate-500 hover:text-cyan-600" />
-                          </Button>
-                          <Button variant="ghost" size="icon" title="Archive Location" onClick={() => requestDelete('node', n.id, `location: ${n.name}`)  }>
-                            <Archive className="h-4 w-4 text-slate-500 hover:text-amber-600" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {filteredNodes.map((n, index) => {
+                    const connectedRouteBlocks = routeBlocks.filter(b => b.source === n.id || b.target === n.id);
+                    const connectedRouteNames = Array.from(new Set(connectedRouteBlocks.map(b => b.routeName).filter(Boolean))) as string[];
+                    const connectionCount = connectedRouteBlocks.length;
+
+                    return (
+                      <TableRow key={n.id}>
+                        <TableCell className="font-mono text-xs text-slate-500">{index + 1}</TableCell>
+                        <TableCell className="font-mono text-xs">{n.id}</TableCell>
+                        <TableCell className="font-medium text-slate-700">{n.name}</TableCell>
+                        <TableCell className="text-slate-500 text-xs">
+                          {n.coordinates?.latitude != null && n.coordinates?.longitude != null ? (
+                            `${Number(n.coordinates.latitude).toFixed(6)}, ${Number(n.coordinates.longitude).toFixed(6)}`
+                          ) : (
+                            '—'
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1">
+                            {connectedRouteNames.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {connectedRouteNames.map(name => {
+                                  const routeObj = routes.find(r => r.name === name);
+                                  const color = routeObj?.color || '#6366f1';
+                                  return (
+                                    <span
+                                      key={name}
+                                      className="px-2 py-0.5 rounded-full text-[10px] font-semibold text-white shadow-sm"
+                                      style={{ backgroundColor: color }}
+                                    >
+                                      {name}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <span className="text-xs text-slate-400 italic">No serving lines</span>
+                            )}
+                            <span className="text-[10px] text-slate-500 font-medium">
+                              {connectionCount} active connection{connectionCount !== 1 && 's'}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="icon" title="Preview Node on Map" onClick={() => setPreviewNode(n)}>
+                              <Eye className="h-4 w-4 text-slate-500 hover:text-cyan-600" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => {
+                              setNodeId(n.id);
+                              setNodeName(n.name);
+                              setNodeLat(String(n.coordinates?.latitude ?? ''));
+                              setNodeLng(String(n.coordinates?.longitude ?? ''));
+                              setIsEditingNode(true);
+                              setIsAddingNode(true);
+                            }}>
+                              <Edit className="h-4 w-4 text-slate-500 hover:text-cyan-600" />
+                            </Button>
+                            <Button variant="ghost" size="icon" title="Archive Location" onClick={() => requestDelete('node', n.id, `location: ${n.name}`)  }>
+                              <Archive className="h-4 w-4 text-slate-500 hover:text-amber-600" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                   {filteredNodes.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground py-6 text-sm">
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-6 text-sm">
                         {nodesSearch ? 'No matching locations found.' : 'No locations found.'}
                       </TableCell>
                     </TableRow>
@@ -735,30 +877,42 @@ export default function AdminDashboard() {
               <CardDescription>Manage descriptions and map colors for route lines.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="relative flex-1 max-w-sm">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
-                  <Input
-                    placeholder="Search jeepney lines..."
-                    value={routesSearch}
-                    onChange={(e) => setRoutesSearch(e.target.value)}
-                    className="pl-8 bg-white border-slate-200"
-                  />
+              <div className="flex items-center justify-between gap-2 mb-4">
+                <div className="flex items-center gap-2 flex-1 max-w-sm">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+                    <Input
+                      placeholder="Search jeepney lines..."
+                      value={routesSearch}
+                      onChange={(e) => setRoutesSearch(e.target.value)}
+                      className="pl-8 bg-white border-slate-200"
+                    />
+                  </div>
+                  {routesSearch && (
+                    <Button
+                      variant="ghost"
+                      onClick={() => setRoutesSearch('')}
+                      className="text-xs h-9 px-3 text-slate-500 hover:text-slate-800"
+                    >
+                      Clear
+                    </Button>
+                  )}
                 </div>
-                {routesSearch && (
-                  <Button
-                    variant="ghost"
-                    onClick={() => setRoutesSearch('')}
-                    className="text-xs h-9 px-3 text-slate-500 hover:text-slate-800"
-                  >
-                    Clear
-                  </Button>
-                )}
+                <Button className="bg-cyan-500 hover:bg-cyan-600 shadow-md h-9 text-xs" onClick={() => {
+                  setEditRouteName(null);
+                  setRouteInputName('');
+                  setRouteInputDesc('');
+                  setRouteInputColor('#6366f1');
+                  setIsAddingRoute(true);
+                }}>
+                  <PlusCircle className="mr-2 h-4 w-4" /> Add Route Line
+                </Button>
               </div>
 
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[50px] font-semibold text-slate-700">#</TableHead>
                     <TableHead>Route Name</TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead>Color</TableHead>
@@ -767,7 +921,7 @@ export default function AdminDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredRoutes.map(r => {
+                  {filteredRoutes.map((r, index) => {
                     const lineBlocks = routeBlocks.filter(b => b.routeName === r.name);
                     const blockCount = lineBlocks.length;
                     
@@ -780,6 +934,7 @@ export default function AdminDashboard() {
 
                     return (
                       <TableRow key={r.name}>
+                        <TableCell className="font-mono text-xs text-slate-500">{index + 1}</TableCell>
                         <TableCell className="font-bold text-slate-800">{r.name}</TableCell>
                         <TableCell>{r.description}</TableCell>
                         <TableCell>
@@ -798,6 +953,15 @@ export default function AdminDashboard() {
                           <div className="flex items-center gap-1">
                             <Button variant="ghost" size="icon" onClick={() => setViewRouteDetails(r.name)}>
                               <Eye className="h-4 w-4 text-cyan-600" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => {
+                              setEditRouteName(r.name);
+                              setRouteInputName(r.name);
+                              setRouteInputDesc(r.description || '');
+                              setRouteInputColor(r.color || '#6366f1');
+                              setIsAddingRoute(true);
+                            }}>
+                              <Edit className="h-4 w-4 text-slate-500 hover:text-cyan-600" />
                             </Button>
                             <Button variant="ghost" size="icon" title="Archive Jeepney Line" onClick={() => requestDelete('route', r.name, `jeepney line: ${r.name}`)  }>
                               <Archive className="h-4 w-4 text-slate-500 hover:text-amber-600" />
@@ -910,6 +1074,7 @@ export default function AdminDashboard() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="w-[50px] font-semibold text-slate-700">#</TableHead>
                         <TableHead>Location ID</TableHead>
                         <TableHead>Location Name</TableHead>
                         <TableHead>Coordinates (Lat, Lng)</TableHead>
@@ -917,8 +1082,9 @@ export default function AdminDashboard() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {archivedNodes.map(n => (
+                      {archivedNodes.map((n, index) => (
                         <TableRow key={n.id}>
+                          <TableCell className="font-mono text-xs text-slate-500">{index + 1}</TableCell>
                           <TableCell className="font-mono text-xs">{n.id}</TableCell>
                           <TableCell className="font-medium text-slate-700">{n.name}</TableCell>
                           <TableCell className="text-xs text-slate-500">{n.latitude}, {n.longitude}</TableCell>
@@ -937,7 +1103,7 @@ export default function AdminDashboard() {
                       ))}
                       {archivedNodes.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={4} className="text-center text-muted-foreground py-4 text-xs italic">
+                          <TableCell colSpan={5} className="text-center text-muted-foreground py-4 text-xs italic">
                             No archived locations.
                           </TableCell>
                         </TableRow>
@@ -954,6 +1120,7 @@ export default function AdminDashboard() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="w-[50px] font-semibold text-slate-700">#</TableHead>
                         <TableHead>Jeepney Line</TableHead>
                         <TableHead>Segment</TableHead>
                         <TableHead>Distance</TableHead>
@@ -961,8 +1128,9 @@ export default function AdminDashboard() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {archivedBlocks.map(b => (
+                      {archivedBlocks.map((b, index) => (
                         <TableRow key={b.id}>
+                          <TableCell className="font-mono text-xs text-slate-500">{index + 1}</TableCell>
                           <TableCell className="font-semibold text-xs text-slate-500">{b.route_name}</TableCell>
                           <TableCell className="font-medium text-slate-700">{b.source_name} → {b.target_name}</TableCell>
                           <TableCell className="text-xs text-slate-500">{Number(b.distance).toFixed(3)} km</TableCell>
@@ -981,7 +1149,7 @@ export default function AdminDashboard() {
                       ))}
                       {archivedBlocks.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={4} className="text-center text-muted-foreground py-4 text-xs italic">
+                          <TableCell colSpan={5} className="text-center text-muted-foreground py-4 text-xs italic">
                             No archived route blocks.
                           </TableCell>
                         </TableRow>
@@ -998,6 +1166,7 @@ export default function AdminDashboard() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="w-[50px] font-semibold text-slate-700">#</TableHead>
                         <TableHead>Line Name</TableHead>
                         <TableHead>Description</TableHead>
                         <TableHead>Color</TableHead>
@@ -1005,8 +1174,9 @@ export default function AdminDashboard() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {archivedRoutes.map(r => (
+                      {archivedRoutes.map((r, index) => (
                         <TableRow key={r.name}>
+                          <TableCell className="font-mono text-xs text-slate-500">{index + 1}</TableCell>
                           <TableCell className="font-bold text-slate-800">{r.name}</TableCell>
                           <TableCell className="text-xs text-slate-600">{r.description}</TableCell>
                           <TableCell>
@@ -1030,7 +1200,7 @@ export default function AdminDashboard() {
                       ))}
                       {archivedRoutes.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={4} className="text-center text-muted-foreground py-4 text-xs italic">
+                          <TableCell colSpan={5} className="text-center text-muted-foreground py-4 text-xs italic">
                             No archived jeepney lines.
                           </TableCell>
                         </TableRow>
@@ -1096,72 +1266,226 @@ export default function AdminDashboard() {
 
       {/* --- VIEW ROUTE DETAILS DIALOG --- */}
       <Dialog open={!!viewRouteDetails} onOpenChange={(open) => { if (!open) setViewRouteDetails(null); }}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Map className="h-5 w-5 text-cyan-600" /> 
-              {viewRouteDetails} Details
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-2 space-y-6">
-            {(() => {
-              const lineBlocks = routeBlocks.filter(b => b.routeName === viewRouteDetails);
-              
-              const nodeIds = new Set<string>();
-              lineBlocks.forEach(b => {
-                nodeIds.add(b.source);
-                nodeIds.add(b.target);
-              });
-              
-              const usedNodes = nodes.filter(n => nodeIds.has(n.id));
+        <DialogContent className="max-w-5xl border-none shadow-2xl p-0 bg-white rounded-2xl overflow-hidden">
+          {/* Accessibility Title & Description */}
+          <DialogTitle className="sr-only">Route Line Details Map Preview</DialogTitle>
+          <DialogDescription className="sr-only">View stops, blocks, and path preview for this route line.</DialogDescription>
+          
+          {(() => {
+            const currentRoute = routes.find(r => r.name === viewRouteDetails);
+            const lineBlocks = routeBlocks.filter(b => b.routeName === viewRouteDetails);
+            
+            const nodeIds = new Set<string>();
+            lineBlocks.forEach(b => {
+              nodeIds.add(b.source);
+              nodeIds.add(b.target);
+            });
+            
+            const usedNodes = nodes.filter(n => nodeIds.has(n.id));
+            const totalLength = lineBlocks.reduce((sum, b) => sum + Number(b.distance), 0);
+            const totalFare = lineBlocks.reduce((sum, b) => sum + Number(b.regularFare || 0), 0);
 
-              return (
-                <>
-                  <div>
-                    <h4 className="text-sm font-semibold text-slate-800 mb-2 border-b pb-1">Nodes / Stops ({usedNodes.length})</h4>
-                    <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-2 bg-slate-50 rounded border border-slate-100">
-                      {usedNodes.map(n => (
-                        <span key={n.id} className="text-xs bg-white border border-slate-200 px-2 py-1 rounded shadow-sm text-slate-700">
-                          {n.name}
-                        </span>
-                      ))}
-                      {usedNodes.length === 0 && <span className="text-xs text-slate-400 italic">No nodes assigned.</span>}
+            // Construct segments paths for RouteMap
+            const pathSegments = lineBlocks.map(b => {
+              const coords = Array.isArray(b.pathCoordinates) 
+                ? b.pathCoordinates 
+                : (b.pathCoordinates?.ridingCoords || []);
+              return {
+                coords,
+                color: currentRoute?.color || '#6366f1',
+                label: b.routeName
+              };
+            }).filter(p => p.coords.length > 0);
+
+            // Get starting coordinates for map bounds centering
+            const mapInitialPath = pathSegments.length > 0 ? pathSegments[0].coords : undefined;
+
+            return (
+              <div className="flex flex-col md:flex-row h-full max-h-[85vh]">
+                {/* Left: Map Preview */}
+                <div className="w-full md:w-3/5 bg-slate-50 relative min-h-[450px]">
+                  {viewRouteDetails && (
+                    <RouteMap
+                      nodes={usedNodes}
+                      edges={[]}
+                      initialPath={mapInitialPath}
+                      extraPaths={pathSegments}
+                      className="h-full w-full border-none shadow-none rounded-none"
+                    />
+                  )}
+                </div>
+
+                {/* Right: Details & Stats */}
+                <div className="w-full md:w-2/5 p-6 flex flex-col justify-between overflow-y-auto bg-white border-l border-slate-100">
+                  <div className="space-y-6">
+                    <DialogHeader>
+                      <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-slate-800">
+                        <div 
+                          className="w-4 h-4 rounded-full border border-slate-200" 
+                          style={{ backgroundColor: currentRoute?.color || '#6366f1' }}
+                        />
+                        {viewRouteDetails}
+                      </DialogTitle>
+                      <DialogDescription className="text-xs text-slate-500 mt-1">
+                        {currentRoute?.description || 'No description provided.'}
+                      </DialogDescription>
+                    </DialogHeader>
+
+                    {/* Cumulative Stats */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 shadow-sm">
+                        <p className="text-[10px] uppercase font-bold text-slate-400">Total Length</p>
+                        <p className="text-lg font-extrabold text-cyan-600 mt-0.5">{totalLength.toFixed(3)} km</p>
+                      </div>
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 shadow-sm">
+                        <p className="text-[10px] uppercase font-bold text-slate-400">Total Base Fare</p>
+                        <p className="text-lg font-extrabold text-emerald-600 mt-0.5">₱{totalFare.toFixed(2)}</p>
+                      </div>
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 shadow-sm">
+                        <p className="text-[10px] uppercase font-bold text-slate-400">Total Stops</p>
+                        <p className="text-lg font-extrabold text-slate-700 mt-0.5">{usedNodes.length} stops</p>
+                      </div>
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 shadow-sm">
+                        <p className="text-[10px] uppercase font-bold text-slate-400">Segments</p>
+                        <p className="text-lg font-extrabold text-slate-700 mt-0.5">{lineBlocks.length} blocks</p>
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-slate-800 mb-2 border-b pb-1">Route Blocks ({lineBlocks.length})</h4>
-                    <div className="max-h-64 overflow-y-auto border border-slate-100 rounded bg-slate-50">
-                      <Table>
-                        <TableHeader className="bg-white">
-                          <TableRow>
-                            <TableHead className="text-xs">Source</TableHead>
-                            <TableHead className="text-xs">Target</TableHead>
-                            <TableHead className="text-xs">Dist</TableHead>
-                            <TableHead className="text-xs">Fare</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {lineBlocks.map(b => (
-                            <TableRow key={b.id}>
-                              <TableCell className="text-xs font-medium text-slate-700">{nodes.find(n => n.id === b.source)?.name || b.source}</TableCell>
-                              <TableCell className="text-xs font-medium text-slate-700">{nodes.find(n => n.id === b.target)?.name || b.target}</TableCell>
-                              <TableCell className="text-xs text-slate-500">{b.distance} km</TableCell>
-                              <TableCell className="text-xs text-emerald-600 font-semibold">₱{Number(b.regularFare || 0).toFixed(2)}</TableCell>
-                            </TableRow>
-                          ))}
-                          {lineBlocks.length === 0 && (
+
+                    {/* Nodes list */}
+                    <div>
+                      <h4 className="text-xs uppercase font-bold text-slate-400 mb-2 tracking-wider">Stops & Landmarks ({usedNodes.length})</h4>
+                      <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto p-2 bg-slate-50 rounded-xl border border-slate-100">
+                        {usedNodes.map(n => (
+                          <span key={n.id} className="text-[11px] bg-white border border-slate-200 px-2 py-0.5 rounded-md shadow-sm text-slate-600">
+                            {n.name}
+                          </span>
+                        ))}
+                        {usedNodes.length === 0 && <span className="text-[11px] text-slate-400 italic">No stops connected to this line.</span>}
+                      </div>
+                    </div>
+
+                    {/* Blocks list table */}
+                    <div>
+                      <h4 className="text-xs uppercase font-bold text-slate-400 mb-2 tracking-wider">Route Segments ({lineBlocks.length})</h4>
+                      <div className="max-h-44 overflow-y-auto border border-slate-100 rounded-xl bg-slate-50">
+                        <Table>
+                          <TableHeader className="bg-white">
                             <TableRow>
-                              <TableCell colSpan={4} className="text-center text-xs text-slate-400 italic py-4">No route blocks assigned.</TableCell>
+                              <TableHead className="text-[10px] py-2 uppercase font-bold">Source</TableHead>
+                              <TableHead className="text-[10px] py-2 uppercase font-bold">Target</TableHead>
+                              <TableHead className="text-[10px] py-2 uppercase font-bold text-right">Distance</TableHead>
                             </TableRow>
-                          )}
-                        </TableBody>
-                      </Table>
+                          </TableHeader>
+                          <TableBody>
+                            {lineBlocks.map(b => (
+                              <TableRow key={b.id} className="hover:bg-slate-100/50">
+                                <TableCell className="text-[11px] py-2 font-medium text-slate-600 truncate max-w-[100px]">{nodes.find(n => n.id === b.source)?.name || b.source}</TableCell>
+                                <TableCell className="text-[11px] py-2 font-medium text-slate-600 truncate max-w-[100px]">{nodes.find(n => n.id === b.target)?.name || b.target}</TableCell>
+                                <TableCell className="text-[11px] py-2 text-slate-500 text-right font-mono">{b.distance} km</TableCell>
+                              </TableRow>
+                            ))}
+                            {lineBlocks.length === 0 && (
+                              <TableRow>
+                                <TableCell colSpan={3} className="text-center text-xs text-slate-400 italic py-4">No route segments.</TableCell>
+                              </TableRow>
+                            )}
+                          </TableBody>
+                        </Table>
+                      </div>
                     </div>
                   </div>
-                </>
-              );
-            })()}
+
+                  <div className="mt-6 pt-4 border-t border-slate-100 flex justify-end">
+                    <DialogClose asChild>
+                      <Button variant="outline" className="px-6 text-xs h-9">Close Details</Button>
+                    </DialogClose>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* --- ADD/EDIT ROUTE LINE DIALOG --- */}
+      <Dialog open={isAddingRoute} onOpenChange={(open) => {
+        setIsAddingRoute(open);
+        if (!open) {
+          setEditRouteName(null);
+          setRouteInputName('');
+          setRouteInputDesc('');
+          setRouteInputColor('#6366f1');
+        }
+      }}>
+        <DialogContent className="max-w-md bg-white rounded-2xl border-none shadow-2xl p-6">
+          <DialogHeader className="mb-4">
+            <DialogTitle className="text-xl font-bold flex items-center gap-2 text-slate-800">
+              <PlusCircle className="h-5 w-5 text-cyan-500" />
+              {editRouteName ? 'Edit Jeepney Line' : 'Add Jeepney Line'}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              {editRouteName ? 'Update name, description, or map color of this transit route line.' : 'Define a new jeepney/bus line name, description, and custom map color.'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="grid gap-1">
+              <Label htmlFor="routeNameInput" className="text-slate-700 font-medium">Route Name</Label>
+              <Input
+                id="routeNameInput"
+                value={routeInputName}
+                onChange={e => setRouteInputName(e.target.value)}
+                placeholder="e.g. Tambo-Gerona-City Proper"
+                className="border-slate-200"
+              />
+            </div>
+            
+            <div className="grid gap-1">
+              <Label htmlFor="routeDescInput" className="text-slate-700 font-medium">Description</Label>
+              <Input
+                id="routeDescInput"
+                value={routeInputDesc}
+                onChange={e => setRouteInputDesc(e.target.value)}
+                placeholder="e.g. Jeepney line connecting Tambo Terminal to City Proper"
+                className="border-slate-200"
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="routeColorInput" className="text-slate-700 font-medium">Map Color</Label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  id="routeColorInput"
+                  value={routeInputColor}
+                  onChange={e => setRouteInputColor(e.target.value)}
+                  className="w-10 h-10 border border-slate-200 rounded-lg cursor-pointer bg-transparent"
+                />
+                <Input
+                  value={routeInputColor}
+                  onChange={e => setRouteInputColor(e.target.value)}
+                  placeholder="#6366f1"
+                  className="font-mono text-xs w-28 uppercase border-slate-200"
+                />
+                <div 
+                  className="w-8 h-8 rounded-full border border-slate-200 shadow-sm"
+                  style={{ backgroundColor: routeInputColor }}
+                />
+              </div>
+            </div>
           </div>
+
+          <DialogFooter className="mt-6 gap-2">
+            <DialogClose asChild>
+              <Button variant="outline" className="px-6 text-xs h-9">Cancel</Button>
+            </DialogClose>
+            <Button 
+              onClick={handleSaveRoute} 
+              className="bg-cyan-500 hover:bg-cyan-600 text-white px-6 text-xs h-9"
+            >
+              {editRouteName ? 'Update Line' : 'Save Line'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -1201,33 +1525,295 @@ export default function AdminDashboard() {
         </DialogContent>
       </Dialog>
 
+      {/* --- VERSION HISTORY DIALOG --- */}
+      <Dialog open={!!historyBlockId} onOpenChange={(open) => { if (!open) { setHistoryBlockId(null); setHistoryData(null); setSelectedVersion(null); } }}>
+        <DialogContent className="max-w-5xl border-none shadow-2xl p-0 bg-white rounded-2xl overflow-hidden">
+          {/* Accessibility Title & Description */}
+          <DialogTitle className="sr-only">Route Block Version History</DialogTitle>
+          <DialogDescription className="sr-only">View and restore previous route block versions.</DialogDescription>
+          {isHistoryLoading ? (
+            <div className="h-[400px] flex items-center justify-center font-medium italic text-slate-400">Loading version history...</div>
+          ) : historyData && (
+            <div className="flex flex-col md:flex-row h-full max-h-[85vh]">
+              {/* Left: Map Preview */}
+              <div className="w-full md:w-3/5 bg-slate-50 relative min-h-[400px]">
+                <RouteMap
+                  nodes={nodes.filter(n => n.id === historyData.active.source_id || n.id === historyData.active.target_id)}
+                  edges={[]}
+                  initialPath={
+                    selectedVersion
+                      ? (() => {
+                          try {
+                            const parsed = typeof selectedVersion.path_coordinates === 'string'
+                              ? JSON.parse(selectedVersion.path_coordinates)
+                              : selectedVersion.path_coordinates;
+                            return Array.isArray(parsed)
+                              ? parsed
+                              : (parsed?.ridingCoords || []);
+                          } catch {
+                            if (Array.isArray(selectedVersion.path_coordinates)) return selectedVersion.path_coordinates;
+                            if (selectedVersion.path_coordinates?.ridingCoords) return selectedVersion.path_coordinates.ridingCoords;
+                            return [];
+                          }
+                        })()
+                      : []
+                  }
+                  className="h-full w-full border-none shadow-none rounded-none"
+                  selectedSource={historyData.active.source_id}
+                  selectedTarget={historyData.active.target_id}
+                />
+              </div>
+
+              {/* Right: Version List */}
+              <div className="w-full md:w-2/5 p-6 flex flex-col justify-between overflow-y-auto bg-white border-l border-slate-100">
+                <div>
+                  <DialogHeader className="mb-4">
+                    <DialogTitle className="text-xl font-bold flex items-center gap-2 text-slate-800">
+                      <History className="h-5 w-5 text-cyan-500" />
+                      Version History
+                    </DialogTitle>
+                    <DialogDescription className="text-xs text-slate-500">
+                      Route block between <strong>{nodes.find(n => n.id === historyData.active.source_id)?.name || historyData.active.source_id}</strong> and <strong>{nodes.find(n => n.id === historyData.active.target_id)?.name || historyData.active.target_id}</strong>.
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <div className="space-y-3 pr-1 max-h-[45vh] overflow-y-auto">
+                    {/* Active Version */}
+                    <div
+                      onClick={() => setSelectedVersion({ ...historyData.active, isCurrentActive: true })}
+                      className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                        selectedVersion?.isCurrentActive
+                          ? 'border-cyan-500 bg-cyan-50/40 shadow-sm'
+                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="font-bold text-xs text-cyan-600 bg-cyan-100 px-2 py-0.5 rounded-full">ACTIVE VERSION</span>
+                        <span className="text-[10px] text-slate-400 font-mono">v{historyData.active.version || 1}</span>
+                      </div>
+                      <div className="text-xs text-slate-600 space-y-1">
+                        <p>Line: <span className="font-semibold">{historyData.active.route_name}</span></p>
+                        <p>Distance: <span className="font-semibold">{historyData.active.distance} km</span></p>
+                        <p>Fare: <span className="font-semibold text-green-700">₱{Number(historyData.active.regular_fare || 0).toFixed(2)}</span></p>
+                      </div>
+                    </div>
+
+                    {/* Historical Versions */}
+                    {historyData.history.length === 0 ? (
+                      <p className="text-xs text-slate-400 italic text-center py-4">No previous versions available.</p>
+                    ) : (
+                      historyData.history.map((ver) => (
+                        <div
+                          key={ver.id}
+                          onClick={() => setSelectedVersion({ ...ver, isCurrentActive: false })}
+                          className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                            selectedVersion?.id === ver.id && !selectedVersion?.isCurrentActive
+                              ? 'border-cyan-500 bg-cyan-50/40 shadow-sm'
+                              : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                          }`}
+                        >
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="font-bold text-xs text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">Version {ver.version || 1}</span>
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              {new Date(ver.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <div className="text-xs text-slate-600 space-y-1">
+                            <p>Line: <span className="font-semibold">{ver.route_name}</span></p>
+                            <p>Distance: <span className="font-semibold">{ver.distance} km</span></p>
+                            <p>Fare: <span className="font-semibold text-green-700">₱{Number(ver.regular_fare || 0).toFixed(2)}</span></p>
+                            {ver.note && <p className="text-[10px] italic text-slate-500 truncate">Tip: {ver.note}</p>}
+                          </div>
+                          {selectedVersion?.id === ver.id && (
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRestoreVersion(ver.id);
+                              }}
+                              className="w-full mt-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold py-1 h-7 flex items-center justify-center gap-1 shadow-sm"
+                            >
+                              <RotateCcw className="h-3 w-3" /> Restore this version
+                            </Button>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-4 border-t border-slate-100 flex justify-end">
+                  <DialogClose asChild>
+                    <Button variant="outline" className="px-6 text-xs h-9">Close History</Button>
+                  </DialogClose>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* --- PREVIEW NODE DIALOG --- */}
       <Dialog open={!!previewNode} onOpenChange={(open) => { if (!open) setPreviewNode(null); }}>
-        <DialogContent className="max-w-4xl border-none shadow-2xl p-6 bg-white rounded-2xl">
-          <DialogHeader className="mb-4">
-            <DialogTitle className="text-xl font-bold flex items-center gap-2 text-slate-800">
-              <Map className="h-5 w-5 text-cyan-500" />
-              Node Location Review
-            </DialogTitle>
-            <DialogDescription className="text-sm text-slate-500 mt-1">
-              Reviewing accuracy of node: <span className="font-semibold text-slate-700">{previewNode?.name}</span> ({previewNode?.id})
-            </DialogDescription>
-          </DialogHeader>
-          <div className="h-[450px] w-full rounded-xl overflow-hidden border border-slate-200 shadow-inner relative">
-            {previewNode && (
-              <LocationPickerMap
-                selectedLat={previewNode.coordinates?.latitude}
-                selectedLng={previewNode.coordinates?.longitude}
-                onLocationSelect={() => {}}
-                className="h-full w-full border-none shadow-none rounded-none"
-              />
-            )}
-          </div>
-          <DialogFooter className="mt-4">
-            <DialogClose asChild>
-              <Button className="bg-slate-800 hover:bg-slate-900 text-white font-medium shadow-sm transition-all px-6">Close Preview</Button>
-            </DialogClose>
-          </DialogFooter>
+        <DialogContent className="max-w-5xl border-none shadow-2xl p-0 bg-white rounded-2xl overflow-hidden">
+          {previewNode && (() => {
+            const connectedBlocks = routeBlocks.filter(
+              (b) => b.source === previewNode.id || b.target === previewNode.id
+            );
+            
+            const servingLines = Array.from(
+              new Set(connectedBlocks.map((b) => b.routeName).filter(Boolean))
+            ) as string[];
+
+            return (
+              <div className="flex flex-col md:flex-row h-[550px]">
+                {/* Left Panel - Map */}
+                <div className="w-full md:w-1/2 h-1/2 md:h-full relative border-r border-slate-100">
+                  <div className="absolute top-4 left-4 z-10 bg-slate-900/90 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-lg backdrop-blur-sm">
+                    <MapPin className="h-3.5 w-3.5 text-cyan-400" />
+                    <span>Location Map</span>
+                  </div>
+                  <LocationPickerMap
+                    selectedLat={previewNode.coordinates?.latitude}
+                    selectedLng={previewNode.coordinates?.longitude}
+                    onLocationSelect={() => {}}
+                    className="h-full w-full border-none shadow-none rounded-none"
+                  />
+                </div>
+
+                {/* Right Panel - stop info & connections */}
+                <div className="w-full md:w-1/2 h-1/2 md:h-full flex flex-col p-6 overflow-y-auto bg-slate-50/30">
+                  {/* Header */}
+                  <DialogHeader className="mb-4 space-y-1 text-left">
+                    <div className="flex items-center gap-2">
+                      <div className="bg-cyan-500/10 p-1.5 rounded-lg">
+                        <MapPin className="h-5 w-5 text-cyan-600" />
+                      </div>
+                      <DialogTitle className="text-xl font-bold text-slate-800 tracking-tight">
+                        {previewNode.name}
+                      </DialogTitle>
+                    </div>
+                    <DialogDescription className="text-xs font-mono text-slate-500 mt-1">
+                      ID: {previewNode.id} • Lat/Lng: {previewNode.coordinates?.latitude != null && previewNode.coordinates?.longitude != null ? `${Number(previewNode.coordinates.latitude).toFixed(6)}, ${Number(previewNode.coordinates.longitude).toFixed(6)}` : '—'}
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  {/* Summary Cards */}
+                  <div className="grid grid-cols-2 gap-3 mb-5">
+                    <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Serving Lines</span>
+                      <span className="text-2xl font-extrabold text-slate-700">{servingLines.length}</span>
+                    </div>
+                    <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Connections</span>
+                      <span className="text-2xl font-extrabold text-slate-700">{connectedBlocks.length}</span>
+                    </div>
+                  </div>
+
+                  {/* Serving Lines Section */}
+                  <div className="mb-5">
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Serving Lines</h4>
+                    {servingLines.length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {servingLines.map((lineName) => {
+                          const routeObj = routes.find((r) => r.name === lineName);
+                          const color = routeObj?.color || '#6366f1';
+                          return (
+                            <span
+                              key={lineName}
+                              className="px-2.5 py-1 rounded-full text-xs font-semibold text-white shadow-sm transition-transform hover:scale-105"
+                              style={{ backgroundColor: color }}
+                            >
+                              {lineName}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 italic">No lines routing through this stop.</p>
+                    )}
+                  </div>
+
+                  {/* Direct Connections Table */}
+                  <div className="flex-1 flex flex-col min-h-0">
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                      Direct Connections & Fares
+                    </h4>
+                    <div className="flex-1 overflow-y-auto border border-slate-100 rounded-xl bg-white shadow-inner">
+                      {connectedBlocks.length > 0 ? (
+                        <Table>
+                          <TableHeader className="bg-slate-50 sticky top-0 z-10">
+                            <TableRow className="hover:bg-transparent">
+                              <TableHead className="py-2 text-[10px] font-bold text-slate-500 uppercase">Neighbor</TableHead>
+                              <TableHead className="py-2 text-[10px] font-bold text-slate-500 uppercase">Direction</TableHead>
+                              <TableHead className="py-2 text-[10px] font-bold text-slate-500 uppercase">Line</TableHead>
+                              <TableHead className="py-2 text-[10px] font-bold text-slate-500 uppercase text-right">Fares</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {connectedBlocks.map((b) => {
+                              const isSource = b.source === previewNode.id;
+                              const neighborId = isSource ? b.target : b.source;
+                              const neighborNode = nodes.find((n) => n.id === neighborId);
+                              const neighborName = neighborNode?.name || neighborId;
+                              const routeObj = routes.find((r) => r.name === b.routeName);
+                              const lineColor = routeObj?.color || '#94a3b8';
+
+                              return (
+                                <TableRow key={b.id} className="hover:bg-slate-50/50">
+                                  <TableCell className="py-2.5 font-medium text-slate-700 text-xs max-w-[120px] truncate" title={neighborName}>
+                                    {neighborName}
+                                  </TableCell>
+                                  <TableCell className="py-2.5 text-xs">
+                                    {isSource ? (
+                                      <span className="inline-flex items-center gap-1 text-blue-600 font-medium bg-blue-50 px-1.5 py-0.5 rounded text-[10px]">
+                                        Outgoing →
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center gap-1 text-emerald-600 font-medium bg-emerald-50 px-1.5 py-0.5 rounded text-[10px]">
+                                        Incoming ←
+                                      </span>
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="py-2.5 text-xs">
+                                    <span
+                                      className="inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold text-white max-w-[80px] truncate"
+                                      style={{ backgroundColor: lineColor }}
+                                      title={b.routeName}
+                                    >
+                                      {b.routeName}
+                                    </span>
+                                  </TableCell>
+                                  <TableCell className="py-2.5 text-right text-xs">
+                                    <div className="flex flex-col text-[10px]">
+                                      <span className="font-semibold text-slate-700">Reg: ₱{Number(b.regularFare || 0).toFixed(2)}</span>
+                                      <span className="text-slate-500">Disc: ₱{Number(b.discountedFare || 0).toFixed(2)}</span>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      ) : (
+                        <div className="py-8 text-center text-slate-400 text-xs italic">
+                          No direct neighbors connected.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Dialog Footer Actions */}
+                  <div className="mt-5 pt-4 border-t border-slate-100 flex justify-end">
+                    <DialogClose asChild>
+                      <Button className="bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold shadow-md px-5 py-2 h-9 rounded-lg transition-all">
+                        Close Profile
+                      </Button>
+                    </DialogClose>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>

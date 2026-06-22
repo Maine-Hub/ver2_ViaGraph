@@ -5,7 +5,7 @@ export async function GET() {
     try {
         const [nodes, routeBlocks] = await Promise.all([
             query<any[]>('SELECT id, name, latitude as lat, longitude as lng FROM nodes WHERE is_archived = 0'),
-            query<any[]>('SELECT id, source_id as source, target_id as target, distance, route_name as routeName, vehicle_type, regular_fare as regularFare, discounted_fare as discountedFare, path_coordinates as pathCoordinatesJson, note FROM route_blocks WHERE is_archived = 0'),
+            query<any[]>('SELECT id, source_id as source, target_id as target, distance, route_name as routeName, vehicle_type, regular_fare as regularFare, discounted_fare as discountedFare, path_coordinates as pathCoordinatesJson, note FROM route_blocks WHERE is_archived = 0 AND is_history = 0'),
         ]);
 
         // Reshape nodes to match Location type

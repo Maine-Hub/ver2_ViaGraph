@@ -1,0 +1,58 @@
+[
+  {
+    "route_name": "Dalipuga-City Proper and VV",
+    "source_id": "dalipuga_vista_village",
+    "target_id": "dalipuga_centennial_park",
+    "source_name": "Dalipuga Vista Village",
+    "target_name": "Centennial Park",
+    "block_order": 1,
+    "vehicle_type": "Traditional PUJ",
+    "distance": 1.5,
+    "computed_fare": 13.00,
+    "path_coordinates": "[[124.2700, 8.3065], [124.2694, 8.3062], [124.2682, 8.3051], [124.2669, 8.3034], [124.2659, 8.3019], [124.2648, 8.3006]]",
+    "validation_status": "road_following_valid",
+    "notes": "Follows the National Highway curve south of Vista Village."
+  },
+  {
+    "route_name": "Dalipuga-City Proper and VV",
+    "source_id": "dalipuga_centennial_park",
+    "target_id": "kiwalan_port",
+    "source_name": "Centennial Park",
+    "target_name": "Kiwalan",
+    "block_order": 2,
+    "vehicle_type": "Traditional PUJ",
+    "distance": 4.0,
+    "computed_fare": 15.00,
+    "path_coordinates": "[[124.2648, 8.3006], [124.2643, 8.2988], [124.2644, 8.2975], [124.2650, 8.2959], [124.2659, 8.2942], [124.2663, 8.2925], [124.2659, 8.2903], [124.2652, 8.2882], [124.2648, 8.2864], [124.2647, 8.2843], [124.2650, 8.2822], [124.2656, 8.2802], [124.2660, 8.2784], [124.2660, 8.2765], [124.2655, 8.2755], [124.2650, 8.2750]]",
+    "validation_status": "road_following_valid",
+    "notes": "High-density trace along the coastal highway; avoids the bay."
+  },
+  {
+    "route_name": "Dalipuga-City Proper and VV",
+    "source_id": "kiwalan_port",
+    "target_id": "msu_iit_tibanga",
+    "source_name": "Kiwalan",
+    "target_name": "MSU-IIT",
+    "block_order": 3,
+    "vehicle_type": "Traditional PUJ",
+    "distance": 5.0,
+    "computed_fare": 17.00,
+    "path_coordinates": "[[124.2650, 8.2750], [124.2639, 8.2736], [124.2626, 8.2719], [124.2613, 8.2702], [124.2606, 8.2684], [124.2600, 8.2663], [124.2596, 8.2642], [124.2589, 8.2622], [124.2576, 8.2602], [124.2560, 8.2582], [124.2542, 8.2562], [124.2524, 8.2539], [124.2506, 8.2516], [124.2489, 8.2492], [124.2469, 8.2466], [124.2455, 8.2440], [124.2443, 8.2415]]",
+    "validation_status": "road_following_valid",
+    "notes": "Follows the winding road through Santa Filomena and San Roque."
+  },
+  {
+    "route_name": "Dalipuga-City Proper and VV",
+    "source_id": "msu_iit_tibanga",
+    "target_id": "public_plaza_iligan",
+    "source_name": "MSU-IIT",
+    "target_name": "Iligan Public Plaza",
+    "block_order": 4,
+    "vehicle_type": "Traditional PUJ",
+    "distance": 3.4,
+    "computed_fare": 15.00,
+    "path_coordinates": "[[124.2443, 8.2415], [124.2436, 8.2409], [124.2426, 8.2402], [124.2416, 8.2395], [124.2406, 8.2388], [124.2399, 8.2379], [124.2394, 8.2366], [124.2389, 8.2352], [124.2389, 8.2336], [124.2390, 8.2315], [124.2393, 8.2285]]",
+    "validation_status": "road_following_valid",
+    "notes": "Final approach into City Proper via Andres Bonifacio Ave."
+  }
+]

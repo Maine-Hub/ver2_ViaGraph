@@ -7,10 +7,10 @@ export const metadata: Metadata = {
   description: 'Your intelligent route finder',
   icons: {
     icon: [
-      { url: '/images/ViaGraph_LOGO.png', type: 'image/png' },
+      { url: '/images/ViaGraph_logo_final.png', type: 'image/png' },
     ],
-    shortcut: '/images/ViaGraph_LOGO.png',
-    apple: '/images/ViaGraph_LOGO.png',
+    shortcut: '/images/ViaGraph_logo_final.png',
+    apple: '/images/ViaGraph_logo_final.png',
   },
 };
 

@@ -81,8 +81,8 @@ export default function AdminActivitiesPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {activities.map((log: any) => (
-                                        <TableRow key={log.id}>
+                                    {activities.map((log: any, index: number) => (
+                                        <TableRow key={`${log.id}-${index}`}>
                                             <TableCell className="font-medium">
                                                 {log.username || 'Unknown'}
                                                 <div className="text-[10px] text-muted-foreground">{log.uid}</div>

@@ -605,7 +605,7 @@ export default function RouteMapView({ nodes, routes, path, alternatives = [], i
 
                 {/* Alternative Paths (Lighter/Transparent) */}
                 {alternativePolylines.map((seg, i) => (
-                    <Fragment key={`alt-group-${i}`}>
+                    <Fragment key={`alt-group-${seg.routeName}-${seg.isWalking ? 'walk' : 'ride'}-${i}`}>
                         <Polyline
                             positions={seg.coords}
                             color={seg.color}
@@ -616,21 +616,21 @@ export default function RouteMapView({ nodes, routes, path, alternatives = [], i
                         >
                             <Tooltip sticky>
                                 <div className="text-[11px]">
-                                    <span className="font-bold text-slate-700">Option {seg.altIdx + 1}</span>
-                                    <div className="flex items-center gap-1.5 mt-0.5">
-                                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: seg.color }} />
-                                        <span className="font-semibold">{seg.routeName}</span>
-                                    </div>
-                                </div>
-                            </Tooltip>
-                        </Polyline>
-                        <PathDirectionArrows coords={seg.coords} color={seg.color} />
-                    </Fragment>
-                ))}
-
-                {/* Recommended Path (Shortest) */}
-                {segmentPolylines.map((seg, i) => (
-                    <Fragment key={`rec-group-${i}`}>
+                                     <span className="font-bold text-slate-700">Option {seg.altIdx + 1}</span>
+                                     <div className="flex items-center gap-1.5 mt-0.5">
+                                         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: seg.color }} />
+                                         <span className="font-semibold">{seg.routeName}</span>
+                                     </div>
+                                 </div>
+                             </Tooltip>
+                         </Polyline>
+                         <PathDirectionArrows coords={seg.coords} color={seg.color} />
+                     </Fragment>
+                 ))}
+ 
+                 {/* Recommended Path (Shortest) */}
+                 {segmentPolylines.map((seg, i) => (
+                     <Fragment key={`rec-group-${seg.routeName}-${seg.isWalking ? 'walk' : 'ride'}-${i}`}>
                         {/* Glow/Outline for better contrast */}
                         <Polyline
                             positions={seg.coords}

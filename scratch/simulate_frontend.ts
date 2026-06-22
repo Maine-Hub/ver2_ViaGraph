@@ -48,18 +48,55 @@ function getSegmentPolylines(path: any[], routes: any[]) {
 
 async function main() {
   const formData = new FormData();
-  formData.append('startLocation', 'gaisano-mall');
-  formData.append('endLocation', 'anahaw-amphitheater');
+  formData.append('startLocation', 'tambo-terminal');
+  formData.append('endLocation', 'st--michael-s-cathedral');
   
   const state = await findRouteAction({ message: '' }, formData);
-  if (state.result) {
-    const uniqueRouteNames = Array.from(new Set(state.result.path.map((e: any) => e.routeName)));
-    const routes = uniqueRouteNames.map(name => ({
-        name: name,
-        color: '#6366f1'
-    }));
-    const polylines = getSegmentPolylines(state.result.path, routes);
-    console.log("Simulated frontend polylines:", JSON.stringify(polylines, null, 2));
+  if (state.result && state.result.rawDijkstraPath) {
+    const rawPath = state.result.rawDijkstraPath.path;
+    console.log("Raw Dijkstra Path segments count:", rawPath.length);
+    
+    // Simulate segmentPolylines computation from RouteMapView
+    const polylines: any[] = [];
+    rawPath.forEach((segment: any, index: number) => {
+      const anySegment = segment as any;
+      
+      console.log(`\nSegment ${index + 1}: ${segment.from} -> ${segment.to} via "${segment.routeName}"`);
+      console.log("  pathCoordinates format:", anySegment.pathCoordinates ? (anySegment.pathCoordinates.ridingCoords ? 'New format' : 'Legacy/Array') : 'None');
+      
+      if (anySegment.pathCoordinates && anySegment.pathCoordinates.ridingCoords) {
+          if (anySegment.pathCoordinates.ridingCoords.length > 1) {
+              polylines.push({
+                  routeName: segment.routeName,
+                  isWalking: false,
+                  coordsCount: anySegment.pathCoordinates.ridingCoords.length,
+              });
+          }
+          const hasWalking = anySegment.pathCoordinates.walkingDist > 0;
+          if (hasWalking && anySegment.pathCoordinates.walkingCoords?.length > 1) {
+              polylines.push({
+                  routeName: 'Walk',
+                  isWalking: true,
+                  coordsCount: anySegment.pathCoordinates.walkingCoords.length,
+              });
+          }
+      } else if (anySegment.pathCoordinates && anySegment.pathCoordinates.length > 1) {
+          polylines.push({
+              routeName: segment.routeName,
+              isWalking: false,
+              coordsCount: anySegment.pathCoordinates.length,
+          });
+      } else {
+          polylines.push({
+              routeName: segment.routeName,
+              isWalking: false,
+              coordsCount: 2,
+          });
+      }
+    });
+
+    console.log("\nComputed segmentPolylines for map:");
+    console.log(JSON.stringify(polylines, null, 2));
   } else {
     console.log("No path found.");
   }

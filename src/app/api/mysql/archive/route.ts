@@ -11,7 +11,7 @@ export async function GET() {
         FROM route_blocks rb
         JOIN nodes n1 ON rb.source_id = n1.id
         JOIN nodes n2 ON rb.target_id = n2.id
-        WHERE rb.is_archived = 1
+        WHERE rb.is_archived = 1 AND rb.is_history = 0
       `),
       query<any[]>('SELECT id, name, latitude, longitude FROM nodes WHERE is_archived = 1'),
       query<any[]>('SELECT name, description, color FROM routes WHERE is_archived = 1')

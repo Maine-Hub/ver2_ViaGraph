@@ -6,7 +6,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
 import { Location, RouteSegment } from '@/lib/types';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 
 // Component to handle map resizing when the dialog opens
 function InvalidateSize() {
@@ -66,17 +66,26 @@ interface RouteMapProps {
 // Helper component to auto-fit map bounds to nodes or initial path
 function MapCentering({ initialPath, nodes }: { initialPath?: [number, number][]; nodes: Location[] }) {
     const map = useMap();
+    const hasCenteredRef = useRef(false);
+
     useEffect(() => {
+        if (hasCenteredRef.current) return;
+
         const boundsPoints: L.LatLngExpression[] = [];
         if (initialPath && initialPath.length > 0) {
             initialPath.forEach(pt => boundsPoints.push(pt));
-        } else {
+            hasCenteredRef.current = true;
+        } else if (nodes.length > 0) {
             nodes.forEach(n => {
                 if (n.coordinates) {
                     boundsPoints.push([n.coordinates.latitude, n.coordinates.longitude]);
                 }
             });
+            if (nodes.length >= 2) {
+                hasCenteredRef.current = true;
+            }
         }
+
         if (boundsPoints.length > 0) {
             try {
                 const bounds = L.latLngBounds(boundsPoints);
@@ -86,16 +95,131 @@ function MapCentering({ initialPath, nodes }: { initialPath?: [number, number][]
             }
         }
     }, [map, initialPath, nodes]);
+
+    // Reset centering lock when nodes list changes (switched blocks)
+    useEffect(() => {
+        hasCenteredRef.current = false;
+    }, [nodes]);
+
+    return null;
+}
+
+const flattenLatLngs = (latlngs: any): L.LatLng[] => {
+    if (Array.isArray(latlngs) && latlngs.length > 0 && Array.isArray(latlngs[0])) {
+        return (latlngs as any).flat(Infinity);
+    }
+    return latlngs as L.LatLng[];
+};
+
+// Helper component to listen to draw events and sync path coords to parent state
+function EditEventListener({ onEdit }: { onEdit: () => void }) {
+    const map = useMap();
+    useEffect(() => {
+        const handleEdit = () => {
+            onEdit();
+        };
+
+        map.on('draw:editvertex', handleEdit);
+        map.on('draw:edited', handleEdit);
+        map.on('draw:deleted', handleEdit);
+
+        return () => {
+            map.off('draw:editvertex', handleEdit);
+            map.off('draw:edited', handleEdit);
+            map.off('draw:deleted', handleEdit);
+        };
+    }, [map, onEdit]);
+
     return null;
 }
 
 export default function RouteMap({ nodes, edges, selectedSource, selectedTarget, className, onNodeClick, onPathDrawn, initialPath, extraPaths }: RouteMapProps) {
     const [isMounted, setIsMounted] = useState(false);
-    const featureGroupRef = useRef<L.FeatureGroup>(null);
+    const [featureGroup, setFeatureGroup] = useState<L.FeatureGroup | null>(null);
+    const polylineRef = useRef<L.Polyline | null>(null);
 
     useEffect(() => {
         setIsMounted(true);
     }, []);
+
+    // Sync initialPath changes to raw Leaflet polyline
+    useEffect(() => {
+        if (!featureGroup) return;
+
+        // Check if current layer is already in sync with incoming initialPath
+        if (polylineRef.current) {
+            const currentLatLngs = polylineRef.current.getLatLngs();
+            const currentCoords = flattenLatLngs(currentLatLngs).map(ll => [ll.lat, ll.lng]);
+            const isSame = initialPath && 
+                           initialPath.length === currentCoords.length && 
+                           initialPath.every((val, index) => val[0] === currentCoords[index][0] && val[1] === currentCoords[index][1]);
+            
+            if (isSame) {
+                return; // Prevent resetting drag handles
+            }
+        }
+
+        // Recreate the polyline layer
+        if (polylineRef.current) {
+            featureGroup.removeLayer(polylineRef.current);
+            polylineRef.current = null;
+        }
+
+        if (initialPath && initialPath.length > 0) {
+            const polyline = L.polyline(initialPath, {
+                color: '#22d3ee',
+                weight: 5,
+            });
+            featureGroup.addLayer(polyline);
+            polylineRef.current = polyline;
+        }
+    }, [initialPath, featureGroup]);
+
+    const syncCoords = useCallback(() => {
+        if (polylineRef.current) {
+            const latlngs = flattenLatLngs(polylineRef.current.getLatLngs());
+            const coords: [number, number][] = latlngs.map(ll => [ll.lat, ll.lng]);
+            console.log('[RouteMap] syncCoords:', coords);
+            if (onPathDrawn) onPathDrawn(coords);
+        }
+    }, [onPathDrawn]);
+
+    const handleCreated = useCallback((e: any) => {
+        const layer = e.layer;
+        console.log('[RouteMap] handleCreated layer:', layer);
+        if (layer && typeof layer.getLatLngs === 'function') {
+            // Remove the drawn layer from the Leaflet feature group.
+            // React will render the polyline dynamically via useEffect.
+            if (featureGroup) {
+                featureGroup.removeLayer(layer);
+            }
+            const rawLatLngs = layer.getLatLngs();
+            const latlngs = flattenLatLngs(rawLatLngs);
+            const coords: [number, number][] = latlngs.map(ll => [ll.lat, ll.lng]);
+            console.log('[RouteMap] handleCreated path:', coords);
+            if (onPathDrawn) onPathDrawn(coords);
+        }
+    }, [onPathDrawn]);
+
+    const handleEdited = useCallback((e: any) => {
+        const layers = e.layers;
+        console.log('[RouteMap] handleEdited layers:', layers);
+        layers.eachLayer((layer: any) => {
+            console.log('[RouteMap] handleEdited checking layer:', layer);
+            if (layer && typeof layer.getLatLngs === 'function') {
+                const rawLatLngs = layer.getLatLngs();
+                const latlngs = flattenLatLngs(rawLatLngs);
+                const coords: [number, number][] = latlngs.map(ll => [ll.lat, ll.lng]);
+                console.log('[RouteMap] handleEdited path:', coords);
+                if (onPathDrawn) onPathDrawn(coords);
+            }
+        });
+    }, [onPathDrawn]);
+
+    const handleDeleted = useCallback(() => {
+        console.log('[RouteMap] handleDeleted');
+        if (onPathDrawn) onPathDrawn([]);
+    }, [onPathDrawn]);
 
     if (!isMounted) return (
         <div className={`w-full bg-slate-100 animate-pulse flex flex-col items-center justify-center rounded-lg border border-slate-200 ${className || 'h-[500px]'}`}>
@@ -108,27 +232,6 @@ export default function RouteMap({ nodes, edges, selectedSource, selectedTarget,
 
     const sourceNode = nodes.find(n => n.id === selectedSource);
     const targetNode = nodes.find(n => n.id === selectedTarget);
-
-    const flattenLatLngs = (latlngs: any): L.LatLng[] => {
-        if (Array.isArray(latlngs) && latlngs.length > 0 && Array.isArray(latlngs[0])) {
-            return (latlngs as any).flat(Infinity);
-        }
-        return latlngs as L.LatLng[];
-    };
-
-    const handleCreated = (e: any) => {
-        const layer = e.layer;
-        if (layer instanceof L.Polyline) {
-            const rawLatLngs = layer.getLatLngs();
-            const latlngs = flattenLatLngs(rawLatLngs);
-            const coords: [number, number][] = latlngs.map(ll => [ll.lat, ll.lng]);
-            if (onPathDrawn) onPathDrawn(coords);
-        }
-    };
-
-    const handleDeleted = () => {
-        if (onPathDrawn) onPathDrawn([]);
-    };
 
     return (
         <div className={`w-full rounded-lg overflow-hidden border border-slate-200 shadow-md ${className || 'h-[500px]'}`}>
@@ -149,12 +252,14 @@ export default function RouteMap({ nodes, edges, selectedSource, selectedTarget,
 
                 <InvalidateSize />
                 <MapCentering initialPath={initialPath} nodes={nodes} />
+                <EditEventListener onEdit={syncCoords} />
 
                 {/* Draw Controls */}
-                <FeatureGroup ref={featureGroupRef}>
+                <FeatureGroup ref={setFeatureGroup}>
                     <EditControl
                         position="topright"
                         onCreated={handleCreated}
+                        onEdited={handleEdited}
                         onDeleted={handleDeleted}
                         draw={{
                             polyline: {
@@ -172,9 +277,6 @@ export default function RouteMap({ nodes, edges, selectedSource, selectedTarget,
                         }}
                         edit={{}}
                     />
-                    {initialPath && initialPath.length > 0 && (
-                        <Polyline positions={initialPath} color="#22d3ee" weight={5} />
-                    )}
                 </FeatureGroup>
 
                 {/* Extra paths for transfer legs */}

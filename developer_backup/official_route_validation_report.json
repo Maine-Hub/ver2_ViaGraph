@@ -1,0 +1,145 @@
+{
+  "summary": {
+    "total_live_blocks_checked": 66,
+    "live_route_names_found": [
+      "JUST WALK",
+      "BUS",
+      "TAMBO GERONA",
+      "MINIBUS SOUTHBOUND TO NORTHBOUND",
+      "ANY JEEP GO TO CITY PROPER\nMINI BUS",
+      "UBALDO JEEP",
+      "UBALDO JEEP then WALK",
+      "SANTAIGO JEEP",
+      "PALAO JEEP"
+    ],
+    "total_official_samples": 6,
+    "matched_official_routes": [
+      "Tambo-Gerona-Barinaut-City Proper and VV"
+    ],
+    "unmatched_official_routes": [
+      "Hinaplanon-San Roque-City Proper and VV",
+      "Dalipuga-City Proper and VV",
+      "Tubod-Orellana-C3-City Proper and VV",
+      "Suarez-IBJT-City Proper-ICNHS-VV",
+      "Pugaan-City Proper and VV"
+    ]
+  },
+  "details": [
+    {
+      "official_name": "Hinaplanon-San Roque-City Proper and VV",
+      "official_length_km": 12.7,
+      "existing_matches_count": 0,
+      "existing_total_distance_km": 0,
+      "distance_variance_km": -12.7,
+      "has_geojson": false,
+      "matched_stops": [],
+      "missing_stops": [
+        "Hinaplanon",
+        "San Roque",
+        "IBJT",
+        "City Proper"
+      ],
+      "validation_status": "Discrepancy",
+      "needs_geojson": true,
+      "needs_nodes": true,
+      "manual_digitization_needed": true
+    },
+    {
+      "official_name": "Tambo-Gerona-Barinaut-City Proper and VV",
+      "official_length_km": 13.9,
+      "existing_matches_count": 30,
+      "existing_total_distance_km": 136.4,
+      "distance_variance_km": 122.5,
+      "has_geojson": true,
+      "matched_stops": [
+        "Tambo"
+      ],
+      "missing_stops": [
+        "IBJT",
+        "Gerona",
+        "Barinaut",
+        "City Proper"
+      ],
+      "validation_status": "Discrepancy",
+      "needs_geojson": false,
+      "needs_nodes": true,
+      "manual_digitization_needed": true
+    },
+    {
+      "official_name": "Dalipuga-City Proper and VV",
+      "official_length_km": 30,
+      "existing_matches_count": 0,
+      "existing_total_distance_km": 0,
+      "distance_variance_km": -30,
+      "has_geojson": false,
+      "matched_stops": [],
+      "missing_stops": [
+        "Dalipuga",
+        "Kiwalan",
+        "Tibanga",
+        "City Proper"
+      ],
+      "validation_status": "Discrepancy",
+      "needs_geojson": true,
+      "needs_nodes": true,
+      "manual_digitization_needed": true
+    },
+    {
+      "official_name": "Tubod-Orellana-C3-City Proper and VV",
+      "official_length_km": 8.8,
+      "existing_matches_count": 0,
+      "existing_total_distance_km": 0,
+      "distance_variance_km": -8.8,
+      "has_geojson": false,
+      "matched_stops": [],
+      "missing_stops": [
+        "Tubod",
+        "Orellana",
+        "C3",
+        "City Proper"
+      ],
+      "validation_status": "Discrepancy",
+      "needs_geojson": true,
+      "needs_nodes": true,
+      "manual_digitization_needed": true
+    },
+    {
+      "official_name": "Suarez-IBJT-City Proper-ICNHS-VV",
+      "official_length_km": 17.9,
+      "existing_matches_count": 0,
+      "existing_total_distance_km": 0,
+      "distance_variance_km": -17.9,
+      "has_geojson": false,
+      "matched_stops": [],
+      "missing_stops": [
+        "Suarez",
+        "IBJT",
+        "City Proper",
+        "ICNHS"
+      ],
+      "validation_status": "Discrepancy",
+      "needs_geojson": true,
+      "needs_nodes": true,
+      "manual_digitization_needed": true
+    },
+    {
+      "official_name": "Pugaan-City Proper and VV",
+      "official_length_km": 12.9,
+      "existing_matches_count": 0,
+      "existing_total_distance_km": 0,
+      "distance_variance_km": -12.9,
+      "has_geojson": false,
+      "matched_stops": [],
+      "missing_stops": [
+        "Pugaan",
+        "C3",
+        "Palao",
+        "City Proper"
+      ],
+      "validation_status": "Discrepancy",
+      "needs_geojson": true,
+      "needs_nodes": true,
+      "manual_digitization_needed": true
+    }
+  ]
+}

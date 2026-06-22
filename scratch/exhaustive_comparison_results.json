@@ -1,0 +1,3404 @@
+[
+  {
+    "from_id": "aguinaldo-street",
+    "from_name": "Aguinaldo Street",
+    "to_id": "centennial-park",
+    "to_name": "Centennial Park",
+    "viagraph": {
+      "distance": 15.091000000000001,
+      "fare": 44,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 15.091000000000001,
+      "fare": 44,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "aguinaldo-street",
+    "from_name": "Aguinaldo Street",
+    "to_id": "children-s-park",
+    "to_name": "Children's Park",
+    "viagraph": {
+      "distance": 6.38,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 6.38,
+      "fare": 26,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "aguinaldo-street",
+    "from_name": "Aguinaldo Street",
+    "to_id": "crown-paper-aguinaldo",
+    "to_name": "Crown Paper Aguinaldo",
+    "viagraph": {
+      "distance": 9.174,
+      "fare": 29,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 9.174,
+      "fare": 29,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "aguinaldo-street",
+    "from_name": "Aguinaldo Street",
+    "to_id": "gaisano-mall",
+    "to_name": "Gaisano Mall",
+    "viagraph": {
+      "distance": 7.323,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 7.1819999999999995,
+      "fare": 26,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0.1410000000000009
+    }
+  },
+  {
+    "from_id": "aguinaldo-street",
+    "from_name": "Aguinaldo Street",
+    "to_id": "gaisano-sukiclub",
+    "to_name": "Gaisano Suki Club",
+    "viagraph": {
+      "distance": 8.427,
+      "fare": 27,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 7.981,
+      "fare": 31,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 4,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0.44599999999999973
+    }
+  },
+  {
+    "from_id": "aguinaldo-street",
+    "from_name": "Aguinaldo Street",
+    "to_id": "highway-30-gym",
+    "to_name": "Highway 30 Gym",
+    "viagraph": {
+      "distance": 5.7219999999999995,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 5.7219999999999995,
+      "fare": 26,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "aguinaldo-street",
+    "from_name": "Aguinaldo Street",
+    "to_id": "iligan-port",
+    "to_name": "Port of Iligan",
+    "viagraph": {
+      "distance": 8.325,
+      "fare": 27,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 8.128,
+      "fare": 27,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0.19699999999999918
+    }
+  },
+  {
+    "from_id": "aguinaldo-street",
+    "from_name": "Aguinaldo Street",
+    "to_id": "landbank-main",
+    "to_name": "Landbank Iligan Main",
+    "viagraph": {
+      "distance": 9.962,
+      "fare": 30,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 9.891,
+      "fare": 30,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0.07099999999999973
+    }
+  },
+  {
+    "from_id": "aguinaldo-street",
+    "from_name": "Aguinaldo Street",
+    "to_id": "msu-iit",
+    "to_name": "MSU IIT",
+    "viagraph": {
+      "distance": 6.167,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 6.167,
+      "fare": 26,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "aguinaldo-street",
+    "from_name": "Aguinaldo Street",
+    "to_id": "public-plaza",
+    "to_name": "Iligan Public Plaza",
+    "viagraph": {
+      "distance": 8.984,
+      "fare": 28,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 8.365,
+      "fare": 28,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0.6189999999999998
+    }
+  },
+  {
+    "from_id": "aguinaldo-street",
+    "from_name": "Aguinaldo Street",
+    "to_id": "robinsons-mall",
+    "to_name": "Robinsons Mall",
+    "viagraph": {
+      "distance": 8.799,
+      "fare": 30,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 8.651,
+      "fare": 41,
+      "rides": 3
+    },
+    "metrics": {
+      "fare_saved": 11,
+      "transfers_saved": 1,
+      "extra_dist_walked": 0.1479999999999997
+    }
+  },
+  {
+    "from_id": "aguinaldo-street",
+    "from_name": "Aguinaldo Street",
+    "to_id": "soda-beach",
+    "to_name": "Soda Beach",
+    "viagraph": {
+      "distance": 8.688,
+      "fare": 30,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 8.688,
+      "fare": 30,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "aguinaldo-street",
+    "from_name": "Aguinaldo Street",
+    "to_id": "st--michael-s-cathedral",
+    "to_name": "St. Michael's Cathedral",
+    "viagraph": {
+      "distance": 7.663,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 7.550999999999999,
+      "fare": 26,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0.11200000000000099
+    }
+  },
+  {
+    "from_id": "aguinaldo-street",
+    "from_name": "Aguinaldo Street",
+    "to_id": "st.michael's-college",
+    "to_name": "St. Michael's College",
+    "viagraph": {
+      "distance": 7.651999999999999,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 7.515999999999999,
+      "fare": 26,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0.13600000000000012
+    }
+  },
+  {
+    "from_id": "aguinaldo-street",
+    "from_name": "Aguinaldo Street",
+    "to_id": "tambo-market",
+    "to_name": "Tambo Public Market",
+    "viagraph": {
+      "distance": 4.3069999999999995,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 4.3069999999999995,
+      "fare": 26,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "aguinaldo-street",
+    "from_name": "Aguinaldo Street",
+    "to_id": "tambo-terminal",
+    "to_name": "Tambo Terminal",
+    "viagraph": {
+      "distance": 3.961,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 3.961,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "aguinaldo-street",
+    "from_name": "Aguinaldo Street",
+    "to_id": "unicity",
+    "to_name": "Unicity",
+    "viagraph": {
+      "distance": 9.448,
+      "fare": 29,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 9.34,
+      "fare": 29,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0.10800000000000054
+    }
+  },
+  {
+    "from_id": "aguinaldo-street",
+    "from_name": "Aguinaldo Street",
+    "to_id": "unitop",
+    "to_name": "Unitop",
+    "viagraph": {
+      "distance": 7.746,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 7.64,
+      "fare": 32,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 6,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0.10600000000000076
+    }
+  },
+  {
+    "from_id": "aguinaldo-street",
+    "from_name": "Aguinaldo Street",
+    "to_id": "v-jollibee-aguinaldo",
+    "to_name": "Jollibee Aguinaldo",
+    "viagraph": {
+      "distance": 11.227,
+      "fare": 32,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 11.227,
+      "fare": 32,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "aguinaldo-street",
+    "from_name": "Aguinaldo Street",
+    "to_id": "wet-market",
+    "to_name": "Iligan Wet Market",
+    "viagraph": {
+      "distance": 8.566,
+      "fare": 28,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 8.496,
+      "fare": 27,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": -1,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0.07000000000000028
+    }
+  },
+  {
+    "from_id": "aguinaldo-street",
+    "from_name": "Aguinaldo Street",
+    "to_id": "zoey's-cafe",
+    "to_name": "Zoey's Cafe",
+    "viagraph": {
+      "distance": 9.018,
+      "fare": 28,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 9.018,
+      "fare": 28,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "children-s-park",
+    "from_name": "Children's Park",
+    "to_id": "st--michael-s-cathedral",
+    "to_name": "St. Michael's Cathedral",
+    "viagraph": {
+      "distance": 1.883,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 1.883,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "crown-paper-aguinaldo",
+    "from_name": "Crown Paper Aguinaldo",
+    "to_id": "anahaw-amphitheater",
+    "to_name": "Anahaw Amphitheater",
+    "viagraph": {
+      "distance": 1.373,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 1.373,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "crown-paper-aguinaldo",
+    "from_name": "Crown Paper Aguinaldo",
+    "to_id": "iligan-cityhall",
+    "to_name": "Iligan City Hall",
+    "viagraph": {
+      "distance": 1.478,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 1.478,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "gaisano-mall",
+    "from_name": "Gaisano Mall",
+    "to_id": "aguinaldo-street",
+    "to_name": "Aguinaldo Street",
+    "viagraph": {
+      "distance": 2.6260000000000003,
+      "fare": 28,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 2.6260000000000003,
+      "fare": 28,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "gaisano-mall",
+    "from_name": "Gaisano Mall",
+    "to_id": "anahaw-amphitheater",
+    "to_name": "Anahaw Amphitheater",
+    "viagraph": {
+      "distance": 4.923,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 4.923,
+      "fare": 26,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "gaisano-mall",
+    "from_name": "Gaisano Mall",
+    "to_id": "children-s-park",
+    "to_name": "Children's Park",
+    "viagraph": {
+      "distance": 1.508,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 1.508,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "gaisano-mall",
+    "from_name": "Gaisano Mall",
+    "to_id": "palao-market",
+    "to_name": "Palao Market",
+    "viagraph": {
+      "distance": 2.9080000000000004,
+      "fare": 28,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 2.9080000000000004,
+      "fare": 28,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "gaisano-mall",
+    "from_name": "Gaisano Mall",
+    "to_id": "robinsons-mall",
+    "to_name": "Robinsons Mall",
+    "viagraph": {
+      "distance": 1.469,
+      "fare": 15,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 1.469,
+      "fare": 15,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "gaisano-mall",
+    "from_name": "Gaisano Mall",
+    "to_id": "st--michael-s-cathedral",
+    "to_name": "St. Michael's Cathedral",
+    "viagraph": {
+      "distance": 0.369,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 0.369,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "gaisano-mall",
+    "from_name": "Gaisano Mall",
+    "to_id": "st.michael's-college",
+    "to_name": "St. Michael's College",
+    "viagraph": {
+      "distance": 0.334,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 0.334,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "gaisano-mall",
+    "from_name": "Gaisano Mall",
+    "to_id": "unicity",
+    "to_name": "Unicity",
+    "viagraph": {
+      "distance": 2.168,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 2.168,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "gaisano-mall",
+    "from_name": "Gaisano Mall",
+    "to_id": "zoey's-cafe",
+    "to_name": "Zoey's Cafe",
+    "viagraph": {
+      "distance": 1.848,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 1.848,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "highway-30-gym",
+    "from_name": "Highway 30 Gym",
+    "to_id": "paseo-de-santiago",
+    "to_name": "Paseo de Santiago",
+    "viagraph": {
+      "distance": 0.675,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 0.675,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "msu-iit",
+    "from_name": "MSU IIT",
+    "to_id": "aguinaldo-street",
+    "to_name": "Aguinaldo Street",
+    "viagraph": {
+      "distance": 3.692,
+      "fare": 28,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 3.641,
+      "fare": 41,
+      "rides": 3
+    },
+    "metrics": {
+      "fare_saved": 13,
+      "transfers_saved": 1,
+      "extra_dist_walked": 0.051000000000000156
+    }
+  },
+  {
+    "from_id": "msu-iit",
+    "from_name": "MSU IIT",
+    "to_id": "anahaw-amphitheater",
+    "to_name": "Anahaw Amphitheater",
+    "viagraph": {
+      "distance": 4.38,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 4.38,
+      "fare": 26,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "msu-iit",
+    "from_name": "MSU IIT",
+    "to_id": "centennial-park",
+    "to_name": "Centennial Park",
+    "viagraph": {
+      "distance": 11.605,
+      "fare": 27,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 11.605,
+      "fare": 27,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "msu-iit",
+    "from_name": "MSU IIT",
+    "to_id": "children-s-park",
+    "to_name": "Children's Park",
+    "viagraph": {
+      "distance": 2.5229999999999997,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 2.5229999999999997,
+      "fare": 26,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "msu-iit",
+    "from_name": "MSU IIT",
+    "to_id": "crown-paper-aguinaldo",
+    "to_name": "Crown Paper Aguinaldo",
+    "viagraph": {
+      "distance": 3.007,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 3.007,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "msu-iit",
+    "from_name": "MSU IIT",
+    "to_id": "gaisano-mall",
+    "to_name": "Gaisano Mall",
+    "viagraph": {
+      "distance": 1.015,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 1.015,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "msu-iit",
+    "from_name": "MSU IIT",
+    "to_id": "gaisano-sukiclub",
+    "to_name": "Gaisano Suki Club",
+    "viagraph": {
+      "distance": 1.814,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 1.814,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "msu-iit",
+    "from_name": "MSU IIT",
+    "to_id": "highway-30-gym",
+    "to_name": "Highway 30 Gym",
+    "viagraph": {
+      "distance": 4.022,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 4.022,
+      "fare": 14,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": -12,
+      "transfers_saved": -1,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "msu-iit",
+    "from_name": "MSU IIT",
+    "to_id": "hypermart-167",
+    "to_name": "167 HyperMart",
+    "viagraph": {
+      "distance": 3.142,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 3.142,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "msu-iit",
+    "from_name": "MSU IIT",
+    "to_id": "iligan-city-hospital",
+    "to_name": "Iligan City Hospital",
+    "viagraph": {
+      "distance": 7.584999999999999,
+      "fare": 28,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 7.584999999999999,
+      "fare": 28,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "msu-iit",
+    "from_name": "MSU IIT",
+    "to_id": "iligan-cityhall",
+    "to_name": "Iligan City Hall",
+    "viagraph": {
+      "distance": 4.485,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 4.485,
+      "fare": 26,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "msu-iit",
+    "from_name": "MSU IIT",
+    "to_id": "iligan-medical-center-college",
+    "to_name": "Iligan Medical Center College",
+    "viagraph": {
+      "distance": 6.534,
+      "fare": 28,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 6.534,
+      "fare": 28,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "msu-iit",
+    "from_name": "MSU IIT",
+    "to_id": "iligan-medical-center-hospital",
+    "to_name": "Iligan Medical Center Hospital",
+    "viagraph": {
+      "distance": 6.494,
+      "fare": 28,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 6.494,
+      "fare": 28,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "msu-iit",
+    "from_name": "MSU IIT",
+    "to_id": "iligan-port",
+    "to_name": "Port of Iligan",
+    "viagraph": {
+      "distance": 1.961,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 1.961,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "msu-iit",
+    "from_name": "MSU IIT",
+    "to_id": "landbank-main",
+    "to_name": "Landbank Iligan Main",
+    "viagraph": {
+      "distance": 3.724,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 3.724,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "msu-iit",
+    "from_name": "MSU IIT",
+    "to_id": "night-market",
+    "to_name": "Iligan Night Market",
+    "viagraph": {
+      "distance": 2.252,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 2.252,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "msu-iit",
+    "from_name": "MSU IIT",
+    "to_id": "palao-market",
+    "to_name": "Palao Market",
+    "viagraph": {
+      "distance": 3.974,
+      "fare": 28,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 3.923,
+      "fare": 41,
+      "rides": 3
+    },
+    "metrics": {
+      "fare_saved": 13,
+      "transfers_saved": 1,
+      "extra_dist_walked": 0.051000000000000156
+    }
+  },
+  {
+    "from_id": "msu-iit",
+    "from_name": "MSU IIT",
+    "to_id": "paseo-de-santiago",
+    "to_name": "Paseo de Santiago",
+    "viagraph": {
+      "distance": 0.943,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 0.943,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "msu-iit",
+    "from_name": "MSU IIT",
+    "to_id": "psa",
+    "to_name": "PSA",
+    "viagraph": {
+      "distance": 5.768999999999999,
+      "fare": 28,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 5.768999999999999,
+      "fare": 28,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "msu-iit",
+    "from_name": "MSU IIT",
+    "to_id": "public-plaza",
+    "to_name": "Iligan Public Plaza",
+    "viagraph": {
+      "distance": 2.198,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 2.198,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "msu-iit",
+    "from_name": "MSU IIT",
+    "to_id": "robinsons-mall",
+    "to_name": "Robinsons Mall",
+    "viagraph": {
+      "distance": 2.484,
+      "fare": 28,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 2.484,
+      "fare": 28,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "msu-iit",
+    "from_name": "MSU IIT",
+    "to_id": "sanitarium",
+    "to_name": "Sanitarium",
+    "viagraph": {
+      "distance": 4.890000000000001,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 4.890000000000001,
+      "fare": 16,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": -10,
+      "transfers_saved": -1,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "msu-iit",
+    "from_name": "MSU IIT",
+    "to_id": "soda-beach",
+    "to_name": "Soda Beach",
+    "viagraph": {
+      "distance": 5.19,
+      "fare": 16,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 5.19,
+      "fare": 16,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "msu-iit",
+    "from_name": "MSU IIT",
+    "to_id": "st--michael-s-cathedral",
+    "to_name": "St. Michael's Cathedral",
+    "viagraph": {
+      "distance": 1.384,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 1.384,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": -13,
+      "transfers_saved": -1,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "msu-iit",
+    "from_name": "MSU IIT",
+    "to_id": "st.michael's-college",
+    "to_name": "St. Michael's College",
+    "viagraph": {
+      "distance": 1.349,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 1.349,
+      "fare": 26,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "msu-iit",
+    "from_name": "MSU IIT",
+    "to_id": "tambo-market",
+    "to_name": "Tambo Public Market",
+    "viagraph": {
+      "distance": 1.932,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 1.932,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "msu-iit",
+    "from_name": "MSU IIT",
+    "to_id": "tambo-terminal",
+    "to_name": "Tambo Terminal",
+    "viagraph": {
+      "distance": 2.261,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 2.261,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "msu-iit",
+    "from_name": "MSU IIT",
+    "to_id": "unicity",
+    "to_name": "Unicity",
+    "viagraph": {
+      "distance": 3.173,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 3.173,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "msu-iit",
+    "from_name": "MSU IIT",
+    "to_id": "unitop",
+    "to_name": "Unitop",
+    "viagraph": {
+      "distance": 1.473,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 1.473,
+      "fare": 15,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 2,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "msu-iit",
+    "from_name": "MSU IIT",
+    "to_id": "v-jollibee-aguinaldo",
+    "to_name": "Jollibee Aguinaldo",
+    "viagraph": {
+      "distance": 5.06,
+      "fare": 15,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 5.06,
+      "fare": 15,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "msu-iit",
+    "from_name": "MSU IIT",
+    "to_id": "wet-market",
+    "to_name": "Iligan Wet Market",
+    "viagraph": {
+      "distance": 2.329,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 2.329,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "msu-iit",
+    "from_name": "MSU IIT",
+    "to_id": "zoey's-cafe",
+    "to_name": "Zoey's Cafe",
+    "viagraph": {
+      "distance": 2.851,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 2.851,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "palao-market",
+    "from_name": "Palao Market",
+    "to_id": "centennial-park",
+    "to_name": "Centennial Park",
+    "viagraph": {
+      "distance": 15.317,
+      "fare": 45,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 15.317,
+      "fare": 45,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "palao-market",
+    "from_name": "Palao Market",
+    "to_id": "children-s-park",
+    "to_name": "Children's Park",
+    "viagraph": {
+      "distance": 6.606,
+      "fare": 27,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 6.606,
+      "fare": 27,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "palao-market",
+    "from_name": "Palao Market",
+    "to_id": "crown-paper-aguinaldo",
+    "to_name": "Crown Paper Aguinaldo",
+    "viagraph": {
+      "distance": 9.4,
+      "fare": 30,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 9.4,
+      "fare": 30,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "palao-market",
+    "from_name": "Palao Market",
+    "to_id": "gaisano-mall",
+    "to_name": "Gaisano Mall",
+    "viagraph": {
+      "distance": 7.549,
+      "fare": 27,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 7.408,
+      "fare": 27,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0.14100000000000001
+    }
+  },
+  {
+    "from_id": "palao-market",
+    "from_name": "Palao Market",
+    "to_id": "gaisano-sukiclub",
+    "to_name": "Gaisano Suki Club",
+    "viagraph": {
+      "distance": 8.653,
+      "fare": 28,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 8.207,
+      "fare": 32,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 4,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0.44599999999999973
+    }
+  },
+  {
+    "from_id": "palao-market",
+    "from_name": "Palao Market",
+    "to_id": "highway-30-gym",
+    "to_name": "Highway 30 Gym",
+    "viagraph": {
+      "distance": 5.948,
+      "fare": 27,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 5.948,
+      "fare": 27,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "palao-market",
+    "from_name": "Palao Market",
+    "to_id": "iligan-port",
+    "to_name": "Port of Iligan",
+    "viagraph": {
+      "distance": 8.551,
+      "fare": 28,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 8.354000000000001,
+      "fare": 28,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0.19699999999999918
+    }
+  },
+  {
+    "from_id": "palao-market",
+    "from_name": "Palao Market",
+    "to_id": "landbank-main",
+    "to_name": "Landbank Iligan Main",
+    "viagraph": {
+      "distance": 10.188,
+      "fare": 31,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 10.117,
+      "fare": 31,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0.07099999999999973
+    }
+  },
+  {
+    "from_id": "palao-market",
+    "from_name": "Palao Market",
+    "to_id": "msu-iit",
+    "to_name": "MSU IIT",
+    "viagraph": {
+      "distance": 6.393000000000001,
+      "fare": 27,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 6.393000000000001,
+      "fare": 27,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "palao-market",
+    "from_name": "Palao Market",
+    "to_id": "public-plaza",
+    "to_name": "Iligan Public Plaza",
+    "viagraph": {
+      "distance": 9.21,
+      "fare": 29,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 8.591000000000001,
+      "fare": 29,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0.6189999999999998
+    }
+  },
+  {
+    "from_id": "palao-market",
+    "from_name": "Palao Market",
+    "to_id": "robinsons-mall",
+    "to_name": "Robinsons Mall",
+    "viagraph": {
+      "distance": 9.025,
+      "fare": 31,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 8.877,
+      "fare": 42,
+      "rides": 3
+    },
+    "metrics": {
+      "fare_saved": 11,
+      "transfers_saved": 1,
+      "extra_dist_walked": 0.1479999999999997
+    }
+  },
+  {
+    "from_id": "palao-market",
+    "from_name": "Palao Market",
+    "to_id": "soda-beach",
+    "to_name": "Soda Beach",
+    "viagraph": {
+      "distance": 8.914000000000001,
+      "fare": 31,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 8.914000000000001,
+      "fare": 31,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "palao-market",
+    "from_name": "Palao Market",
+    "to_id": "st--michael-s-cathedral",
+    "to_name": "St. Michael's Cathedral",
+    "viagraph": {
+      "distance": 7.889,
+      "fare": 27,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 7.777,
+      "fare": 27,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0.1120000000000001
+    }
+  },
+  {
+    "from_id": "palao-market",
+    "from_name": "Palao Market",
+    "to_id": "st.michael's-college",
+    "to_name": "St. Michael's College",
+    "viagraph": {
+      "distance": 7.878,
+      "fare": 27,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 7.742,
+      "fare": 27,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0.13600000000000012
+    }
+  },
+  {
+    "from_id": "palao-market",
+    "from_name": "Palao Market",
+    "to_id": "tambo-market",
+    "to_name": "Tambo Public Market",
+    "viagraph": {
+      "distance": 4.533,
+      "fare": 27,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 4.533,
+      "fare": 27,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "palao-market",
+    "from_name": "Palao Market",
+    "to_id": "tambo-terminal",
+    "to_name": "Tambo Terminal",
+    "viagraph": {
+      "distance": 4.187,
+      "fare": 14,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 4.187,
+      "fare": 14,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "palao-market",
+    "from_name": "Palao Market",
+    "to_id": "unicity",
+    "to_name": "Unicity",
+    "viagraph": {
+      "distance": 9.674,
+      "fare": 30,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 9.566,
+      "fare": 30,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0.10799999999999876
+    }
+  },
+  {
+    "from_id": "palao-market",
+    "from_name": "Palao Market",
+    "to_id": "unitop",
+    "to_name": "Unitop",
+    "viagraph": {
+      "distance": 7.972,
+      "fare": 27,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 7.8660000000000005,
+      "fare": 33,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 6,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0.10599999999999987
+    }
+  },
+  {
+    "from_id": "palao-market",
+    "from_name": "Palao Market",
+    "to_id": "v-jollibee-aguinaldo",
+    "to_name": "Jollibee Aguinaldo",
+    "viagraph": {
+      "distance": 11.453,
+      "fare": 33,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 11.453,
+      "fare": 33,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "palao-market",
+    "from_name": "Palao Market",
+    "to_id": "wet-market",
+    "to_name": "Iligan Wet Market",
+    "viagraph": {
+      "distance": 8.792000000000002,
+      "fare": 29,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 8.722000000000001,
+      "fare": 28,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": -1,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0.07000000000000028
+    }
+  },
+  {
+    "from_id": "palao-market",
+    "from_name": "Palao Market",
+    "to_id": "zoey's-cafe",
+    "to_name": "Zoey's Cafe",
+    "viagraph": {
+      "distance": 9.244,
+      "fare": 29,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 9.244,
+      "fare": 29,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "public-plaza",
+    "from_name": "Iligan Public Plaza",
+    "to_id": "sanitarium",
+    "to_name": "Sanitarium",
+    "viagraph": {
+      "distance": 2.692,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 2.692,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "robinsons-mall",
+    "from_name": "Robinsons Mall",
+    "to_id": "aguinaldo-street",
+    "to_name": "Aguinaldo Street",
+    "viagraph": {
+      "distance": 1.157,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 1.157,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "robinsons-mall",
+    "from_name": "Robinsons Mall",
+    "to_id": "palao-market",
+    "to_name": "Palao Market",
+    "viagraph": {
+      "distance": 1.439,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 1.439,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "robinsons-mall",
+    "from_name": "Robinsons Mall",
+    "to_id": "tambo-terminal",
+    "to_name": "Tambo Terminal",
+    "viagraph": {
+      "distance": 5.118,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 5.118,
+      "fare": 26,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-market",
+    "from_name": "Tambo Public Market",
+    "to_id": "anahaw-amphitheater",
+    "to_name": "Anahaw Amphitheater",
+    "viagraph": {
+      "distance": 6.2490000000000006,
+      "fare": 28,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 6.2490000000000006,
+      "fare": 28,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-market",
+    "from_name": "Tambo Public Market",
+    "to_id": "centennial-park",
+    "to_name": "Centennial Park",
+    "viagraph": {
+      "distance": 13.474,
+      "fare": 40,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 13.474,
+      "fare": 40,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-market",
+    "from_name": "Tambo Public Market",
+    "to_id": "crown-paper-aguinaldo",
+    "to_name": "Crown Paper Aguinaldo",
+    "viagraph": {
+      "distance": 4.876,
+      "fare": 15,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 4.876,
+      "fare": 15,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-market",
+    "from_name": "Tambo Public Market",
+    "to_id": "gaisano-mall",
+    "to_name": "Gaisano Mall",
+    "viagraph": {
+      "distance": 2.884,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 2.884,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": -13,
+      "transfers_saved": -1,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-market",
+    "from_name": "Tambo Public Market",
+    "to_id": "gaisano-sukiclub",
+    "to_name": "Gaisano Suki Club",
+    "viagraph": {
+      "distance": 3.683,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 3.683,
+      "fare": 17,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": -9,
+      "transfers_saved": -1,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-market",
+    "from_name": "Tambo Public Market",
+    "to_id": "hypermart-167",
+    "to_name": "167 HyperMart",
+    "viagraph": {
+      "distance": 5.011,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 5.011,
+      "fare": 15,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": -11,
+      "transfers_saved": -1,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-market",
+    "from_name": "Tambo Public Market",
+    "to_id": "iligan-city-hospital",
+    "to_name": "Iligan City Hospital",
+    "viagraph": {
+      "distance": 9.453999999999999,
+      "fare": 32,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 9.453999999999999,
+      "fare": 32,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-market",
+    "from_name": "Tambo Public Market",
+    "to_id": "iligan-cityhall",
+    "to_name": "Iligan City Hall",
+    "viagraph": {
+      "distance": 6.354,
+      "fare": 28,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 6.354,
+      "fare": 28,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-market",
+    "from_name": "Tambo Public Market",
+    "to_id": "iligan-medical-center-college",
+    "to_name": "Iligan Medical Center College",
+    "viagraph": {
+      "distance": 8.402999999999999,
+      "fare": 32,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 8.402999999999999,
+      "fare": 32,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-market",
+    "from_name": "Tambo Public Market",
+    "to_id": "iligan-medical-center-hospital",
+    "to_name": "Iligan Medical Center Hospital",
+    "viagraph": {
+      "distance": 8.363,
+      "fare": 32,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 8.363,
+      "fare": 32,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-market",
+    "from_name": "Tambo Public Market",
+    "to_id": "iligan-port",
+    "to_name": "Port of Iligan",
+    "viagraph": {
+      "distance": 3.83,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 3.83,
+      "fare": 14,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": -12,
+      "transfers_saved": -1,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-market",
+    "from_name": "Tambo Public Market",
+    "to_id": "landbank-main",
+    "to_name": "Landbank Iligan Main",
+    "viagraph": {
+      "distance": 5.593,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 5.593,
+      "fare": 16,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": -10,
+      "transfers_saved": -1,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-market",
+    "from_name": "Tambo Public Market",
+    "to_id": "msu-iit",
+    "to_name": "MSU IIT",
+    "viagraph": {
+      "distance": 1.869,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 1.869,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-market",
+    "from_name": "Tambo Public Market",
+    "to_id": "night-market",
+    "to_name": "Iligan Night Market",
+    "viagraph": {
+      "distance": 4.1209999999999996,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 4.1209999999999996,
+      "fare": 15,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": -11,
+      "transfers_saved": -1,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-market",
+    "from_name": "Tambo Public Market",
+    "to_id": "paseo-de-santiago",
+    "to_name": "Paseo de Santiago",
+    "viagraph": {
+      "distance": 2.812,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 2.812,
+      "fare": 26,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-market",
+    "from_name": "Tambo Public Market",
+    "to_id": "psa",
+    "to_name": "PSA",
+    "viagraph": {
+      "distance": 7.637999999999999,
+      "fare": 32,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 7.637999999999999,
+      "fare": 32,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-market",
+    "from_name": "Tambo Public Market",
+    "to_id": "public-plaza",
+    "to_name": "Iligan Public Plaza",
+    "viagraph": {
+      "distance": 4.067,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 4.067,
+      "fare": 15,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": -11,
+      "transfers_saved": -1,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-market",
+    "from_name": "Tambo Public Market",
+    "to_id": "robinsons-mall",
+    "to_name": "Robinsons Mall",
+    "viagraph": {
+      "distance": 4.404,
+      "fare": 28,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 4.353,
+      "fare": 28,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0.051000000000000156
+    }
+  },
+  {
+    "from_id": "tambo-market",
+    "from_name": "Tambo Public Market",
+    "to_id": "sanitarium",
+    "to_name": "Sanitarium",
+    "viagraph": {
+      "distance": 7.232,
+      "fare": 29,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 6.759,
+      "fare": 28,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": -1,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0.47299999999999986
+    }
+  },
+  {
+    "from_id": "tambo-market",
+    "from_name": "Tambo Public Market",
+    "to_id": "soda-beach",
+    "to_name": "Soda Beach",
+    "viagraph": {
+      "distance": 7.059,
+      "fare": 29,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 7.059,
+      "fare": 29,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-market",
+    "from_name": "Tambo Public Market",
+    "to_id": "st--michael-s-cathedral",
+    "to_name": "St. Michael's Cathedral",
+    "viagraph": {
+      "distance": 7.832,
+      "fare": 30,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 3.253,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": -17,
+      "transfers_saved": -1,
+      "extra_dist_walked": 4.579
+    }
+  },
+  {
+    "from_id": "tambo-market",
+    "from_name": "Tambo Public Market",
+    "to_id": "st.michael's-college",
+    "to_name": "St. Michael's College",
+    "viagraph": {
+      "distance": 8.014,
+      "fare": 30,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 3.218,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": -17,
+      "transfers_saved": -1,
+      "extra_dist_walked": 4.795999999999999
+    }
+  },
+  {
+    "from_id": "tambo-market",
+    "from_name": "Tambo Public Market",
+    "to_id": "tambo-terminal",
+    "to_name": "Tambo Terminal",
+    "viagraph": {
+      "distance": 4.13,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 4.13,
+      "fare": 14,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": -12,
+      "transfers_saved": -1,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-market",
+    "from_name": "Tambo Public Market",
+    "to_id": "unicity",
+    "to_name": "Unicity",
+    "viagraph": {
+      "distance": 5.042,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 5.042,
+      "fare": 15,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": -11,
+      "transfers_saved": -1,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-market",
+    "from_name": "Tambo Public Market",
+    "to_id": "unitop",
+    "to_name": "Unitop",
+    "viagraph": {
+      "distance": 3.342,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 3.342,
+      "fare": 18,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": -8,
+      "transfers_saved": -1,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-market",
+    "from_name": "Tambo Public Market",
+    "to_id": "v-jollibee-aguinaldo",
+    "to_name": "Jollibee Aguinaldo",
+    "viagraph": {
+      "distance": 6.928999999999999,
+      "fare": 19,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 6.928999999999999,
+      "fare": 19,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-market",
+    "from_name": "Tambo Public Market",
+    "to_id": "wet-market",
+    "to_name": "Iligan Wet Market",
+    "viagraph": {
+      "distance": 4.198,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 4.198,
+      "fare": 14,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": -12,
+      "transfers_saved": -1,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-market",
+    "from_name": "Tambo Public Market",
+    "to_id": "zoey's-cafe",
+    "to_name": "Zoey's Cafe",
+    "viagraph": {
+      "distance": 4.72,
+      "fare": 15,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 4.72,
+      "fare": 15,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-terminal",
+    "from_name": "Tambo Terminal",
+    "to_id": "aguinaldo-street",
+    "to_name": "Aguinaldo Street",
+    "viagraph": {
+      "distance": 5.995,
+      "fare": 30,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 5.847,
+      "fare": 41,
+      "rides": 3
+    },
+    "metrics": {
+      "fare_saved": 11,
+      "transfers_saved": 1,
+      "extra_dist_walked": 0.1479999999999997
+    }
+  },
+  {
+    "from_id": "tambo-terminal",
+    "from_name": "Tambo Terminal",
+    "to_id": "anahaw-amphitheater",
+    "to_name": "Anahaw Amphitheater",
+    "viagraph": {
+      "distance": 6.586,
+      "fare": 29,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 6.586,
+      "fare": 29,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-terminal",
+    "from_name": "Tambo Terminal",
+    "to_id": "centennial-park",
+    "to_name": "Centennial Park",
+    "viagraph": {
+      "distance": 11.13,
+      "fare": 31,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 11.13,
+      "fare": 31,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-terminal",
+    "from_name": "Tambo Terminal",
+    "to_id": "children-s-park",
+    "to_name": "Children's Park",
+    "viagraph": {
+      "distance": 2.419,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 2.419,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-terminal",
+    "from_name": "Tambo Terminal",
+    "to_id": "crown-paper-aguinaldo",
+    "to_name": "Crown Paper Aguinaldo",
+    "viagraph": {
+      "distance": 5.213,
+      "fare": 16,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 5.213,
+      "fare": 16,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-terminal",
+    "from_name": "Tambo Terminal",
+    "to_id": "gaisano-mall",
+    "to_name": "Gaisano Mall",
+    "viagraph": {
+      "distance": 3.221,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 3.221,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": -13,
+      "transfers_saved": -1,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-terminal",
+    "from_name": "Tambo Terminal",
+    "to_id": "gaisano-sukiclub",
+    "to_name": "Gaisano Suki Club",
+    "viagraph": {
+      "distance": 4.02,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 4.02,
+      "fare": 18,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": -8,
+      "transfers_saved": -1,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-terminal",
+    "from_name": "Tambo Terminal",
+    "to_id": "highway-30-gym",
+    "to_name": "Highway 30 Gym",
+    "viagraph": {
+      "distance": 1.761,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 1.761,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-terminal",
+    "from_name": "Tambo Terminal",
+    "to_id": "hypermart-167",
+    "to_name": "167 HyperMart",
+    "viagraph": {
+      "distance": 5.348,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 5.348,
+      "fare": 16,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": -10,
+      "transfers_saved": -1,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-terminal",
+    "from_name": "Tambo Terminal",
+    "to_id": "iligan-city-hospital",
+    "to_name": "Iligan City Hospital",
+    "viagraph": {
+      "distance": 9.791,
+      "fare": 32,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 9.791,
+      "fare": 32,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-terminal",
+    "from_name": "Tambo Terminal",
+    "to_id": "iligan-cityhall",
+    "to_name": "Iligan City Hall",
+    "viagraph": {
+      "distance": 6.691,
+      "fare": 29,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 6.691,
+      "fare": 29,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-terminal",
+    "from_name": "Tambo Terminal",
+    "to_id": "iligan-medical-center-college",
+    "to_name": "Iligan Medical Center College",
+    "viagraph": {
+      "distance": 8.74,
+      "fare": 32,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 8.74,
+      "fare": 32,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-terminal",
+    "from_name": "Tambo Terminal",
+    "to_id": "iligan-medical-center-hospital",
+    "to_name": "Iligan Medical Center Hospital",
+    "viagraph": {
+      "distance": 8.7,
+      "fare": 32,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 8.7,
+      "fare": 32,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-terminal",
+    "from_name": "Tambo Terminal",
+    "to_id": "iligan-port",
+    "to_name": "Port of Iligan",
+    "viagraph": {
+      "distance": 4.167,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 4.167,
+      "fare": 14,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": -12,
+      "transfers_saved": -1,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-terminal",
+    "from_name": "Tambo Terminal",
+    "to_id": "landbank-main",
+    "to_name": "Landbank Iligan Main",
+    "viagraph": {
+      "distance": 5.93,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 5.93,
+      "fare": 17,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": -9,
+      "transfers_saved": -1,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-terminal",
+    "from_name": "Tambo Terminal",
+    "to_id": "msu-iit",
+    "to_name": "MSU IIT",
+    "viagraph": {
+      "distance": 2.206,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 2.206,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-terminal",
+    "from_name": "Tambo Terminal",
+    "to_id": "night-market",
+    "to_name": "Iligan Night Market",
+    "viagraph": {
+      "distance": 4.458,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 4.458,
+      "fare": 15,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": -11,
+      "transfers_saved": -1,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-terminal",
+    "from_name": "Tambo Terminal",
+    "to_id": "palao-market",
+    "to_name": "Palao Market",
+    "viagraph": {
+      "distance": 6.277,
+      "fare": 30,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 6.1290000000000004,
+      "fare": 41,
+      "rides": 3
+    },
+    "metrics": {
+      "fare_saved": 11,
+      "transfers_saved": 1,
+      "extra_dist_walked": 0.1479999999999997
+    }
+  },
+  {
+    "from_id": "tambo-terminal",
+    "from_name": "Tambo Terminal",
+    "to_id": "paseo-de-santiago",
+    "to_name": "Paseo de Santiago",
+    "viagraph": {
+      "distance": 2.436,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 2.436,
+      "fare": 26,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-terminal",
+    "from_name": "Tambo Terminal",
+    "to_id": "psa",
+    "to_name": "PSA",
+    "viagraph": {
+      "distance": 7.975,
+      "fare": 32,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 7.975,
+      "fare": 32,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-terminal",
+    "from_name": "Tambo Terminal",
+    "to_id": "public-plaza",
+    "to_name": "Iligan Public Plaza",
+    "viagraph": {
+      "distance": 4.404,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 4.404,
+      "fare": 15,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": -11,
+      "transfers_saved": -1,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-terminal",
+    "from_name": "Tambo Terminal",
+    "to_id": "robinsons-mall",
+    "to_name": "Robinsons Mall",
+    "viagraph": {
+      "distance": 4.741,
+      "fare": 28,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 4.69,
+      "fare": 28,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0.05099999999999927
+    }
+  },
+  {
+    "from_id": "tambo-terminal",
+    "from_name": "Tambo Terminal",
+    "to_id": "sanitarium",
+    "to_name": "Sanitarium",
+    "viagraph": {
+      "distance": 7.569,
+      "fare": 29,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 7.096,
+      "fare": 28,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": -1,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0.47299999999999986
+    }
+  },
+  {
+    "from_id": "tambo-terminal",
+    "from_name": "Tambo Terminal",
+    "to_id": "soda-beach",
+    "to_name": "Soda Beach",
+    "viagraph": {
+      "distance": 4.727,
+      "fare": 17,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 4.727,
+      "fare": 17,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-terminal",
+    "from_name": "Tambo Terminal",
+    "to_id": "st--michael-s-cathedral",
+    "to_name": "St. Michael's Cathedral",
+    "viagraph": {
+      "distance": 3.702,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 3.59,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0.1120000000000001
+    }
+  },
+  {
+    "from_id": "tambo-terminal",
+    "from_name": "Tambo Terminal",
+    "to_id": "st.michael's-college",
+    "to_name": "St. Michael's College",
+    "viagraph": {
+      "distance": 3.691,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 3.555,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0.13599999999999968
+    }
+  },
+  {
+    "from_id": "tambo-terminal",
+    "from_name": "Tambo Terminal",
+    "to_id": "tambo-market",
+    "to_name": "Tambo Public Market",
+    "viagraph": {
+      "distance": 0.346,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 0.346,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-terminal",
+    "from_name": "Tambo Terminal",
+    "to_id": "unicity",
+    "to_name": "Unicity",
+    "viagraph": {
+      "distance": 5.379,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 5.379,
+      "fare": 16,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": -10,
+      "transfers_saved": -1,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-terminal",
+    "from_name": "Tambo Terminal",
+    "to_id": "unitop",
+    "to_name": "Unitop",
+    "viagraph": {
+      "distance": 3.6790000000000003,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 3.6790000000000003,
+      "fare": 19,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": -7,
+      "transfers_saved": -1,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-terminal",
+    "from_name": "Tambo Terminal",
+    "to_id": "v-jollibee-aguinaldo",
+    "to_name": "Jollibee Aguinaldo",
+    "viagraph": {
+      "distance": 7.266,
+      "fare": 19,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 7.266,
+      "fare": 19,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-terminal",
+    "from_name": "Tambo Terminal",
+    "to_id": "wet-market",
+    "to_name": "Iligan Wet Market",
+    "viagraph": {
+      "distance": 4.535,
+      "fare": 26,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 4.535,
+      "fare": 14,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": -12,
+      "transfers_saved": -1,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "tambo-terminal",
+    "from_name": "Tambo Terminal",
+    "to_id": "zoey's-cafe",
+    "to_name": "Zoey's Cafe",
+    "viagraph": {
+      "distance": 5.057,
+      "fare": 15,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 5.057,
+      "fare": 15,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "timoga",
+    "from_name": "Timoga",
+    "to_id": "aguinaldo-street",
+    "to_name": "Aguinaldo Street",
+    "viagraph": {
+      "distance": 8.945,
+      "fare": 33,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 8.945,
+      "fare": 33,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "timoga",
+    "from_name": "Timoga",
+    "to_id": "palao-market",
+    "to_name": "Palao Market",
+    "viagraph": {
+      "distance": 9.227,
+      "fare": 33,
+      "rides": 2
+    },
+    "dijkstra": {
+      "distance": 9.227,
+      "fare": 33,
+      "rides": 2
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "timoga",
+    "from_name": "Timoga",
+    "to_id": "robinsons-mall",
+    "to_name": "Robinsons Mall",
+    "viagraph": {
+      "distance": 7.788,
+      "fare": 20,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 7.788,
+      "fare": 20,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "unicity",
+    "from_name": "Unicity",
+    "to_id": "anahaw-amphitheater",
+    "to_name": "Anahaw Amphitheater",
+    "viagraph": {
+      "distance": 2.755,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 2.755,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "v-jollibee-aguinaldo",
+    "from_name": "Jollibee Aguinaldo",
+    "to_id": "anahaw-amphitheater",
+    "to_name": "Anahaw Amphitheater",
+    "viagraph": {
+      "distance": 2.8,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 2.8,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "v-jollibee-aguinaldo",
+    "from_name": "Jollibee Aguinaldo",
+    "to_id": "iligan-city-hospital",
+    "to_name": "Iligan City Hospital",
+    "viagraph": {
+      "distance": 2.525,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 2.525,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "v-jollibee-aguinaldo",
+    "from_name": "Jollibee Aguinaldo",
+    "to_id": "iligan-cityhall",
+    "to_name": "Iligan City Hall",
+    "viagraph": {
+      "distance": 1.895,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 1.895,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "v-jollibee-aguinaldo",
+    "from_name": "Jollibee Aguinaldo",
+    "to_id": "iligan-medical-center-college",
+    "to_name": "Iligan Medical Center College",
+    "viagraph": {
+      "distance": 1.474,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 1.474,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "v-jollibee-aguinaldo",
+    "from_name": "Jollibee Aguinaldo",
+    "to_id": "iligan-medical-center-hospital",
+    "to_name": "Iligan Medical Center Hospital",
+    "viagraph": {
+      "distance": 1.434,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 1.434,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "v-jollibee-aguinaldo",
+    "from_name": "Jollibee Aguinaldo",
+    "to_id": "landbank-main",
+    "to_name": "Landbank Iligan Main",
+    "viagraph": {
+      "distance": 0.631,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 0.631,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  },
+  {
+    "from_id": "v-jollibee-aguinaldo",
+    "from_name": "Jollibee Aguinaldo",
+    "to_id": "psa",
+    "to_name": "PSA",
+    "viagraph": {
+      "distance": 0.709,
+      "fare": 13,
+      "rides": 1
+    },
+    "dijkstra": {
+      "distance": 0.709,
+      "fare": 13,
+      "rides": 1
+    },
+    "metrics": {
+      "fare_saved": 0,
+      "transfers_saved": 0,
+      "extra_dist_walked": 0
+    }
+  }
+]

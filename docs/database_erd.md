@@ -100,7 +100,7 @@ Stores user authentication profile data and permission details.
 
 | Column | Data Type | Keys / Constraints | Description |
 | :--- | :--- | :--- | :--- |
-| `uid` | `varchar(128)` | **PK** | Firebase Auth Unique ID or standard UUID. |
+| `uid` | `varchar(128)` | **PK** | Standard UUID or unique user identifier. |
 | `email` | `varchar(255)` | **Unique** | User email address. |
 | `username` | `varchar(255)` | - | User display name. |
 | `role` | `enum('user', 'admin')` | Default: `'user'` | Determines administrative privilege. |

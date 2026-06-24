@@ -39,8 +39,7 @@ For administrators and transit planners, the app includes a secure, feature-rich
 *   **Styling & UI:** Vanilla CSS, Tailwind CSS, Lucide React Icons, and Shadcn/ui Components
 *   **Mapping Engine:** [Leaflet](https://leafletjs.org/) & [React Leaflet](https://react-leaflet.js.org/) (OpenStreetMap & Esri World Imagery tiles)
 *   **Database Management:**
-    *   **Firebase Firestore:** Used for fast document storage and client-side graph caching.
-    *   **MySQL:** Used for relational user profiles, account recovery secrets, session audit logs, and version control tables.
+    *   **MySQL:** Used for all data persistence, including nodes (locations), route segments (route blocks), jeepney lines, user profiles, authentication, security recovery setups, session audit logs, and version control tables.
 *   **Authentication & Security:** JWT session management via secure HttpOnly cookies and Bcrypt password hashing.
 
 ---
@@ -62,7 +61,6 @@ For administrators and transit planners, the app includes a secure, feature-rich
 ### Prerequisites
 1.  [Node.js](https://nodejs.org/) (v20+ recommended)
 2.  MySQL Server (e.g., XAMPP, Laragon, or standalone MySQL on port `3306`)
-3.  Firebase Project (Firestore enabled)
 
 ### Local Installation
 1.  Clone this repository to your local machine:
@@ -85,14 +83,6 @@ For administrators and transit planners, the app includes a secure, feature-rich
 
     # Authentication Secrets
     JWT_SECRET=your_jwt_secret_key_here
-    
-    # Firebase Web Config Credentials
-    NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
-    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain
-    NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_storage_bucket
-    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-    NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
     ```
 4.  Import the database schema:
     *   Locate the SQL dump file inside `developer_backup/viagraph_experiment.sql` and import it into your local MySQL server.
